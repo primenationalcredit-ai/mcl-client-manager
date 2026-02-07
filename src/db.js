@@ -20,6 +20,7 @@ export async function loadClients() {
     address: r.address || '',
     ssnLast4: r.ssn_last4 || '',
     dob: r.dob || '',
+    dealId: r.deal_id || '',
     mclCase: r.mcl_case || '',
     mclType: r.mcl_type || '',
     mclStatus: r.mcl_status || '',
@@ -52,6 +53,7 @@ export async function saveClient(c) {
     address: c.address || '',
     ssn_last4: c.ssnLast4 || '',
     dob: c.dob || '',
+    deal_id: c.dealId || '',
     mcl_case: c.mclCase || '',
     mcl_type: c.mclType || '',
     mcl_status: c.mclStatus || '',
@@ -85,6 +87,7 @@ export async function saveClients(clients) {
     address: c.address || '',
     ssn_last4: c.ssnLast4 || '',
     dob: c.dob || '',
+    deal_id: c.dealId || '',
     mcl_case: c.mclCase || '',
     mcl_type: c.mclType || '',
     mcl_status: c.mclStatus || '',
@@ -176,5 +179,16 @@ export async function sendText({ to, body, clientName, webhookUrl }) {
     body: JSON.stringify({ phone: to, message: body, client_name: clientName })
   })
   if (!r.ok) throw new Error('Text webhook failed')
+  return { ok: true }
+}
+
+// ── Push email/phone back to Google Sheet (via Zapier webhook) ──
+export async function pushToSheet({ clientName, email, phone, dealId, webhookUrl }) {
+  const r = await fetch(webhookUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ client_name: clientName, email: email || '', phone: phone || '', deal_id: dealId || '' })
+  })
+  if (!r.ok) throw new Error('Sheet update webhook failed')
   return { ok: true }
 }

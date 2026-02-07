@@ -48,6 +48,7 @@ export default function App() {
   const [editTplD, setEditTplD] = useState({});
   const [csvUrl, setCsvUrl] = useState(CSV_URL);
   const [zapierUrl, setZapierUrl] = useState("");
+  const [sheetWebhookUrl, setSheetWebhookUrl] = useState("");
   const [lastSync, setLastSync] = useState(null);
   const [syncing, setSyncing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -71,6 +72,7 @@ export default function App() {
           setAgent(dbSettings.agent_name || "Joe");
           setCsvUrl(dbSettings.csv_url || CSV_URL);
           setZapierUrl(dbSettings.zapier_url || "");
+          setSheetWebhookUrl(dbSettings.sheet_webhook_url || "");
           setLastSync(dbSettings.last_sync || null);
         }
       } catch (e) {
@@ -95,8 +97,8 @@ export default function App() {
 
   // ── Save settings when they change ──
   const saveSettingsDebounced = useCallback(() => {
-    db.saveSettings({ agent_name: agent, csv_url: csvUrl, zapier_url: zapierUrl, last_sync: lastSync }).catch(e => console.error(e));
-  }, [agent, csvUrl, zapierUrl, lastSync]);
+    db.saveSettings({ agent_name: agent, csv_url: csvUrl, zapier_url: zapierUrl, sheet_webhook_url: sheetWebhookUrl, last_sync: lastSync }).catch(e => console.error(e));
+  }, [agent, csvUrl, zapierUrl, sheetWebhookUrl, lastSync]);
 
   // ── CSV Sync ──
   const syncCSV = useCallback(async (url) => {
@@ -505,7 +507,8 @@ export default function App() {
     const [en,setEn]=useState(c.notes||""); const [ea,setEa]=useState(c.address||"");
     const [es,setEs]=useState(c.ssnLast4||""); const [ed,setEd]=useState(c.dob||"");
     const [ee,setEe]=useState(c.email||""); const [ep,setEp]=useState(c.phone||"");
-    const sv=()=>upd(c.id,{notes:en,address:ea,ssnLast4:es,dob:ed,email:ee,phone:ep});
+    const [edi,setEdi]=useState(c.dealId||"");
+    const sv=()=>upd(c.id,{notes:en,address:ea,ssnLast4:es,dob:ed,email:ee,phone:ep,dealId:edi});
     useEffect(()=>{if(c.isNewLead&&!c.seenByAgent)upd(c.id,{seenByAgent:true})},[c.id]);
 
     return (
@@ -516,6 +519,7 @@ export default function App() {
             <div style={{display:"flex",gap:6,marginTop:4,flexWrap:"wrap"}}>
               <Badge s={c.status}/>
               {c.mclCase&&<span style={{fontSize:11,color:"#8b5cf6",fontWeight:600}}>⚖️ {c.mclCase}</span>}
+              {c.dealId&&<span style={{fontSize:10,color:"#ea580c",background:"#fff7ed",padding:"1px 6px",borderRadius:6,fontWeight:600}}>🔗 Deal {c.dealId}</span>}
               {c.mclStatus&&<span style={{fontSize:10,color:"#64748b",background:"#f1f5f9",padding:"1px 6px",borderRadius:6}}>{c.mclStatus}</span>}
             </div>
           </div>
@@ -576,10 +580,14 @@ export default function App() {
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
               <div><label style={lbl}>Email</label><input value={ee} onChange={e=>setEe(e.target.value)} onBlur={sv} style={inp}/></div>
               <div><label style={lbl}>Phone</label><input value={ep} onChange={e=>setEp(e.target.value)} onBlur={sv} style={inp}/></div>
-              <div style={{gridColumn:"1/-1"}}><label style={lbl}>Address</label><input value={ea} onChange={e=>setEa(e.target.value)} onBlur={sv} style={inp}/></div>
+              <div><label style={lbl}>Pipedrive Deal ID</label><input value={edi} onChange={e=>setEdi(e.target.value)} onBlur={sv} placeholder="e.g. 12345" style={inp}/></div>
               <div><label style={lbl}>Last 4 SSN</label><input value={es} onChange={e=>setEs(e.target.value)} onBlur={sv} maxLength={4} style={inp}/></div>
+              <div style={{gridColumn:"1/-1"}}><label style={lbl}>Address</label><input value={ea} onChange={e=>setEa(e.target.value)} onBlur={sv} style={inp}/></div>
               <div><label style={lbl}>DOB</label><input type="date" value={ed} onChange={e=>setEd(e.target.value)} onBlur={sv} style={inp}/></div>
             </div>
+            {(ee||ep)&&sheetWebhookUrl&&(
+              <button onClick={async()=>{try{await db.pushToSheet({clientName:c.name,email:ee,phone:ep,dealId:edi,webhookUrl:sheetWebhookUrl});flash("📤 Pushed to Sheet!","new");addLog(c.id,`Pushed to sheet: ${ee} / ${ep}`)}catch(er){flash("❌ Push failed","lost")}}} style={{...bt("#8b5cf6"),marginTop:8,width:"100%",textAlign:"center"}}>📤 Push Email & Phone to Google Sheet</button>
+            )}
           </Sec>
 
           <Sec t="Notes"><textarea value={en} onChange={e=>setEn(e.target.value)} onBlur={sv} rows={3} style={{...inp,resize:"vertical",fontFamily:"inherit"}}/></Sec>
@@ -661,6 +669,7 @@ export default function App() {
   // ═══════════════════════════════════════════════════════════════════
   const Settings = () => {
     const [za,setZa]=useState(zapierUrl);
+    const [zs,setZs]=useState(sheetWebhookUrl);
     return (
     <div style={{padding:"14px 20px",maxWidth:560}}>
       <h3 style={{margin:"0 0 14px",fontSize:15}}>Settings</h3>
@@ -676,6 +685,15 @@ export default function App() {
           <button onClick={()=>{setZapierUrl(za);saveSettingsDebounced();flash("Saved!")}} style={bt("#22c55e")}>Save</button>
         </div>
         {zapierUrl && <div style={{marginTop:6,fontSize:11,color:"#22c55e",fontWeight:600}}>✅ Connected</div>}
+      </Sec>
+
+      <Sec t="📊 Zapier → Google Sheet (Push Email & Phone)">
+        <p style={{fontSize:11,color:"#64748b",margin:"0 0 6px"}}>Separate Zap. Receives: client_name, email, phone, deal_id → writes to your MCL Google Sheet columns C (email) and D (phone).</p>
+        <div style={{display:"flex",gap:8}}>
+          <input value={zs} onChange={e=>setZs(e.target.value)} placeholder="https://hooks.zapier.com/hooks/catch/..." style={{...inp,flex:1,fontSize:11}}/>
+          <button onClick={()=>{setSheetWebhookUrl(zs);saveSettingsDebounced();flash("Saved!")}} style={bt("#8b5cf6")}>Save</button>
+        </div>
+        {sheetWebhookUrl && <div style={{marginTop:6,fontSize:11,color:"#8b5cf6",fontWeight:600}}>✅ Connected</div>}
       </Sec>
 
       <Sec t="📧 Email (SendGrid)">
@@ -732,7 +750,7 @@ export default function App() {
 
   // ADD MODAL
   const AddModal = () => {
-    const [f,setF]=useState({name:"",email:"",phone:"",notes:""});
+    const [f,setF]=useState({name:"",email:"",phone:"",notes:"",dealId:""});
     if(!showAdd)return null;
     return (
       <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setShowAdd(false)}>
@@ -742,6 +760,7 @@ export default function App() {
             <div><label style={lbl}>Name *</label><input value={f.name} onChange={e=>setF({...f,name:e.target.value})} style={inp} autoFocus/></div>
             <div><label style={lbl}>Email</label><input value={f.email} onChange={e=>setF({...f,email:e.target.value})} style={inp}/></div>
             <div><label style={lbl}>Phone</label><input value={f.phone} onChange={e=>setF({...f,phone:e.target.value})} style={inp}/></div>
+            <div><label style={lbl}>Pipedrive Deal ID</label><input value={f.dealId} onChange={e=>setF({...f,dealId:e.target.value})} placeholder="e.g. 12345" style={inp}/></div>
             <div><label style={lbl}>Notes</label><textarea value={f.notes} onChange={e=>setF({...f,notes:e.target.value})} rows={2} style={{...inp,fontFamily:"inherit"}}/></div>
           </div>
           <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:12}}>
