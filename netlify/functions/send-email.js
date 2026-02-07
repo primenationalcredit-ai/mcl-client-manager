@@ -1,6 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 // SEND EMAIL — Netlify Serverless Function → SendGrid
-// Wraps plain-text body in branded ASAP Credit Repair HTML template
+// From: accounts@asapcreditrepairusa.com
+// Signature: FCRA Compliance Team
 // ═══════════════════════════════════════════════════════════════
 
 function brandedHtml(body) {
@@ -39,8 +40,9 @@ function brandedHtml(body) {
 <!-- FOOTER -->
 <tr><td style="padding:24px 32px 28px;text-align:center;">
   <p style="margin:0 0 6px;font-size:14px;font-weight:700;color:#0f172a;">ASAP Credit Repair USA</p>
+  <p style="margin:0 0 2px;font-size:12px;color:#0f172a;font-weight:600;">FCRA Compliance Team</p>
   <p style="margin:0 0 4px;font-size:12px;color:#64748b;">Helping Americans Repair Their Credit Since 2013</p>
-  <p style="margin:0 0 12px;font-size:12px;color:#64748b;">&#128222; (888) 960-1802 &nbsp;|&nbsp; &#127760; asapcreditrepairusa.com</p>
+  <p style="margin:0 0 12px;font-size:12px;color:#64748b;">&#128222; (888) 960-1802 &nbsp;|&nbsp; &#9993; accounts@asapcreditrepairusa.com</p>
   <p style="margin:0;font-size:10px;color:#94a3b8;">This email is regarding a potential legal matter on your credit report.<br>If you believe you received this email in error, please contact us.</p>
 </td></tr>
 
@@ -61,20 +63,26 @@ export default async (req) => {
   if (req.method !== 'POST') return new Response('POST only', { status: 405 })
 
   try {
-    const { to, subject, body, clientName } = await req.json()
+    const { to, subject, body, plain } = await req.json()
     if (!to || !subject || !body) return new Response(JSON.stringify({ error: 'Missing fields' }), { status: 400 })
+
+    const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'accounts@asapcreditrepairusa.com'
+
+    const content = plain
+      ? [{ type: 'text/plain', value: body }]
+      : [
+          { type: 'text/plain', value: body },
+          { type: 'text/html', value: brandedHtml(body) }
+        ]
 
     const r = await fetch('https://api.sendgrid.com/v3/mail/send', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${process.env.SENDGRID_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         personalizations: [{ to: [{ email: to }] }],
-        from: { email: process.env.SENDGRID_FROM_EMAIL || 'noreply@asapcreditrepairusa.com', name: 'ASAP Credit Repair' },
+        from: { email: fromEmail, name: 'ASAP Credit Repair - FCRA Compliance' },
         subject,
-        content: [
-          { type: 'text/plain', value: body },
-          { type: 'text/html', value: brandedHtml(body) }
-        ]
+        content
       })
     })
 

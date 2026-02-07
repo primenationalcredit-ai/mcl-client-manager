@@ -8,7 +8,6 @@ export const sb = createClient(url, key)
 export async function loadClients() {
   const { data, error } = await sb.from('clients').select('*').order('updated_at', { ascending: false })
   if (error) throw error
-  // Convert DB snake_case → app camelCase
   return (data || []).map(r => ({
     id: r.id,
     name: r.name,
@@ -37,6 +36,7 @@ export async function loadClients() {
     createdAt: r.created_at,
     updatedAt: r.updated_at,
     comms: r.comms || {},
+    creditReports: r.credit_reports || [],
   }))
 }
 
@@ -68,6 +68,7 @@ export async function saveClient(c) {
     is_new_lead: c.isNewLead || false,
     seen_by_agent: c.seenByAgent ?? true,
     comms: c.comms || {},
+    credit_reports: c.creditReports || [],
     updated_at: new Date().toISOString(),
   }
   const { error } = await sb.from('clients').upsert(row, { onConflict: 'id' })
@@ -102,9 +103,9 @@ export async function saveClients(clients) {
     is_new_lead: c.isNewLead || false,
     seen_by_agent: c.seenByAgent ?? true,
     comms: c.comms || {},
+    credit_reports: c.creditReports || [],
     updated_at: new Date().toISOString(),
   }))
-  // Supabase has a max of ~1000 rows per upsert, batch if needed
   for (let i = 0; i < rows.length; i += 500) {
     const batch = rows.slice(i, i + 500)
     const { error } = await sb.from('clients').upsert(batch, { onConflict: 'id' })
@@ -160,15 +161,25 @@ export async function deleteTemplate(key) {
 }
 
 // ── Send Email (via Netlify function → SendGrid) ──
-export async function sendEmail({ to, subject, body, clientName }) {
+// From: accounts@asapcreditrepairusa.com | Signature: FCRA Compliance Team
+export async function sendEmail({ to, subject, body, plain }) {
   const r = await fetch('/.netlify/functions/send-email', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ to, subject, body, clientName })
+    body: JSON.stringify({ to, subject, body, plain: plain || false })
   })
   const d = await r.json()
   if (!r.ok) throw new Error(d.error || 'Email send failed')
   return d
+}
+
+// ── Send Email to McCarthy Law ──
+export async function sendMclEmail({ subject, body }) {
+  return sendEmail({
+    to: 'FCRA@McCarthyLawyer.com',
+    subject,
+    body,
+  })
 }
 
 // ── Send Text (via Zapier webhook → RingCentral) ──
@@ -183,12 +194,53 @@ export async function sendText({ to, body, clientName, webhookUrl }) {
 }
 
 // ── Push email/phone back to Google Sheet (via Zapier webhook) ──
-export async function pushToSheet({ clientName, email, phone, dealId, webhookUrl }) {
+export async function pushToSheet({ clientName, email, phone, dealId, reportUrl, webhookUrl }) {
   const r = await fetch(webhookUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ client_name: clientName, email: email || '', phone: phone || '', deal_id: dealId || '' })
+    body: JSON.stringify({
+      client_name: clientName,
+      email: email || '',
+      phone: phone || '',
+      deal_id: dealId || '',
+      report_url: reportUrl || '',
+    })
   })
   if (!r.ok) throw new Error('Sheet update webhook failed')
   return { ok: true }
+}
+
+// ── Upload Credit Report to Supabase Storage ──
+export async function uploadReport(clientId, file) {
+  const ts = Date.now()
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+  const path = `${clientId}/${ts}_${safeName}`
+
+  const { data, error } = await sb.storage
+    .from('credit-reports')
+    .upload(path, file, { upsert: true, contentType: file.type })
+
+  if (error) throw error
+
+  const { data: urlData } = sb.storage
+    .from('credit-reports')
+    .getPublicUrl(path)
+
+  return {
+    name: file.name,
+    url: urlData.publicUrl,
+    uploaded_at: new Date().toISOString(),
+    size: file.size,
+  }
+}
+
+// ── Delete Credit Report from Supabase Storage ──
+export async function deleteReport(url) {
+  // Extract path from public URL
+  const match = url.match(/credit-reports\/(.+)$/)
+  if (!match) return
+  const { error } = await sb.storage
+    .from('credit-reports')
+    .remove([match[1]])
+  if (error) console.error('Delete report error:', error)
 }

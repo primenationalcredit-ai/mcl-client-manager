@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import * as db from "./db";
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// MCL CLIENT MANAGER v5 — Supabase + SendGrid + Zapier/RingCentral
+// MCL CLIENT MANAGER v8 — Supabase + SendGrid + Zapier/RingCentral + Credit Reports
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-aIG0R1yc8KPTTmXLfUoAOjIv9oVVfGgDc_-M_i009NwwOJEiaoG9yLNkKDBZ4zMTBkYcOHw9qMn-/pub?gid=0&single=true&output=csv";
@@ -132,6 +132,7 @@ export default function App() {
             disputeLetterSent: null, reportsRequestedDate: null,
             outcomeDate: null, filedDate: null,
             comms: {}, isNewLead: true, seenByAgent: false, inServiceDate: null,
+            creditReports: [],
           };
           newClients.push(c);
           ex.add(nn(name));
@@ -546,13 +547,20 @@ export default function App() {
 
           <Sec t="Communications">
             <div style={{display:"flex",flexDirection:"column",gap:4}}>
-              {Object.entries(templates).map(([k,t])=>{
+              {Object.entries(templates)
+                .sort((a,b)=>{
+                  const aMatch=a[1].trigger===c.status?0:1;
+                  const bMatch=b[1].trigger===c.status?0:1;
+                  return aMatch-bMatch;
+                })
+                .map(([k,t])=>{
+                const isStageMatch=t.trigger===c.status;
                 const sent=!!c.comms?.[k]; const cd=c.comms?.[k];
                 return (
-                  <div key={k} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:8,background:sent?(cd?.sent?"#ecfdf5":"#fefce8"):"#f8fafc",border:`1px solid ${sent?(cd?.sent?"#6ee7b7":"#fde68a"):"#e2e8f0"}`}}>
+                  <div key={k} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:8,background:sent?(cd?.sent?"#ecfdf5":"#fefce8"):isStageMatch?"#eff6ff":"#f8fafc",border:`1px solid ${sent?(cd?.sent?"#6ee7b7":"#fde68a"):isStageMatch?"#bfdbfe":"#e2e8f0"}`,opacity:isStageMatch||sent?1:0.5}}>
                     <div style={{width:22,height:22,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,background:sent?(cd?.sent?t.type==="email"?"#3b82f6":"#10b981":"#eab308"):"#e2e8f0",color:sent?"#fff":"#94a3b8",fontSize:11,fontWeight:700}}>{sent?(cd?.sent?"✓":"📋"):"○"}</div>
                     <div style={{flex:1}}>
-                      <div style={{fontSize:12,fontWeight:600,color:sent?"#0f172a":"#64748b"}}>{t.type==="email"?"📧":"📱"} {t.name}</div>
+                      <div style={{fontSize:12,fontWeight:600,color:sent?"#0f172a":"#64748b"}}>{t.type==="email"?"📧":"📱"} {t.name}{isStageMatch&&!sent?<span style={{fontSize:9,color:"#3b82f6",marginLeft:4}}>● CURRENT STAGE</span>:""}</div>
                       {sent&&<div style={{fontSize:10,color:"#94a3b8"}}>{cd?.sent?"Sent":"Logged"} {fmtF(cd.at)} by {cd.a}</div>}
                     </div>
                     {!sent ? <button onClick={()=>setSendM({cid:c.id,k})} style={bt(t.type==="email"?"#3b82f6":"#10b981",true)}>Send</button>
@@ -565,7 +573,7 @@ export default function App() {
 
           <Sec t="Key Dates">
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-              {[["Dispute Letter Sent","disputeLetterSent"],["Packet Sent","packetSentDate"],["Client Mailed","mailDate"],["MCL Contact","mclContactDate"],["Reports Requested","reportsRequestedDate"],["Filed Date","filedDate"],["Outcome Date","outcomeDate"],["In-Service Date","inServiceDate"]].map(([l,k])=>(
+              {[["Dispute Letter Sent","disputeLetterSent"],["Packet Sent","packetSentDate"],["MCL Contact","mclContactDate"],["Reports Requested","reportsRequestedDate"],["Filed Date","filedDate"],["Outcome Date","outcomeDate"],["In-Service Date","inServiceDate"]].map(([l,k])=>(
                 <div key={k}><label style={lbl}>{l}</label><input type="date" value={c[k]?c[k].substring(0,10):""} onChange={e=>{upd(c.id,{[k]:e.target.value||null});addLog(c.id,`${l}: ${e.target.value}`)}} style={inp}/></div>
               ))}
             </div>
@@ -574,6 +582,35 @@ export default function App() {
                 {dsince(c.disputeLetterSent)>=31?`🔴 Day ${dsince(c.disputeLetterSent)} — follow up NOW!`:`Day ${dsince(c.disputeLetterSent)} of 31 — follow up in ${31-dsince(c.disputeLetterSent)} days`}
               </div>
             )}
+          </Sec>
+
+          <Sec t="📬 Client Mailed Disputes">
+            <p style={{fontSize:11,color:"#78716c",margin:"0 0 6px"}}>When the client mails their disputes, enter the date below. This will automatically notify McCarthy Law via email.</p>
+            <div style={{display:"flex",gap:8,alignItems:"flex-end"}}>
+              <div style={{flex:1}}>
+                <label style={lbl}>Date Mailed</label>
+                <input type="date" value={c.mailDate?c.mailDate.substring(0,10):""} onChange={e=>{
+                  const val=e.target.value||null;
+                  upd(c.id,{mailDate:val});
+                  addLog(c.id,`Client Mailed: ${val}`);
+                }} style={inp}/>
+              </div>
+              {c.mailDate&&!c.comms?.mcl_mail_notified&&(
+                <button onClick={async()=>{
+                  try{
+                    const mailDateFmt=new Date(c.mailDate).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});
+                    await db.sendMclEmail({
+                      subject:`Client Mail Date Notification: ${c.name}`,
+                      body:`Dear McCarthy Law Team,\n\nThis is to inform you that ${c.name} has notified us that they mailed their dispute documents on ${mailDateFmt}.\n\nPlease update your records accordingly.\n\nBest regards,\nFCRA Compliance Team\nASAP Credit Repair USA\n(888) 960-1802`
+                    });
+                    upd(c.id,{comms:{...c.comms,mcl_mail_notified:{at:new Date().toISOString(),a:agent,sent:true}}});
+                    addLog(c.id,`Notified MCL: disputes mailed ${mailDateFmt}`);
+                    flash("📧 McCarthy Law notified!");
+                  }catch(er){flash("❌ MCL email failed: "+er.message,"err")}
+                }} style={{...bt("#8b5cf6"),whiteSpace:"nowrap"}}>📧 Notify MCL</button>
+              )}
+            </div>
+            {c.comms?.mcl_mail_notified&&<div style={{marginTop:6,fontSize:11,color:"#22c55e",fontWeight:600}}>✅ McCarthy Law notified on {fmtF(c.comms.mcl_mail_notified.at)}</div>}
           </Sec>
 
           <Sec t="Contact Info">
@@ -591,6 +628,64 @@ export default function App() {
           </Sec>
 
           <Sec t="Notes"><textarea value={en} onChange={e=>setEn(e.target.value)} onBlur={sv} rows={3} style={{...inp,resize:"vertical",fontFamily:"inherit"}}/></Sec>
+
+          <Sec t="📊 Credit Reports">
+            <p style={{fontSize:11,color:"#78716c",margin:"0 0 8px"}}>Upload credit reports here. Files are stored securely and can be emailed to McCarthy Law and linked in Google Sheet.</p>
+            <input type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" multiple onChange={async(e)=>{
+              const files=Array.from(e.target.files);
+              if(!files.length)return;
+              flash("📤 Uploading...");
+              try{
+                const newReports=[...(c.creditReports||[])];
+                for(const f of files){
+                  const r=await db.uploadReport(c.id,f);
+                  newReports.push(r);
+                  addLog(c.id,`Uploaded report: ${f.name}`);
+                }
+                upd(c.id,{creditReports:newReports});
+                flash(`✅ ${files.length} report${files.length>1?"s":""} uploaded!`);
+              }catch(er){flash("❌ Upload failed: "+er.message,"err")}
+              e.target.value="";
+            }} style={{fontSize:12,marginBottom:8}}/>
+            {(c.creditReports||[]).length>0&&(
+              <div style={{display:"flex",flexDirection:"column",gap:4,marginTop:4}}>
+                {c.creditReports.map((r,i)=>(
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",background:"#f0fdf4",borderRadius:6,border:"1px solid #86efac"}}>
+                    <span style={{fontSize:14}}>📄</span>
+                    <div style={{flex:1,minWidth:0}}>
+                      <a href={r.url} target="_blank" rel="noopener" style={{fontSize:12,fontWeight:600,color:"#0f172a",textDecoration:"none"}}>{r.name}</a>
+                      <div style={{fontSize:10,color:"#64748b"}}>{fmtF(r.uploaded_at)}{r.size?` · ${(r.size/1024).toFixed(0)}KB`:""}</div>
+                    </div>
+                    <button onClick={()=>{navigator.clipboard?.writeText(r.url);flash("📋 Link copied!")}} style={bt("#64748b",true)}>🔗</button>
+                    <button onClick={()=>{const nr=c.creditReports.filter((_,j)=>j!==i);upd(c.id,{creditReports:nr});db.deleteReport(r.url)}} style={{...bt("#ef4444",true),opacity:0.6}}>✕</button>
+                  </div>
+                ))}
+                <div style={{display:"flex",gap:6,marginTop:6}}>
+                  <button onClick={async()=>{
+                    try{
+                      const links=(c.creditReports||[]).map(r=>`${r.name}: ${r.url}`).join("\n");
+                      await db.sendMclEmail({
+                        subject:`Updated Credit Reports: ${c.name}`,
+                        body:`Dear McCarthy Law Team,\n\nPlease find the updated credit reports for ${c.name} at the following link(s):\n\n${links}\n\nPlease review and let us know if you need anything else.\n\nBest regards,\nFCRA Compliance Team\nASAP Credit Repair USA\n(888) 960-1802`
+                      });
+                      addLog(c.id,`Emailed ${c.creditReports.length} report(s) to McCarthy Law`);
+                      flash("📧 Reports emailed to McCarthy Law!");
+                    }catch(er){flash("❌ Email failed: "+er.message,"err")}
+                  }} style={bt("#3b82f6")}>📧 Email Reports to MCL</button>
+                  {sheetWebhookUrl&&(
+                    <button onClick={async()=>{
+                      try{
+                        const urls=(c.creditReports||[]).map(r=>r.url).join(" | ");
+                        await db.pushToSheet({clientName:c.name,email:ee,phone:ep,dealId:edi,reportUrl:urls,webhookUrl:sheetWebhookUrl});
+                        addLog(c.id,`Pushed report links to Google Sheet`);
+                        flash("📤 Report links pushed to Sheet!");
+                      }catch(er){flash("❌ Push failed: "+er.message,"err")}
+                    }} style={bt("#8b5cf6")}>📤 Push Links to Sheet</button>
+                  )}
+                </div>
+              </div>
+            )}
+          </Sec>
           <div style={{marginTop:12,paddingTop:12,borderTop:"1px solid #f1f5f9"}}>
             <button onClick={async()=>{if(confirm(`Delete ${c.name}?`)){await db.deleteClient(c.id);setClients(p=>p.filter(x=>x.id!==c.id));setSel(null)}}} style={{...bt("#ef4444"),opacity:0.6}}>🗑️ Delete</button>
           </div>
@@ -697,7 +792,9 @@ export default function App() {
       </Sec>
 
       <Sec t="📧 Email (SendGrid)">
-        <p style={{fontSize:11,color:"#64748b",margin:0}}>SendGrid API key is set in Netlify env vars (SENDGRID_API_KEY, SENDGRID_FROM_EMAIL). Emails send via a serverless function.</p>
+        <p style={{fontSize:11,color:"#64748b",margin:"0 0 6px"}}>From: <b>accounts@asapcreditrepairusa.com</b> · Signature: <b>FCRA Compliance Team</b></p>
+        <p style={{fontSize:11,color:"#64748b",margin:"0 0 4px"}}>SendGrid API key is set in Netlify env vars (SENDGRID_API_KEY).</p>
+        <p style={{fontSize:11,color:"#64748b",margin:0}}>Auto-emails McCarthy Law (FCRA@McCarthyLawyer.com) when mail date is entered and when credit reports are uploaded.</p>
       </Sec>
 
       <Sec t="Data">
@@ -765,7 +862,7 @@ export default function App() {
           </div>
           <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:12}}>
             <button onClick={()=>setShowAdd(false)} style={bt("#94a3b8")}>Cancel</button>
-            <button onClick={async()=>{if(!f.name)return;const nc={id:gid(),...f,status:"new",introduced:false,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),address:"",ssnLast4:"",dob:"",mclCase:"",mclType:"",mclStatus:"",packetSentDate:null,mailDate:null,mclContactDate:null,disputeLetterSent:null,reportsRequestedDate:null,outcomeDate:null,filedDate:null,comms:{},isNewLead:true,seenByAgent:false,inServiceDate:null};setClients(p=>[nc,...p]);await db.saveClient(nc);setShowAdd(false);flash("Added!","new")}} style={bt("#0f172a")}>Add</button>
+            <button onClick={async()=>{if(!f.name)return;const nc={id:gid(),...f,status:"new",introduced:false,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),address:"",ssnLast4:"",dob:"",mclCase:"",mclType:"",mclStatus:"",packetSentDate:null,mailDate:null,mclContactDate:null,disputeLetterSent:null,reportsRequestedDate:null,outcomeDate:null,filedDate:null,comms:{},isNewLead:true,seenByAgent:false,inServiceDate:null,creditReports:[]};setClients(p=>[nc,...p]);await db.saveClient(nc);setShowAdd(false);flash("Added!","new")}} style={bt("#0f172a")}>Add</button>
           </div>
         </div>
       </div>
