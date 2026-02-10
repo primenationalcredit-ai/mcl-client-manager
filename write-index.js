@@ -1,0 +1,779 @@
+const fs = require("fs");
+const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MCL Client Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --navy:#003f87; --navy-dark:#002d63; --navy-light:#e8f0fa;
+  --gold:#c9952b; --gold-light:#fef9ef;
+  --red:#dc2626; --red-light:#fef2f2;
+  --green:#16a34a; --green-light:#f0fdf4;
+  --g50:#f9fafb; --g100:#f3f4f6; --g200:#e5e7eb; --g300:#d1d5db;
+  --g400:#9ca3af; --g500:#6b7280; --g600:#4b5563; --g700:#374151;
+  --g800:#1f2937; --g900:#111827;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--g50);color:var(--g800);min-height:100vh;}
+button{font-family:inherit;cursor:pointer;}
+input,select,textarea{font-family:inherit;}
+
+/* NAV */
+.topnav{background:var(--navy-dark);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.topnav-brand{color:#fff;font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px;}
+.topnav-right{display:flex;align-items:center;gap:12px;}
+.badge-alert{background:var(--red);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;}
+
+/* LAYOUT */
+.app{display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 52px);}
+
+/* SIDEBAR */
+.sidebar{background:#fff;border-right:1px solid var(--g200);overflow-y:auto;}
+.sb-section{padding:14px;border-bottom:1px solid var(--g100);}
+.sb-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--g400);margin-bottom:8px;}
+.stage-btn{width:100%;display:flex;align-items:center;justify-content:space-between;padding:9px 10px;border:none;background:transparent;border-radius:8px;margin-bottom:3px;transition:all .12s;}
+.stage-btn:hover{background:var(--g50);}
+.stage-btn.active{background:var(--navy-light);}
+.sb-left{display:flex;align-items:center;gap:8px;}
+.sb-icon{font-size:16px;}
+.sb-label{font-size:13px;font-weight:600;color:var(--g800);}
+.sb-right{display:flex;align-items:center;gap:5px;}
+.sb-count{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--g500);background:var(--g100);padding:1px 7px;border-radius:10px;}
+.sb-overdue{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:#fff;background:var(--red);padding:1px 5px;border-radius:10px;min-width:16px;text-align:center;}
+
+/* CLIENT LIST */
+.search-box{width:100%;padding:7px 10px;border:1px solid var(--g200);border-radius:8px;font-size:12px;outline:none;margin-bottom:8px;}
+.search-box:focus{border-color:var(--navy);}
+.client-list{list-style:none;}
+.client-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:all .1s;}
+.client-item:hover{background:var(--g50);}
+.client-item.active{background:var(--navy-light);border-color:var(--navy);}
+.ci-left{display:flex;flex-direction:column;min-width:0;}
+.ci-name{font-size:13px;font-weight:600;color:var(--g800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ci-sub{font-size:11px;color:var(--g400);margin-top:1px;}
+.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.dot.overdue{background:var(--red);}
+.dot.due_today{background:var(--gold);}
+.dot.on_track{background:var(--green);}
+.dot.responded{background:var(--navy);}
+.dot.needs_intro{background:var(--g300);}
+.dot.resolved{background:var(--g300);}
+
+/* ADD CLIENT BTN */
+.add-btn{width:100%;padding:8px;border:2px dashed var(--g200);border-radius:8px;background:transparent;color:var(--g400);font-size:13px;font-weight:600;margin-top:8px;transition:all .12s;}
+.add-btn:hover{border-color:var(--navy);color:var(--navy);}
+
+/* MAIN */
+.main{overflow-y:auto;padding:24px 28px;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:8px;border:none;font-size:13px;font-weight:600;transition:all .12s;white-space:nowrap;}
+.btn-navy{background:var(--navy);color:#fff;}.btn-navy:hover{background:var(--navy-dark);}
+.btn-green{background:var(--green);color:#fff;}.btn-green:hover{background:#15803d;}
+.btn-red{background:transparent;color:var(--g400);border:1px solid var(--g200);}.btn-red:hover{border-color:var(--red);color:var(--red);}
+.btn-outline{background:transparent;color:var(--g600);border:1px solid var(--g200);}.btn-outline:hover{border-color:var(--navy);color:var(--navy);}
+.btn-sm{padding:5px 10px;font-size:12px;}
+.btn-gold{background:var(--gold);color:#fff;}.btn-gold:hover{background:#b8862a;}
+
+/* PROFILE HEADER */
+.prof-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;}
+.prof-name{font-size:22px;font-weight:700;color:var(--g900);}
+.prof-meta{display:flex;gap:14px;flex-wrap:wrap;margin-top:4px;}
+.prof-meta span{font-size:13px;color:var(--g500);display:flex;align-items:center;gap:4px;}
+.prof-meta a{color:var(--navy);text-decoration:none;}
+.prof-actions{display:flex;gap:6px;flex-shrink:0;}
+
+/* INFO GRID */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;}
+.info-card{background:#fff;border:1px solid var(--g200);border-radius:10px;padding:16px 18px;}
+.info-card-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--g400);margin-bottom:10px;}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--g50);}
+.info-row:last-child{border-bottom:none;}
+.info-lbl{font-size:13px;color:var(--g500);}
+.info-val{font-size:13px;font-weight:600;color:var(--g800);}
+.info-val.muted{color:var(--g400);}
+.stage-badge{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:700;padding:4px 12px;border-radius:8px;background:var(--navy-light);color:var(--navy);}
+.days-badge{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;padding:2px 7px;border-radius:12px;}
+.days-badge.overdue{background:var(--red-light);color:var(--red);}
+.days-badge.ok{background:var(--green-light);color:var(--green);}
+
+/* TIMELINE */
+.timeline-card{background:#fff;border:1px solid var(--g200);border-radius:10px;padding:20px;}
+.timeline-title{font-size:15px;font-weight:700;color:var(--g900);margin-bottom:16px;}
+.flow-stage{position:relative;padding-left:36px;padding-bottom:4px;}
+.flow-stage::before{content:'';position:absolute;left:13px;top:28px;bottom:0;width:2px;background:var(--g200);}
+.flow-stage:last-child::before{display:none;}
+.flow-dot{position:absolute;left:5px;top:5px;width:18px;height:18px;border-radius:50%;border:3px solid var(--g300);background:#fff;z-index:2;}
+.flow-dot.done{background:var(--green);border-color:var(--green);}
+.flow-dot.done::after{content:'✓';color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;height:100%;}
+.flow-dot.current{background:var(--navy);border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,63,135,.2);}
+.flow-dot.current::after{content:'';width:5px;height:5px;background:#fff;border-radius:50%;display:block;margin:3.5px auto;}
+.flow-head{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.flow-label{font-size:13px;font-weight:700;color:var(--g900);}
+.flow-label.pending{color:var(--g400);}
+.flow-date{font-size:11px;color:var(--g400);font-family:'JetBrains Mono',monospace;}
+.flow-dur{font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;}
+.flow-dur.fast{background:var(--green-light);color:var(--green);}
+.flow-dur.slow{background:var(--gold-light);color:var(--gold);}
+.flow-dur.overdue{background:var(--red-light);color:var(--red);}
+.flow-events{margin:6px 0 14px;list-style:none;}
+.flow-event{display:flex;align-items:flex-start;gap:6px;padding:4px 8px;border-radius:5px;font-size:12px;color:var(--g600);}
+.flow-event:hover{background:var(--g50);}
+.fe-icon{flex-shrink:0;font-size:13px;margin-top:1px;}
+.fe-text{flex:1;line-height:1.3;}
+.fe-date{flex-shrink:0;font-size:10px;color:var(--g400);font-family:'JetBrains Mono',monospace;margin-top:1px;}
+.flow-pending-desc{font-size:12px;color:var(--g400);padding:2px 0 14px;}
+
+/* NEXT ACTION */
+.next-action{background:var(--navy-light);border:2px solid var(--navy);border-radius:9px;padding:12px 14px;margin:6px 0 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.na-left{display:flex;align-items:center;gap:8px;}
+.na-icon{font-size:18px;}
+.na-text{font-size:12px;font-weight:600;color:var(--navy-dark);}
+.na-sub{font-size:11px;color:var(--g500);margin-top:1px;}
+.na-btns{display:flex;gap:5px;flex-shrink:0;}
+
+/* MOVE STAGE */
+.move-bar{display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid var(--g200);}
+.move-bar label{font-size:13px;font-weight:600;color:var(--g600);}
+.move-select{padding:5px 10px;border:1px solid var(--g200);border-radius:8px;font-size:13px;color:var(--g700);outline:none;}
+.move-select:focus{border-color:var(--navy);}
+
+/* NOTES */
+.notes-area{width:100%;min-height:70px;padding:8px 10px;border:1px solid var(--g200);border-radius:8px;font-size:13px;color:var(--g700);resize:vertical;outline:none;margin-top:6px;}
+.notes-area:focus{border-color:var(--navy);}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s;}
+.modal-bg.visible{opacity:1;pointer-events:all;}
+.modal{background:#fff;border-radius:14px;width:500px;max-height:85vh;overflow-y:auto;box-shadow:0 10px 15px rgba(0,0,0,.1);}
+.modal-head{padding:18px 20px;border-bottom:1px solid var(--g200);display:flex;align-items:center;justify-content:space-between;}
+.modal-head h3{font-size:15px;font-weight:700;}
+.modal-close{width:28px;height:28px;border-radius:6px;border:none;background:var(--g100);font-size:14px;display:flex;align-items:center;justify-content:center;}
+.modal-body{padding:20px;}
+.modal-foot{padding:14px 20px;border-top:1px solid var(--g200);display:flex;gap:6px;justify-content:flex-end;}
+
+/* FORM */
+.form-row{margin-bottom:14px;}
+.form-label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--g500);margin-bottom:4px;}
+.form-input{width:100%;padding:8px 10px;border:1px solid var(--g200);border-radius:8px;font-size:13px;outline:none;}
+.form-input:focus{border-color:var(--navy);}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:60px 20px;color:var(--g400);}
+.empty-icon{font-size:42px;margin-bottom:10px;}
+
+/* STATUS PILLS */
+.pill{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;}
+.pill.overdue{background:var(--red-light);color:var(--red);}
+.pill.due_today{background:var(--gold-light);color:var(--gold);}
+.pill.on_track{background:var(--green-light);color:var(--green);}
+.pill.responded{background:var(--navy-light);color:var(--navy);}
+.pill.needs_intro{background:var(--g100);color:var(--g500);}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--g900);color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;z-index:300;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+
+@media(max-width:900px){.app{grid-template-columns:1fr;}.sidebar{display:none;}}
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <span class="topnav-brand">⚖️ MCL Client Manager</span>
+  <div class="topnav-right">
+    <span class="badge-alert" id="overdueGlobal">0 overdue</span>
+  </div>
+</div>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="sb-section" id="stagesContainer"></div>
+    <div class="sb-section">
+      <div class="sb-title" id="stageClientsTitle">Clients</div>
+      <input class="search-box" type="text" placeholder="Search clients..." id="searchInput" oninput="filterClients()">
+      <ul class="client-list" id="clientList"></ul>
+      <button class="add-btn" onclick="openAddModal()">+ Add Client</button>
+    </div>
+  </div>
+  <div class="main" id="mainPanel">
+    <div class="empty">
+      <div class="empty-icon">👈</div>
+      <p>Select a client from the sidebar to view their profile</p>
+    </div>
+  </div>
+</div>
+
+<!-- ADD CLIENT MODAL -->
+<div class="modal-bg" id="addModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Add New Client</h3><button class="modal-close" onclick="closeModal('addModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><label class="form-label">Full Name *</label><input class="form-input" id="addName"></div>
+      <div class="form-row-2">
+        <div class="form-row"><label class="form-label">Email</label><input class="form-input" id="addEmail" type="email"></div>
+        <div class="form-row"><label class="form-label">Phone</label><input class="form-input" id="addPhone"></div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row"><label class="form-label">Pipedrive ID</label><input class="form-input" id="addPipedrive"></div>
+        <div class="form-row"><label class="form-label">Assigned To</label>
+          <select class="form-input" id="addAssigned">
+            <option value="">Select...</option>
+            <option>Eric De La Rosa</option>
+            <option>Cindy</option>
+            <option>Carlos Salguera</option>
+            <option>Kimberly Sanchez</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row"><label class="form-label">Starting Stage</label>
+          <select class="form-input" id="addStage">
+            <option value="no_answer">📞 No Answer</option>
+            <option value="contacted">💬 Contacted</option>
+            <option value="mailing">📬 Mailing</option>
+            <option value="day31">⏳ Day 31</option>
+          </select>
+        </div>
+        <div class="form-row"><label class="form-label">Intro Type</label>
+          <select class="form-input" id="addIntroType">
+            <option value="no_answer">No Answer</option>
+            <option value="lvm">Left Voicemail</option>
+            <option value="spoke">Spoke</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row"><label class="form-label">Notes</label><textarea class="form-input" id="addNotes" rows="2"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal('addModal')">Cancel</button>
+      <button class="btn btn-navy" onclick="addClient()">Add Client →</button>
+    </div>
+  </div>
+</div>
+
+<!-- SEND EMAIL MODAL -->
+<div class="modal-bg" id="sendModal">
+  <div class="modal">
+    <div class="modal-head"><h3 id="sendModalTitle">Send Follow-up</h3><button class="modal-close" onclick="closeModal('sendModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><label class="form-label">Template</label><div id="sendTemplateInfo" style="font-size:13px;color:var(--g700);padding:8px 10px;background:var(--g50);border-radius:8px;"></div></div>
+      <div class="form-row"><label class="form-label">Subject</label><div id="sendSubject" style="font-size:13px;color:var(--g700);padding:8px 10px;background:var(--g50);border-radius:8px;"></div></div>
+      <div class="form-row"><label class="form-label">Preview</label><div id="sendPreview" style="font-size:13px;color:var(--g700);padding:12px;background:var(--g50);border-radius:8px;max-height:180px;overflow-y:auto;line-height:1.5;"></div></div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
+        <input type="checkbox" id="sendAlsoSms" checked style="width:16px;height:16px;">
+        <label for="sendAlsoSms" style="font-size:13px;color:var(--g600);">Also send matching SMS</label>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal('sendModal')">Cancel</button>
+      <button class="btn btn-navy" id="sendConfirmBtn" onclick="confirmSend()">Send →</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// CONFIG - UPDATE THESE WITH YOUR SUPABASE CREDENTIALS
+// ═══════════════════════════════════════════════════
+const SUPABASE_URL = 'https://kkcbpqbcpzcarxhknzza.supabase.co';
+const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY_HERE'; // Get from Supabase → Settings → API → anon public key
+const SEND_EMAIL_URL = 'https://stupendous-melomakarona-97abc8.netlify.app/.netlify/functions/send-email';
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+let clients = [];
+let templates = [];
+let currentStage = 'no_answer';
+let currentClientId = null;
+let pendingSend = null;
+
+const STAGES = [
+  { key: 'no_answer', icon: '📞', label: 'No Answer' },
+  { key: 'contacted', icon: '💬', label: 'Contacted' },
+  { key: 'mailing', icon: '📬', label: 'Mailing' },
+  { key: 'day31', icon: '⏳', label: 'Day 31' },
+  { key: 'won', icon: '✅', label: 'Won' },
+  { key: 'lost', icon: '❌', label: 'Lost' },
+];
+
+const STAGE_ICONS = { no_answer:'📞', contacted:'💬', mailing:'📬', day31:'⏳', won:'✅', lost:'❌' };
+
+// Template key mapping per stage
+function getTemplateKeys(stage, lastFu) {
+  const map = {
+    no_answer: { none:'intro_email_no_answer', intro:'fu1_email_no_answer', fu1:'fu2_email_no_answer', fu2:'fu3_email_no_answer' },
+    contacted: { none:'fu1_email_contacted', intro:'fu1_email_contacted', fu1:'fu2_email_contacted', fu2:'fu3_email_contacted', fu3:'fu4_email_contacted' },
+    mailing: { none:'intro_email_mailing', intro:'fu1_email_mailing', fu1:'fu2_email_mailing', fu2:'fu3_email_mailing' },
+    day31: { none:'followup_31day_email', intro:'fu2_email_reports', fu1:'fu2_email_reports', fu2:'fu3_email_reports', fu3:'fu4_email_reports' },
+  };
+  const smsMap = {
+    no_answer: { none:'intro_text_no_answer', intro:'fu1_text_no_answer', fu1:'fu2_text_no_answer', fu2:'fu3_text_no_answer' },
+    contacted: { none:'fu1_text_contacted', intro:'fu1_text_contacted', fu1:'fu2_text_contacted', fu2:'fu3_text_contacted', fu3:'fu4_text_contacted' },
+    mailing: { none:'intro_text_mailing', intro:'fu1_text_mailing', fu1:'fu2_text_mailing', fu2:'fu3_text_mailing' },
+    day31: { none:'followup_31day_text', intro:'fu2_text_reports', fu1:'fu2_text_reports', fu2:'fu3_text_reports', fu3:'fu4_text_reports' },
+  };
+  const stageMap = map[stage] || {};
+  const smsStageMap = smsMap[stage] || {};
+  return { email: stageMap[lastFu] || null, sms: smsStageMap[lastFu] || null };
+}
+
+// ═══════════════════════════════════════════════════
+// DATA LOADING
+// ═══════════════════════════════════════════════════
+async function loadData() {
+  const [cRes, tRes] = await Promise.all([
+    sb.from('mcl_client_status').select('*').order('days_since_contact', { ascending: false, nullsFirst: true }),
+    sb.from('templates').select('key, name, type, subject, body, trigger_stage')
+  ]);
+  if (cRes.data) clients = cRes.data;
+  if (tRes.data) templates = tRes.data;
+  renderStages();
+  renderClientList();
+  updateOverdueBadge();
+  if (currentClientId) renderProfile(currentClientId);
+}
+
+// ═══════════════════════════════════════════════════
+// RENDER STAGES
+// ═══════════════════════════════════════════════════
+function renderStages() {
+  const container = document.getElementById('stagesContainer');
+  container.innerHTML = '<div class="sb-title">Pipeline</div>';
+  STAGES.forEach(s => {
+    const stageClients = clients.filter(c => {
+      if (s.key === 'won') return c.outcome === 'won';
+      if (s.key === 'lost') return c.outcome === 'lost';
+      return c.stage === s.key && !c.outcome;
+    });
+    const overdue = stageClients.filter(c => c.follow_up_status === 'overdue').length;
+    const btn = document.createElement('button');
+    btn.className = 'stage-btn' + (s.key === currentStage ? ' active' : '');
+    btn.onclick = () => { currentStage = s.key; currentClientId = null; renderStages(); renderClientList(); renderEmptyMain(); };
+    btn.innerHTML = \`
+      <span class="sb-left"><span class="sb-icon">\${s.icon}</span><span class="sb-label">\${s.label}</span></span>
+      <span class="sb-right">
+        <span class="sb-count">\${stageClients.length}</span>
+        \${overdue > 0 ? \`<span class="sb-overdue">\${overdue}</span>\` : ''}
+      </span>\`;
+    container.appendChild(btn);
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// RENDER CLIENT LIST
+// ═══════════════════════════════════════════════════
+function renderClientList() {
+  const stageClients = getStageClients();
+  document.getElementById('stageClientsTitle').textContent = \`\${STAGE_ICONS[currentStage]||'🏁'} \${STAGES.find(s=>s.key===currentStage)?.label||'Clients'} — \${stageClients.length}\`;
+  renderFilteredClients(stageClients);
+}
+
+function getStageClients() {
+  let list;
+  if (currentStage === 'won') list = clients.filter(c => c.outcome === 'won');
+  else if (currentStage === 'lost') list = clients.filter(c => c.outcome === 'lost');
+  else list = clients.filter(c => c.stage === currentStage && !c.outcome);
+  // Sort: overdue first, then due_today, then on_track
+  const priority = { overdue: 0, due_today: 1, needs_intro: 2, on_track: 3, responded: 4, resolved: 5 };
+  list.sort((a, b) => (priority[a.follow_up_status] || 9) - (priority[b.follow_up_status] || 9) || (b.days_since_contact || 0) - (a.days_since_contact || 0));
+  return list;
+}
+
+function renderFilteredClients(list) {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  if (q) list = list.filter(c => c.name.toLowerCase().includes(q) || (c.email||'').toLowerCase().includes(q));
+  const ul = document.getElementById('clientList');
+  ul.innerHTML = '';
+  if (!list.length) { ul.innerHTML = '<div style="text-align:center;padding:20px;color:var(--g400);font-size:13px;">No clients</div>'; return; }
+  list.forEach(c => {
+    const li = document.createElement('li');
+    li.className = 'client-item' + (c.id === currentClientId ? ' active' : '');
+    li.onclick = () => { currentClientId = c.id; renderClientList(); renderProfile(c.id); };
+    const fuLabel = c.last_followup === 'none' ? 'No contact' : c.last_followup === 'intro' ? 'Intro sent' : \`FU #\${c.last_followup.replace('fu','')}\`;
+    const daysLabel = c.days_since_contact != null ? \`\${c.days_since_contact}d ago\` : 'never';
+    li.innerHTML = \`
+      <div class="ci-left"><div class="ci-name">\${c.name}</div><div class="ci-sub">\${fuLabel} · \${daysLabel}</div></div>
+      <div><span class="dot \${c.follow_up_status}"></span></div>\`;
+    ul.appendChild(li);
+  });
+}
+
+function filterClients() { renderFilteredClients(getStageClients()); }
+
+// ═══════════════════════════════════════════════════
+// RENDER PROFILE
+// ═══════════════════════════════════════════════════
+function renderProfile(clientId) {
+  const c = clients.find(x => x.id === clientId);
+  if (!c) return;
+  const main = document.getElementById('mainPanel');
+
+  const stageLabel = STAGES.find(s=>s.key===c.stage)?.label || c.stage;
+  const stageIcon = STAGE_ICONS[c.stage] || '📋';
+  const daysInStage = c.days_in_stage || 0;
+
+  // Determine next action
+  const lastFu = c.last_followup || 'none';
+  const fuKeys = getTemplateKeys(c.stage, lastFu);
+  const hasNextTemplate = fuKeys.email != null;
+  const allSent = !hasNextTemplate;
+
+  main.innerHTML = \`
+    <!-- PROFILE HEADER -->
+    <div class="prof-header">
+      <div>
+        <div class="prof-name">\${c.name}</div>
+        <div class="prof-meta">
+          \${c.email ? \`<span>📧 <a href="mailto:\${c.email}">\${c.email}</a></span>\` : ''}
+          \${c.phone ? \`<span>📱 \${c.phone}</span>\` : ''}
+          \${c.pipedrive_id ? \`<span>📋 PD #\${c.pipedrive_id}</span>\` : ''}
+        </div>
+      </div>
+      <div class="prof-actions">
+        \${!c.responded && !c.outcome ? \`<button class="btn btn-gold btn-sm" onclick="markResponded('\${c.id}')">✓ Responded</button>\` : ''}
+        \${!c.outcome ? \`<button class="btn btn-green btn-sm" onclick="markOutcome('\${c.id}','won')">✅ Won</button>\` : ''}
+        \${!c.outcome ? \`<button class="btn btn-red btn-sm" onclick="markOutcome('\${c.id}','lost')">❌ Lost</button>\` : ''}
+      </div>
+    </div>
+
+    <!-- INFO CARDS -->
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-card-title">Client Details</div>
+        <div class="info-row"><span class="info-lbl">Current Stage</span><span class="stage-badge">\${stageIcon} \${stageLabel}</span></div>
+        <div class="info-row"><span class="info-lbl">Time in Stage</span><span class="days-badge \${daysInStage > 10 ? 'overdue' : 'ok'}">\${daysInStage} days</span></div>
+        <div class="info-row"><span class="info-lbl">Assigned To</span><span class="info-val">\${c.assigned_to || '—'}</span></div>
+        <div class="info-row"><span class="info-lbl">Intro Type</span><span class="info-val">\${c.intro_type === 'lvm' ? 'Left Voicemail' : c.intro_type === 'spoke' ? 'Spoke' : 'No Answer'}</span></div>
+        <div class="info-row"><span class="info-lbl">Follow-up Status</span><span class="pill \${c.follow_up_status}">\${statusLabel(c.follow_up_status)}</span></div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-title">Key Dates</div>
+        <div class="info-row"><span class="info-lbl">Lead Created</span><span class="info-val">\${fmtDate(c.created_at)}</span></div>
+        <div class="info-row"><span class="info-lbl">Intro Sent</span><span class="info-val \${!c.intro_sent_at?'muted':''}">\${c.intro_sent_at ? fmtDate(c.intro_sent_at) : '— not yet'}</span></div>
+        <div class="info-row"><span class="info-lbl">Responded</span><span class="info-val \${!c.responded_at?'muted':''}">\${c.responded_at ? fmtDate(c.responded_at) : '— not yet'}</span></div>
+        <div class="info-row"><span class="info-lbl">Date Mailed</span><span class="info-val \${!c.date_mailed?'muted':''}">\${c.date_mailed || '— not yet'}</span></div>
+        <div class="info-row"><span class="info-lbl">Outcome</span><span class="info-val \${!c.outcome?'muted':''}">\${c.outcome ? c.outcome.toUpperCase() : '— pending'}</span></div>
+      </div>
+    </div>
+
+    <!-- TIMELINE -->
+    <div class="timeline-card">
+      <div class="timeline-title">📋 Follow-up Timeline</div>
+      <div class="flow">
+        \${renderTimeline(c)}
+      </div>
+      \${!c.outcome ? \`
+      <div class="move-bar">
+        <label>Move to:</label>
+        <select class="move-select" id="moveSelect">
+          <option value="no_answer">📞 No Answer</option>
+          <option value="contacted">💬 Contacted</option>
+          <option value="mailing">📬 Mailing</option>
+          <option value="day31">⏳ Day 31</option>
+        </select>
+        <button class="btn btn-navy btn-sm" onclick="moveStage('\${c.id}')">Move →</button>
+      </div>\` : ''}
+    </div>
+
+    <!-- NOTES -->
+    <div style="margin-top:16px;">
+      <div class="form-label">Notes</div>
+      <textarea class="notes-area" id="notesArea" onblur="saveNotes('\${c.id}')" placeholder="Add notes...">\${c.notes || ''}</textarea>
+    </div>
+  \`;
+
+  // Set move select to current stage
+  const sel = document.getElementById('moveSelect');
+  if (sel) sel.value = c.stage;
+}
+
+function renderTimeline(c) {
+  let html = '';
+  const events = [];
+  
+  // Intro
+  if (c.intro_sent_at) events.push({ type: 'intro', label: 'Intro email + SMS sent', date: c.intro_sent_at, icon: '📧' });
+  if (c.fu1_sent_at) events.push({ type: 'fu1', label: 'Follow-up #1 sent', date: c.fu1_sent_at, icon: '📧' });
+  if (c.fu2_sent_at) events.push({ type: 'fu2', label: 'Follow-up #2 sent', date: c.fu2_sent_at, icon: '📧' });
+  if (c.fu3_sent_at) events.push({ type: 'fu3', label: 'Follow-up #3 sent', date: c.fu3_sent_at, icon: '📧' });
+  if (c.fu4_sent_at) events.push({ type: 'fu4', label: 'Follow-up #4 sent', date: c.fu4_sent_at, icon: '📧' });
+
+  // Current stage
+  const stageIcon = STAGE_ICONS[c.stage];
+  const stageLabel = STAGES.find(s=>s.key===c.stage)?.label || c.stage;
+  const daysInStage = c.days_in_stage || 0;
+  const durClass = daysInStage > 14 ? 'overdue' : daysInStage > 7 ? 'slow' : 'fast';
+
+  html += \`<div class="flow-stage">
+    <div class="flow-dot current"></div>
+    <div class="flow-head">
+      <span class="flow-label">\${stageIcon} \${stageLabel}</span>
+      <span class="flow-date">\${fmtDate(c.intro_sent_at || c.created_at)} → now</span>
+      <span class="flow-dur \${durClass}">\${daysInStage} days</span>
+    </div>
+    <ul class="flow-events">
+      \${events.length === 0 ? \`<li class="flow-event"><span class="fe-icon">⚪</span><span class="fe-text">No follow-ups sent yet</span></li>\` : ''}
+      \${events.map(e => \`<li class="flow-event"><span class="fe-icon">\${e.icon}</span><span class="fe-text">\${e.label}</span><span class="fe-date">\${fmtDate(e.date)}</span></li>\`).join('')}
+    </ul>\`;
+
+  // Next action
+  if (!c.responded && !c.outcome) {
+    const lastFu = c.last_followup || 'none';
+    const fuKeys = getTemplateKeys(c.stage, lastFu);
+    if (fuKeys.email) {
+      const tpl = templates.find(t => t.key === fuKeys.email);
+      const nextNum = lastFu === 'none' ? 'Intro' : \`FU #\${parseInt(lastFu.replace('fu','')) + 1}\`;
+      const dueText = c.follow_up_status === 'overdue' ? \`🔴 OVERDUE — \${c.days_since_contact} days since last contact\` : c.follow_up_status === 'due_today' ? '🟡 Due today' : \`🟢 Due in \${3 - (c.days_since_contact || 0)} days\`;
+      html += \`<div class="next-action">
+        <div class="na-left"><span class="na-icon">\${c.follow_up_status === 'overdue' ? '🔴' : '📨'}</span>
+          <div><div class="na-text">Next: Send \${nextNum}\${tpl ? \` — "\${tpl.subject}"\` : ''}</div><div class="na-sub">\${dueText}</div></div>
+        </div>
+        <div class="na-btns">
+          <button class="btn btn-navy btn-sm" onclick="openSendModal('\${c.id}','email')">📧 Send Email</button>
+          <button class="btn btn-green btn-sm" onclick="openSendModal('\${c.id}','sms')">💬 Send Text</button>
+        </div>
+      </div>\`;
+    } else {
+      html += \`<div class="next-action">
+        <div class="na-left"><span class="na-icon">✅</span>
+          <div><div class="na-text">All follow-ups sent</div><div class="na-sub">Consider calling again or marking as Won/Lost</div></div>
+        </div>
+        <div class="na-btns">
+          <button class="btn btn-outline btn-sm" onclick="markResponded('\${c.id}')">✓ Responded</button>
+          <button class="btn btn-red btn-sm" onclick="markOutcome('\${c.id}','lost')">✗ Lost</button>
+        </div>
+      </div>\`;
+    }
+  } else if (c.responded) {
+    html += \`<div class="next-action" style="border-color:var(--green);background:var(--green-light);">
+      <div class="na-left"><span class="na-icon">✅</span>
+        <div><div class="na-text" style="color:var(--green);">Client responded \${c.responded_at ? 'on ' + fmtDate(c.responded_at) : ''}</div></div>
+      </div>
+    </div>\`;
+  }
+  html += \`</div>\`;
+
+  // Pending stages
+  const allStages = ['no_answer','contacted','mailing','day31'];
+  const currentIdx = allStages.indexOf(c.stage);
+  for (let i = currentIdx + 1; i < allStages.length; i++) {
+    const ps = STAGES.find(s => s.key === allStages[i]);
+    const descs = {
+      contacted: 'Client replies "Yes" to email → move here',
+      mailing: 'Packet sent → client mails & confirms date',
+      day31: '30-day clock expires → request updated reports',
+    };
+    html += \`<div class="flow-stage"><div class="flow-dot"></div>
+      <div class="flow-head"><span class="flow-label pending">\${ps.icon} \${ps.label}</span></div>
+      <div class="flow-pending-desc">\${descs[allStages[i]] || ''}</div></div>\`;
+  }
+  html += \`<div class="flow-stage"><div class="flow-dot"></div>
+    <div class="flow-head"><span class="flow-label pending">🏁 Won or Lost</span></div>
+    <div class="flow-pending-desc">Final outcome</div></div>\`;
+
+  return html;
+}
+
+function renderEmptyMain() {
+  document.getElementById('mainPanel').innerHTML = \`<div class="empty"><div class="empty-icon">👈</div><p>Select a client from the sidebar</p></div>\`;
+}
+
+// ═══════════════════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════════════════
+async function addClient() {
+  const name = document.getElementById('addName').value.trim();
+  if (!name) { toast('Name is required'); return; }
+  const { data, error } = await sb.from('mcl_clients').insert({
+    name,
+    email: document.getElementById('addEmail').value.trim() || null,
+    phone: document.getElementById('addPhone').value.trim() || null,
+    pipedrive_id: document.getElementById('addPipedrive').value.trim() || null,
+    assigned_to: document.getElementById('addAssigned').value || null,
+    stage: document.getElementById('addStage').value,
+    intro_type: document.getElementById('addIntroType').value,
+    notes: document.getElementById('addNotes').value.trim() || null,
+  }).select().single();
+  if (error) { toast('Error: ' + error.message); return; }
+  closeModal('addModal');
+  toast('Client added ✓');
+  currentStage = data.stage;
+  currentClientId = data.id;
+  await loadData();
+}
+
+async function markResponded(id) {
+  await sb.from('mcl_clients').update({ responded: true, responded_at: new Date().toISOString() }).eq('id', id);
+  await sb.from('mcl_activity_log').insert({ client_id: id, action: 'responded', details: 'Manually marked as responded' });
+  toast('Marked as responded ✓');
+  await loadData();
+}
+
+async function markOutcome(id, outcome) {
+  await sb.from('mcl_clients').update({ outcome, outcome_at: new Date().toISOString(), stage: outcome }).eq('id', id);
+  await sb.from('mcl_activity_log').insert({ client_id: id, action: outcome, details: \`Marked as \${outcome}\` });
+  toast(\`Marked as \${outcome} ✓\`);
+  await loadData();
+}
+
+async function moveStage(id) {
+  const newStage = document.getElementById('moveSelect').value;
+  const c = clients.find(x => x.id === id);
+  if (!c || c.stage === newStage) return;
+  
+  // Reset follow-up tracking when moving to new stage
+  await sb.from('mcl_clients').update({
+    stage: newStage,
+    intro_sent_at: null, fu1_sent_at: null, fu2_sent_at: null, fu3_sent_at: null, fu4_sent_at: null,
+    responded: false, responded_at: null,
+  }).eq('id', id);
+  await sb.from('mcl_activity_log').insert({ client_id: id, action: 'stage_changed', details: \`Moved from \${c.stage} to \${newStage}\` });
+  toast(\`Moved to \${newStage} ✓\`);
+  currentStage = newStage;
+  await loadData();
+}
+
+async function saveNotes(id) {
+  const notes = document.getElementById('notesArea')?.value || '';
+  await sb.from('mcl_clients').update({ notes }).eq('id', id);
+}
+
+// ═══════════════════════════════════════════════════
+// SEND EMAIL/SMS
+// ═══════════════════════════════════════════════════
+function openSendModal(clientId, type) {
+  const c = clients.find(x => x.id === clientId);
+  if (!c) return;
+  const lastFu = c.last_followup || 'none';
+  const fuKeys = getTemplateKeys(c.stage, lastFu);
+  const tplKey = type === 'sms' ? fuKeys.sms : fuKeys.email;
+  const tpl = templates.find(t => t.key === tplKey);
+
+  if (!tpl) { toast('No template found for this step'); return; }
+
+  const nextNum = lastFu === 'none' ? 'Intro' : \`Follow-up #\${parseInt(lastFu.replace('fu','')) + 1}\`;
+  document.getElementById('sendModalTitle').textContent = \`📧 Send \${nextNum} to \${c.name}\`;
+  document.getElementById('sendTemplateInfo').textContent = \`\${tpl.name} (\${tpl.key})\`;
+  document.getElementById('sendSubject').textContent = tpl.subject || '(SMS - no subject)';
+
+  // Replace {name} in preview
+  const preview = (tpl.body || '').replace(/\\{name\\}/g, c.name.split(' ')[0]).replace(/\\{agent\\}/g, c.assigned_to || 'ASAP Credit Repair');
+  document.getElementById('sendPreview').innerHTML = tpl.type === 'email' ? preview : preview.replace(/\\n/g, '<br>');
+
+  pendingSend = { clientId, emailKey: fuKeys.email, smsKey: fuKeys.sms, lastFu, type };
+  document.getElementById('sendModal').classList.add('visible');
+}
+
+async function confirmSend() {
+  if (!pendingSend) return;
+  const c = clients.find(x => x.id === pendingSend.clientId);
+  if (!c) return;
+
+  const sendSms = document.getElementById('sendAlsoSms').checked;
+  const emailTpl = templates.find(t => t.key === pendingSend.emailKey);
+  const smsTpl = templates.find(t => t.key === pendingSend.smsKey);
+
+  // Send email via SendGrid function
+  if (emailTpl && c.email) {
+    try {
+      const body = emailTpl.body.replace(/\\{name\\}/g, c.name.split(' ')[0]).replace(/\\{agent\\}/g, c.assigned_to || '');
+      const res = await fetch(SEND_EMAIL_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: c.email, subject: emailTpl.subject, body })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'email_sent', template_key: emailTpl.key, details: \`Sent: \${emailTpl.subject}\` });
+      } else {
+        toast('Email error: ' + (data.error || 'unknown'));
+      }
+    } catch (e) { toast('Email send failed: ' + e.message); }
+  }
+
+  // Log SMS (manual send via RingCentral)
+  if (sendSms && smsTpl) {
+    await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'sms_sent', template_key: smsTpl.key, details: 'SMS logged (send manually via RingCentral)' });
+  }
+
+  // Update follow-up timestamps
+  const lastFu = pendingSend.lastFu;
+  const updateField = lastFu === 'none' ? 'intro_sent_at' : lastFu === 'intro' ? 'fu1_sent_at' : lastFu === 'fu1' ? 'fu2_sent_at' : lastFu === 'fu2' ? 'fu3_sent_at' : lastFu === 'fu3' ? 'fu4_sent_at' : null;
+  if (updateField) {
+    await sb.from('mcl_clients').update({ [updateField]: new Date().toISOString() }).eq('id', c.id);
+  }
+
+  closeModal('sendModal');
+  toast('Sent ✓');
+  pendingSend = null;
+  await loadData();
+}
+
+// ═══════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════
+function fmtDate(d) {
+  if (!d) return '—';
+  const dt = new Date(d);
+  return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function statusLabel(s) {
+  return { overdue: '⚠ Overdue', due_today: '● Due Today', on_track: '✓ On Track', responded: '✓ Responded', needs_intro: '○ Needs Intro', resolved: '● Resolved' }[s] || s;
+}
+
+function updateOverdueBadge() {
+  const overdue = clients.filter(c => c.follow_up_status === 'overdue').length;
+  document.getElementById('overdueGlobal').textContent = overdue > 0 ? \`\${overdue} overdue\` : '✓ All clear';
+  document.getElementById('overdueGlobal').style.background = overdue > 0 ? 'var(--red)' : 'var(--green)';
+}
+
+function openAddModal() {
+  document.getElementById('addName').value = '';
+  document.getElementById('addEmail').value = '';
+  document.getElementById('addPhone').value = '';
+  document.getElementById('addPipedrive').value = '';
+  document.getElementById('addAssigned').value = '';
+  document.getElementById('addStage').value = currentStage === 'won' || currentStage === 'lost' ? 'no_answer' : currentStage;
+  document.getElementById('addIntroType').value = 'no_answer';
+  document.getElementById('addNotes').value = '';
+  document.getElementById('addModal').classList.add('visible');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('visible'); }
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Click outside modal to close
+document.querySelectorAll('.modal-bg').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('visible'); });
+});
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+loadData();
+// Auto-refresh every 60 seconds
+setInterval(loadData, 60000);
+</script>
+</body>
+</html>
+`;
+fs.writeFileSync("index.html", html, "utf8");
+console.log("SUCCESS - index.html written ("+html.length+" bytes)");
