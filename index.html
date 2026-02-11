@@ -701,9 +701,19 @@ async function confirmSend() {
     } catch (e) { toast('Email send failed: ' + e.message); }
   }
 
-  // Log SMS (manual send via RingCentral)
-  if (sendSms && smsTpl) {
-    await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'sms_sent', template_key: smsTpl.key, details: 'SMS logged (send manually via RingCentral)' });
+  // Send SMS via Zapier webhook
+  if (sendSms && smsTpl && c.phone) {
+    try {
+      const smsBody = smsTpl.body.replace(/\{name\}/g, c.name.split(' ')[0]).replace(/\{agent\}/g, c.assigned_to || 'ASAP Credit Repair');
+      const digits = (c.phone || '').replace(/\D/g, '');
+      const phone = digits.length === 10 ? '+1' + digits : digits.length === 11 ? '+' + digits : c.phone;
+      await fetch('https://hooks.zapier.com/hooks/catch/172130/ueak5vf/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ "Texting Cell": phone, "Person First Name": c.name.split(' ')[0], "SMS": smsBody, "Deal ID": c.deal_id || "" })
+      });
+      await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'sms_sent', template_key: smsTpl.key, details: 'Sent via Zapier' });
+    } catch (e) { toast('SMS send failed: ' + e.message); }
   }
 
   // Update follow-up timestamps
