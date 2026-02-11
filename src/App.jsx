@@ -47,7 +47,7 @@ export default function App() {
   const [editTpl, setEditTpl] = useState(null);
   const [editTplD, setEditTplD] = useState({});
   const [csvUrl, setCsvUrl] = useState(CSV_URL);
-  const [zapierUrl, setZapierUrl] = useState("https://hooks.zapier.com/hooks/catch/172130/2gmw9ht/");
+  const [zapierUrl, setZapierUrl] = useState("https://hooks.zapier.com/hooks/catch/172130/ueak5vf/");
   const [sheetWebhookUrl, setSheetWebhookUrl] = useState("");
   const [lastSync, setLastSync] = useState(null);
   const [syncing, setSyncing] = useState(false);
@@ -71,7 +71,7 @@ export default function App() {
         if (dbSettings) {
           setAgent(dbSettings.agent_name || "Joe");
           setCsvUrl(dbSettings.csv_url || CSV_URL);
-          setZapierUrl(dbSettings.zapier_url || "https://hooks.zapier.com/hooks/catch/172130/2gmw9ht/");
+          setZapierUrl(dbSettings.zapier_url || "https://hooks.zapier.com/hooks/catch/172130/ueak5vf/");
           setSheetWebhookUrl(dbSettings.sheet_webhook_url || "");
           setLastSync(dbSettings.last_sync || null);
         }
