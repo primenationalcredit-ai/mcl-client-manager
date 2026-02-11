@@ -184,10 +184,15 @@ export async function sendMclEmail({ subject, body }) {
 
 // ── Send Text (via Zapier webhook → RingCentral) ──
 export async function sendText({ to, body, clientName, webhookUrl }) {
-  const r = await fetch(webhookUrl, {
+  const firstName = clientName ? clientName.split(' ')[0] : ''
+  const r = await fetch(webhookUrl || 'https://hooks.zapier.com/hooks/catch/172130/2gmw9ht/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone: to, message: body, client_name: clientName })
+    body: JSON.stringify({
+      "Texting Cell": to,
+      "Person First Name": firstName,
+      "SMS": body
+    })
   })
   if (!r.ok) throw new Error('Text webhook failed')
   return { ok: true }
