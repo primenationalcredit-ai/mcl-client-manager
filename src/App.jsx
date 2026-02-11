@@ -214,7 +214,7 @@ export default function App() {
           sentOk = true;
           flash(`📧 Email sent to ${c.email}!`);
         } else if (t.type === "text" && c.phone && zapierUrl) {
-          await db.sendText({ to: c.phone, body, clientName: c.name, webhookUrl: zapierUrl });
+          await db.sendText({ to: c.phone, body, clientName: c.name, dealId: c.dealId, webhookUrl: zapierUrl });
           sentOk = true;
           flash(`📱 Text sent to ${c.phone}!`);
         } else {
