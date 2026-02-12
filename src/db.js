@@ -182,24 +182,20 @@ export async function sendMclEmail({ subject, body }) {
   })
 }
 
-// ── Send Text (via Zapier webhook → RingCentral) ──
+// ── Send Text (via Netlify function → Zapier → RingCentral) ──
 export async function sendText({ to, body, clientName, dealId, webhookUrl }) {
   const firstName = clientName ? clientName.split(' ')[0] : ''
-  // Format phone: strip to digits, add +1 if needed
-  const digits = (to || '').replace(/\D/g, '')
-  const phone = digits.length === 10 ? `+1${digits}` : digits.length === 11 ? `+${digits}` : to
-  const r = await fetch(webhookUrl || 'https://hooks.zapier.com/hooks/catch/172130/uewbyeb/', {
+  const r = await fetch('/.netlify/functions/send-sms', {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      "Texting Cell": phone,
-      "Person First Name": firstName,
-      "SMS": body,
-      "Deal ID": dealId || "",
-      "phoneNumberTo": phone,
-      "text": body
+      phone: to,
+      firstName,
+      message: body,
+      dealId: dealId || ""
     })
   })
-  if (!r.ok) throw new Error('Text webhook failed')
+  if (!r.ok) throw new Error('Text send failed')
   return { ok: true }
 }
 
