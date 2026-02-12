@@ -807,8 +807,21 @@ document.querySelectorAll('.modal-bg').forEach(m => {
 // INIT
 // ═══════════════════════════════════════════════════
 loadData();
-// Auto-refresh every 60 seconds
+// Auto-refresh data every 60 seconds
 setInterval(loadData, 60000);
+// Auto-sync sheet every 2 minutes (pulls new clients from Google Sheet)
+async function autoSync() {
+  try {
+    const res = await fetch('/.netlify/functions/sync-sheet');
+    const data = await res.json();
+    if (data.new_inserted > 0) {
+      toast(`🔄 ${data.new_inserted} new client(s) synced from sheet`);
+      await loadData();
+    }
+  } catch (e) { /* silent fail on auto-sync */ }
+}
+autoSync(); // run once on load
+setInterval(autoSync, 120000); // then every 2 minutes
 </script>
 </body>
 </html>
