@@ -146,6 +146,9 @@ input,select,textarea{font-family:inherit;}
 .notes-area:focus{border-color:var(--navy);}
 .inline-edit{border:1px solid var(--g200);border-radius:6px;padding:3px 6px;font-size:13px;color:var(--g700);background:transparent;outline:none;font-family:inherit;}
 .inline-edit:focus{border-color:var(--navy);background:white;}
+.missing-field{border-color:#e74c3c !important;background:#fef2f2 !important;}
+.missing-field::placeholder{color:#e74c3c;font-weight:700;}
+.missing-alert{background:#fef2f2;color:#e74c3c;font-size:13px;font-weight:600;padding:8px 12px;border-radius:8px;border:1px solid #fecaca;margin-top:8px;}
 .date-edit{border:1px solid var(--g200);border-radius:6px;padding:3px 6px;font-size:12px;color:var(--g700);background:transparent;outline:none;cursor:pointer;}
 .date-edit:focus{border-color:var(--navy);background:white;}
 
@@ -413,26 +416,40 @@ function getStageClients() {
   return list;
 }
 
-function renderFilteredClients(list) {
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  if (q) list = list.filter(c => c.name.toLowerCase().includes(q) || (c.email||'').toLowerCase().includes(q));
+function renderFilteredClients(list, skipFilter) {
+  if (!skipFilter) {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    if (q) list = list.filter(c => c.name.toLowerCase().includes(q) || (c.email||'').toLowerCase().includes(q));
+  }
   const ul = document.getElementById('clientList');
   ul.innerHTML = '';
   if (!list.length) { ul.innerHTML = '<div style="text-align:center;padding:20px;color:var(--g400);font-size:13px;">No clients</div>'; return; }
   list.forEach(c => {
     const li = document.createElement('li');
     li.className = 'client-item' + (c.id === currentClientId ? ' active' : '');
-    li.onclick = () => { currentClientId = c.id; renderClientList(); renderProfile(c.id); };
+    li.onclick = () => { currentClientId = c.id; currentStage = c.outcome || c.stage; renderStages(); renderClientList(); renderProfile(c.id); };
     const fuLabel = c.last_followup === 'none' ? 'No contact' : c.last_followup === 'intro' ? 'Intro sent' : `FU #${c.last_followup.replace('fu','')}`;
     const daysLabel = c.days_since_contact != null ? `${c.days_since_contact}d ago` : 'never';
+    const stageIcon = STAGE_ICONS[c.outcome || c.stage] || '';
+    const stageName = STAGES.find(s => s.key === (c.outcome || c.stage))?.label || '';
     li.innerHTML = `
-      <div class="ci-left"><div class="ci-name">${c.name}</div><div class="ci-sub">${fuLabel} · ${daysLabel}</div></div>
+      <div class="ci-left"><div class="ci-name">${c.name}</div><div class="ci-sub">${stageIcon} ${stageName} · ${fuLabel} · ${daysLabel}</div></div>
       <div><span class="dot ${c.follow_up_status}"></span></div>`;
     ul.appendChild(li);
   });
 }
 
-function filterClients() { renderFilteredClients(getStageClients()); }
+function filterClients() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  if (q) {
+    // Search across ALL clients, not just current stage
+    const allMatches = clients.filter(c => c.name.toLowerCase().includes(q) || (c.email||'').toLowerCase().includes(q) || (c.phone||'').includes(q));
+    document.getElementById('stageClientsTitle').textContent = `🔍 Search — ${allMatches.length} results`;
+    renderFilteredClients(allMatches, true);
+  } else {
+    renderClientList();
+  }
+}
 
 // ═══════════════════════════════════════════════════
 // RENDER PROFILE
@@ -458,16 +475,18 @@ function renderProfile(clientId) {
       <div>
         <div class="prof-name">${c.name}</div>
         <div class="prof-meta">
-          <span>📧 <input class="inline-edit" id="editEmail" value="${c.email || ''}" placeholder="email@example.com" onblur="saveField('${c.id}','email',this.value)" style="width:220px;"></span>
-          <span>📱 <input class="inline-edit" id="editPhone" value="${c.phone || ''}" placeholder="555-555-5555" onblur="saveField('${c.id}','phone',this.value)" style="width:140px;"></span>
+          <span>📧 <input class="inline-edit ${!c.email ? 'missing-field' : ''}" id="editEmail" value="${c.email || ''}" placeholder="⚠ ADD EMAIL" onblur="saveField('${c.id}','email',this.value)" style="width:220px;"></span>
+          <span>📱 <input class="inline-edit ${!c.phone ? 'missing-field' : ''}" id="editPhone" value="${c.phone || ''}" placeholder="⚠ ADD PHONE" onblur="saveField('${c.id}','phone',this.value)" style="width:140px;"></span>
           ${c.pipedrive_id ? `<span>📋 PD #${c.pipedrive_id}</span>` : ''}
         </div>
+        ${!c.email || !c.phone ? `<div class="missing-alert">⚠️ ${!c.email && !c.phone ? 'Email and phone number are missing' : !c.email ? 'Email is missing' : 'Phone number is missing'} — add before contacting</div>` : ''}
       </div>
       <div class="prof-actions">
         ${!c.responded && !c.outcome ? `<button class="btn btn-gold btn-sm" onclick="markResponded('${c.id}')">✓ Responded</button>` : ''}
         ${!c.outcome ? `<button class="btn btn-green btn-sm" onclick="markOutcome('${c.id}','won')">✅ Won</button>` : ''}
         ${!c.outcome ? `<button class="btn btn-outline btn-sm" onclick="markOutcome('${c.id}','litigation')">⚖️ Litigation</button>` : ''}
         ${!c.outcome ? `<button class="btn btn-red btn-sm" onclick="markOutcome('${c.id}','lost')">❌ Lost</button>` : ''}
+        <button class="btn btn-outline btn-sm" style="color:var(--red);border-color:var(--red);margin-left:8px;" onclick="deleteClient('${c.id}','${c.name.replace(/'/g,"\\'")}')">🗑 Delete</button>
       </div>
     </div>
 
@@ -713,6 +732,16 @@ async function saveNotes(id) {
   await sb.from('mcl_clients').update({ notes }).eq('id', id);
 }
 
+async function deleteClient(id, name) {
+  if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+  await sb.from('mcl_activity_log').delete().eq('client_id', id);
+  await sb.from('mcl_clients').delete().eq('id', id);
+  toast(`${name} deleted`);
+  currentClientId = null;
+  renderEmptyMain();
+  await loadData();
+}
+
 async function saveField(id, field, value) {
   const update = { [field]: value || null };
   // Auto-calculate round end date: disputes mailed + 31 days
@@ -766,6 +795,10 @@ async function confirmSend(mode) {
 
   const doEmail = mode === 'email' || mode === 'both';
   const doSms = mode === 'sms' || mode === 'both';
+
+  if (doEmail && !c.email) { toast('⚠️ Cannot send email — no email address! Add it first.'); return; }
+  if (doSms && !c.phone) { toast('⚠️ Cannot send text — no phone number! Add it first.'); return; }
+
   const emailTpl = templates.find(t => t.key === pendingSend.emailKey);
   const smsTpl = templates.find(t => t.key === pendingSend.smsKey);
 
