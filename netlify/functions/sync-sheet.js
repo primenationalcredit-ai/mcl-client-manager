@@ -86,7 +86,7 @@ export default async (req) => {
         email: row.email,
         phone: row.phone,
         credit_error: row.creditError,
-        stage: 'no_answer',
+        stage: 'need_to_call',
         intro_type: 'no_answer',
         notes: row.notes,
       });

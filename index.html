@@ -238,10 +238,11 @@ input,select,textarea{font-family:inherit;}
       <div class="form-row-2">
         <div class="form-row"><label class="form-label">Starting Stage</label>
           <select class="form-input" id="addStage">
-            <option value="no_answer">📞 No Answer</option>
+            <option value="need_to_call">📞 Need to Call</option>
+            <option value="lvm">📞 LVM</option>
             <option value="contacted">💬 Contacted</option>
-            <option value="mailing">📬 Mailing</option>
-            <option value="day31">⏳ Day 31</option>
+            <option value="waiting_mcl">⏳ Waiting on MCL</option>
+            <option value="packet_sent">📬 Packet Sent</option>
           </select>
         </div>
         <div class="form-row"><label class="form-label">Intro Type</label>
@@ -296,34 +297,41 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ═══════════════════════════════════════════════════
 let clients = [];
 let templates = [];
-let currentStage = 'no_answer';
+let currentStage = 'need_to_call';
 let currentClientId = null;
 let pendingSend = null;
 
 const STAGES = [
-  { key: 'no_answer', icon: '📞', label: 'No Answer' },
+  { key: 'need_to_call', icon: '📞', label: 'Need to Call' },
+  { key: 'lvm', icon: '📞', label: 'LVM' },
   { key: 'contacted', icon: '💬', label: 'Contacted' },
-  { key: 'mailing', icon: '📬', label: 'Mailing' },
-  { key: 'day31', icon: '⏳', label: 'Day 31' },
+  { key: 'waiting_mcl', icon: '⏳', label: 'Waiting on MCL' },
+  { key: 'packet_sent', icon: '📬', label: 'Packet Sent' },
+  { key: 'disputes_mailed', icon: '📮', label: 'Disputes Mailed' },
+  { key: 'waiting_reports', icon: '📊', label: 'Waiting on Reports' },
+  { key: 'litigation', icon: '⚖️', label: 'Litigation ($500)' },
   { key: 'won', icon: '✅', label: 'Won' },
   { key: 'lost', icon: '❌', label: 'Lost' },
 ];
 
-const STAGE_ICONS = { no_answer:'📞', contacted:'💬', mailing:'📬', day31:'⏳', won:'✅', lost:'❌' };
+const STAGE_ICONS = { need_to_call:'📞', lvm:'📞', contacted:'💬', waiting_mcl:'⏳', packet_sent:'📬', disputes_mailed:'📮', waiting_reports:'📊', litigation:'⚖️', won:'✅', lost:'❌' };
+
+// Follow-up days per stage (null = no auto follow-up)
+const STAGE_FU_DAYS = { lvm: 2, contacted: 2, packet_sent: 4, waiting_reports: 2 };
 
 // Template key mapping per stage
 function getTemplateKeys(stage, lastFu) {
   const map = {
-    no_answer: { none:'intro_email_no_answer', intro:'fu1_email_no_answer', fu1:'fu2_email_no_answer', fu2:'fu3_email_no_answer' },
+    lvm: { none:'intro_email_no_answer', intro:'fu1_email_no_answer', fu1:'fu2_email_no_answer', fu2:'fu3_email_no_answer' },
     contacted: { none:'fu1_email_contacted', intro:'fu1_email_contacted', fu1:'fu2_email_contacted', fu2:'fu3_email_contacted', fu3:'fu4_email_contacted' },
-    mailing: { none:'intro_email_mailing', intro:'fu1_email_mailing', fu1:'fu2_email_mailing', fu2:'fu3_email_mailing' },
-    day31: { none:'followup_31day_email', intro:'fu2_email_reports', fu1:'fu2_email_reports', fu2:'fu3_email_reports', fu3:'fu4_email_reports' },
+    packet_sent: { none:'intro_email_mailing', intro:'fu1_email_mailing', fu1:'fu2_email_mailing', fu2:'fu3_email_mailing' },
+    waiting_reports: { none:'followup_31day_email', intro:'fu2_email_reports', fu1:'fu2_email_reports', fu2:'fu3_email_reports', fu3:'fu4_email_reports' },
   };
   const smsMap = {
-    no_answer: { none:'intro_text_no_answer', intro:'fu1_text_no_answer', fu1:'fu2_text_no_answer', fu2:'fu3_text_no_answer' },
+    lvm: { none:'intro_text_no_answer', intro:'fu1_text_no_answer', fu1:'fu2_text_no_answer', fu2:'fu3_text_no_answer' },
     contacted: { none:'fu1_text_contacted', intro:'fu1_text_contacted', fu1:'fu2_text_contacted', fu2:'fu3_text_contacted', fu3:'fu4_text_contacted' },
-    mailing: { none:'intro_text_mailing', intro:'fu1_text_mailing', fu1:'fu2_text_mailing', fu2:'fu3_text_mailing' },
-    day31: { none:'followup_31day_text', intro:'fu2_text_reports', fu1:'fu2_text_reports', fu2:'fu3_text_reports', fu3:'fu4_text_reports' },
+    packet_sent: { none:'intro_text_mailing', intro:'fu1_text_mailing', fu1:'fu2_text_mailing', fu2:'fu3_text_mailing' },
+    waiting_reports: { none:'followup_31day_text', intro:'fu2_text_reports', fu1:'fu2_text_reports', fu2:'fu3_text_reports', fu3:'fu4_text_reports' },
   };
   const stageMap = map[stage] || {};
   const smsStageMap = smsMap[stage] || {};
@@ -367,6 +375,7 @@ function renderStages() {
     const stageClients = clients.filter(c => {
       if (s.key === 'won') return c.outcome === 'won';
       if (s.key === 'lost') return c.outcome === 'lost';
+      if (s.key === 'litigation') return c.outcome === 'litigation';
       return c.stage === s.key && !c.outcome;
     });
     const overdue = stageClients.filter(c => c.follow_up_status === 'overdue').length;
@@ -396,6 +405,7 @@ function getStageClients() {
   let list;
   if (currentStage === 'won') list = clients.filter(c => c.outcome === 'won');
   else if (currentStage === 'lost') list = clients.filter(c => c.outcome === 'lost');
+  else if (currentStage === 'litigation') list = clients.filter(c => c.outcome === 'litigation');
   else list = clients.filter(c => c.stage === currentStage && !c.outcome);
   // Sort: overdue first, then due_today, then on_track
   const priority = { overdue: 0, due_today: 1, needs_intro: 2, on_track: 3, responded: 4, resolved: 5 };
@@ -456,6 +466,7 @@ function renderProfile(clientId) {
       <div class="prof-actions">
         ${!c.responded && !c.outcome ? `<button class="btn btn-gold btn-sm" onclick="markResponded('${c.id}')">✓ Responded</button>` : ''}
         ${!c.outcome ? `<button class="btn btn-green btn-sm" onclick="markOutcome('${c.id}','won')">✅ Won</button>` : ''}
+        ${!c.outcome ? `<button class="btn btn-outline btn-sm" onclick="markOutcome('${c.id}','litigation')">⚖️ Litigation</button>` : ''}
         ${!c.outcome ? `<button class="btn btn-red btn-sm" onclick="markOutcome('${c.id}','lost')">❌ Lost</button>` : ''}
       </div>
     </div>
@@ -475,11 +486,10 @@ function renderProfile(clientId) {
         <div class="info-card-title">Key Dates</div>
         <div class="info-row"><span class="info-lbl">Lead Created</span><span class="info-val">${fmtDate(c.created_at)}</span></div>
         <div class="info-row"><span class="info-lbl">Intro Sent</span><span class="info-val ${!c.intro_sent_at?'muted':''}">${c.intro_sent_at ? fmtDate(c.intro_sent_at) : '— not yet'}</span></div>
-        <div class="info-row"><span class="info-lbl">Responded</span><span class="info-val ${!c.responded_at?'muted':''}">${c.responded_at ? fmtDate(c.responded_at) : '— not yet'}</span></div>
-        <div class="info-row"><span class="info-lbl">Date Mailed</span><span class="info-val ${!c.date_mailed?'muted':''}">${c.date_mailed || '— not yet'}</span></div>
-        <div class="info-row"><span class="info-lbl">Disputes Mailed to Client</span><span class="info-val"><input type="date" class="date-edit" value="${c.disputes_mailed_to_client || ''}" onchange="saveField('${c.id}','disputes_mailed_to_client',this.value)"></span></div>
+        <div class="info-row"><span class="info-lbl">Client Responded</span><span class="info-val ${!c.responded_at?'muted':''}">${c.responded_at ? fmtDate(c.responded_at) : '— not yet'}</span></div>
+        <div class="info-row"><span class="info-lbl">Packet Sent to Client</span><span class="info-val"><input type="date" class="date-edit" value="${c.disputes_mailed_to_client || ''}" onchange="saveField('${c.id}','disputes_mailed_to_client',this.value)"></span></div>
         <div class="info-row"><span class="info-lbl">Disputes Mailed to CRA</span><span class="info-val"><input type="date" class="date-edit" value="${c.disputes_mailed_to_cra || ''}" onchange="saveField('${c.id}','disputes_mailed_to_cra',this.value)"></span></div>
-        <div class="info-row"><span class="info-lbl">Round Over Date</span><span class="info-val"><input type="date" class="date-edit" value="${c.round_over_date || ''}" onchange="saveField('${c.id}','round_over_date',this.value)"></span></div>
+        <div class="info-row"><span class="info-lbl">Round Over Date</span><span class="info-val">${c.round_over_date ? `<span class="days-badge ${c.days_until_round_over <= 0 ? 'overdue' : 'ok'}">${c.round_over_date} ${c.days_until_round_over > 0 ? '(' + c.days_until_round_over + ' days left)' : c.days_until_round_over === 0 ? '(TODAY!)' : '(ROUND OVER)'}</span>` : '<input type="date" class="date-edit" value="" onchange="saveField(\'' + c.id + '\',\'round_over_date\',this.value)">'}</span></div>
         <div class="info-row"><span class="info-lbl">Outcome</span><span class="info-val ${!c.outcome?'muted':''}">${c.outcome ? c.outcome.toUpperCase() : '— pending'}</span></div>
       </div>
     </div>
@@ -494,12 +504,17 @@ function renderProfile(clientId) {
       <div class="move-bar">
         <label>Move to:</label>
         <select class="move-select" id="moveSelect">
-          <option value="no_answer">📞 No Answer</option>
+          <option value="need_to_call">📞 Need to Call</option>
+          <option value="lvm">📞 LVM</option>
           <option value="contacted">💬 Contacted</option>
-          <option value="mailing">📬 Mailing</option>
-          <option value="day31">⏳ Day 31</option>
+          <option value="waiting_mcl">⏳ Waiting on MCL</option>
+          <option value="packet_sent">📬 Packet Sent</option>
+          <option value="disputes_mailed">📮 Disputes Mailed</option>
+          <option value="waiting_reports">📊 Waiting on Reports</option>
         </select>
         <button class="btn btn-navy btn-sm" onclick="moveStage('${c.id}')">Move →</button>
+        <button class="btn btn-green btn-sm" style="margin-left:4px;" onclick="markOutcome('${c.id}','won')">✅ Won</button>
+        <button class="btn btn-outline btn-sm" style="margin-left:4px;" onclick="markOutcome('${c.id}','litigation')">⚖️ Litigation</button>
       </div>` : ''}
     </div>
 
@@ -551,7 +566,8 @@ function renderTimeline(c) {
     if (fuKeys.email) {
       const tpl = templates.find(t => t.key === fuKeys.email);
       const nextNum = lastFu === 'none' ? 'Intro' : `FU #${parseInt(lastFu.replace('fu','')) + 1}`;
-      const dueText = c.follow_up_status === 'overdue' ? `🔴 OVERDUE — ${c.days_since_contact} days since last contact` : c.follow_up_status === 'due_today' ? '🟡 Due today' : `🟢 Due in ${3 - (c.days_since_contact || 0)} days`;
+      const fuDays = STAGE_FU_DAYS[c.stage] || 2;
+      const dueText = c.follow_up_status === 'overdue' ? `🔴 OVERDUE — ${c.days_since_contact} days since last contact` : c.follow_up_status === 'due_today' ? '🟡 Due today' : `🟢 Due in ${fuDays - (c.days_since_contact || 0)} days`;
       html += `<div class="next-action">
         <div class="na-left"><span class="na-icon">${c.follow_up_status === 'overdue' ? '🔴' : '📨'}</span>
           <div><div class="na-text">Next: Send ${nextNum}${tpl ? ` — "${tpl.subject}"` : ''}</div><div class="na-sub">${dueText}</div></div>
@@ -582,22 +598,25 @@ function renderTimeline(c) {
   html += `</div>`;
 
   // Pending stages
-  const allStages = ['no_answer','contacted','mailing','day31'];
+  const allStages = ['need_to_call','lvm','contacted','waiting_mcl','packet_sent','disputes_mailed','waiting_reports'];
   const currentIdx = allStages.indexOf(c.stage);
   for (let i = currentIdx + 1; i < allStages.length; i++) {
     const ps = STAGES.find(s => s.key === allStages[i]);
     const descs = {
-      contacted: 'Client replies "Yes" to email → move here',
-      mailing: 'Packet sent → client mails & confirms date',
-      day31: '30-day clock expires → request updated reports',
+      lvm: 'No answer → leave voicemail, follow up every 2 days',
+      contacted: 'Spoke to client → send intro email, waiting for "Yes"',
+      waiting_mcl: 'Client replied "Yes" → McCarthy Law contacting them',
+      packet_sent: 'MCL sent packet → follow up in 4 days to confirm receipt',
+      disputes_mailed: 'Client mailed disputes → 31-day clock starts',
+      waiting_reports: 'Round over → request updated credit reports',
     };
     html += `<div class="flow-stage"><div class="flow-dot"></div>
       <div class="flow-head"><span class="flow-label pending">${ps.icon} ${ps.label}</span></div>
       <div class="flow-pending-desc">${descs[allStages[i]] || ''}</div></div>`;
   }
   html += `<div class="flow-stage"><div class="flow-dot"></div>
-    <div class="flow-head"><span class="flow-label pending">🏁 Won or Lost</span></div>
-    <div class="flow-pending-desc">Final outcome</div></div>`;
+    <div class="flow-head"><span class="flow-label pending">🏁 Won / ⚖️ Litigation</span></div>
+    <div class="flow-pending-desc">Error corrected = Won | Not corrected = Litigation ($500)</div></div>`;
 
   return html;
 }
@@ -668,11 +687,22 @@ async function saveNotes(id) {
 
 async function saveField(id, field, value) {
   const update = { [field]: value || null };
+  // Auto-calculate round end date: disputes mailed + 31 days
+  if (field === 'disputes_mailed_to_cra' && value) {
+    const mailDate = new Date(value);
+    mailDate.setDate(mailDate.getDate() + 31);
+    update.round_over_date = mailDate.toISOString().split('T')[0];
+  }
   await sb.from('mcl_clients').update(update).eq('id', id);
   // Refresh local data
   const c = clients.find(x => x.id === id);
-  if (c) c[field] = value;
+  if (c) { 
+    c[field] = value;
+    if (update.round_over_date) c.round_over_date = update.round_over_date;
+  }
   toast(`${field.replace(/_/g,' ')} updated ✓`);
+  if (update.round_over_date) toast(`Round over date auto-set: ${update.round_over_date}`);
+  if (currentClientId === id) renderProfile(id);
 }
 
 // ═══════════════════════════════════════════════════
@@ -768,7 +798,7 @@ function fmtDate(d) {
 }
 
 function statusLabel(s) {
-  return { overdue: '⚠ Overdue', due_today: '● Due Today', on_track: '✓ On Track', responded: '✓ Responded', needs_intro: '○ Needs Intro', resolved: '● Resolved' }[s] || s;
+  return { overdue: '⚠ Overdue', due_today: '● Due Today', on_track: '✓ On Track', responded: '✓ Responded', needs_intro: '📞 Needs Call', resolved: '● Resolved' }[s] || s;
 }
 
 function updateOverdueBadge() {
@@ -783,7 +813,7 @@ function openAddModal() {
   document.getElementById('addPhone').value = '';
   document.getElementById('addPipedrive').value = '';
   document.getElementById('addAssigned').value = '';
-  document.getElementById('addStage').value = currentStage === 'won' || currentStage === 'lost' ? 'no_answer' : currentStage;
+  document.getElementById('addStage').value = currentStage === 'won' || currentStage === 'lost' || currentStage === 'litigation' ? 'need_to_call' : currentStage;
   document.getElementById('addIntroType').value = 'no_answer';
   document.getElementById('addNotes').value = '';
   document.getElementById('addModal').classList.add('visible');
