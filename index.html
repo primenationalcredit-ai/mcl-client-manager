@@ -144,6 +144,10 @@ input,select,textarea{font-family:inherit;}
 /* NOTES */
 .notes-area{width:100%;min-height:70px;padding:8px 10px;border:1px solid var(--g200);border-radius:8px;font-size:13px;color:var(--g700);resize:vertical;outline:none;margin-top:6px;}
 .notes-area:focus{border-color:var(--navy);}
+.inline-edit{border:1px solid var(--g200);border-radius:6px;padding:3px 6px;font-size:13px;color:var(--g700);background:transparent;outline:none;font-family:inherit;}
+.inline-edit:focus{border-color:var(--navy);background:white;}
+.date-edit{border:1px solid var(--g200);border-radius:6px;padding:3px 6px;font-size:12px;color:var(--g700);background:transparent;outline:none;cursor:pointer;}
+.date-edit:focus{border-color:var(--navy);background:white;}
 
 /* MODAL */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s;}
@@ -264,14 +268,12 @@ input,select,textarea{font-family:inherit;}
       <div class="form-row"><label class="form-label">Template</label><div id="sendTemplateInfo" style="font-size:13px;color:var(--g700);padding:8px 10px;background:var(--g50);border-radius:8px;"></div></div>
       <div class="form-row"><label class="form-label">Subject</label><div id="sendSubject" style="font-size:13px;color:var(--g700);padding:8px 10px;background:var(--g50);border-radius:8px;"></div></div>
       <div class="form-row"><label class="form-label">Preview</label><div id="sendPreview" style="font-size:13px;color:var(--g700);padding:12px;background:var(--g50);border-radius:8px;max-height:180px;overflow-y:auto;line-height:1.5;"></div></div>
-      <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
-        <input type="checkbox" id="sendAlsoSms" checked style="width:16px;height:16px;">
-        <label for="sendAlsoSms" style="font-size:13px;color:var(--g600);">Also send matching SMS</label>
-      </div>
     </div>
-    <div class="modal-foot">
+    <div class="modal-foot" style="display:flex;gap:8px;justify-content:flex-end;">
       <button class="btn btn-outline" onclick="closeModal('sendModal')">Cancel</button>
-      <button class="btn btn-navy" id="sendConfirmBtn" onclick="confirmSend()">Send →</button>
+      <button class="btn btn-navy" onclick="confirmSend('email')">📧 Email Only</button>
+      <button class="btn btn-green" onclick="confirmSend('sms')">💬 Text Only</button>
+      <button class="btn btn-gold" onclick="confirmSend('both')">📧💬 Send Both</button>
     </div>
   </div>
 </div>
@@ -434,8 +436,8 @@ function renderProfile(clientId) {
       <div>
         <div class="prof-name">${c.name}</div>
         <div class="prof-meta">
-          ${c.email ? `<span>📧 <a href="mailto:${c.email}">${c.email}</a></span>` : ''}
-          ${c.phone ? `<span>📱 ${c.phone}</span>` : ''}
+          <span>📧 <input class="inline-edit" id="editEmail" value="${c.email || ''}" placeholder="email@example.com" onblur="saveField('${c.id}','email',this.value)" style="width:220px;"></span>
+          <span>📱 <input class="inline-edit" id="editPhone" value="${c.phone || ''}" placeholder="555-555-5555" onblur="saveField('${c.id}','phone',this.value)" style="width:140px;"></span>
           ${c.pipedrive_id ? `<span>📋 PD #${c.pipedrive_id}</span>` : ''}
         </div>
       </div>
@@ -462,6 +464,9 @@ function renderProfile(clientId) {
         <div class="info-row"><span class="info-lbl">Intro Sent</span><span class="info-val ${!c.intro_sent_at?'muted':''}">${c.intro_sent_at ? fmtDate(c.intro_sent_at) : '— not yet'}</span></div>
         <div class="info-row"><span class="info-lbl">Responded</span><span class="info-val ${!c.responded_at?'muted':''}">${c.responded_at ? fmtDate(c.responded_at) : '— not yet'}</span></div>
         <div class="info-row"><span class="info-lbl">Date Mailed</span><span class="info-val ${!c.date_mailed?'muted':''}">${c.date_mailed || '— not yet'}</span></div>
+        <div class="info-row"><span class="info-lbl">Disputes Mailed to Client</span><span class="info-val"><input type="date" class="date-edit" value="${c.disputes_mailed_to_client || ''}" onchange="saveField('${c.id}','disputes_mailed_to_client',this.value)"></span></div>
+        <div class="info-row"><span class="info-lbl">Disputes Mailed to CRA</span><span class="info-val"><input type="date" class="date-edit" value="${c.disputes_mailed_to_cra || ''}" onchange="saveField('${c.id}','disputes_mailed_to_cra',this.value)"></span></div>
+        <div class="info-row"><span class="info-lbl">Round Over Date</span><span class="info-val"><input type="date" class="date-edit" value="${c.round_over_date || ''}" onchange="saveField('${c.id}','round_over_date',this.value)"></span></div>
         <div class="info-row"><span class="info-lbl">Outcome</span><span class="info-val ${!c.outcome?'muted':''}">${c.outcome ? c.outcome.toUpperCase() : '— pending'}</span></div>
       </div>
     </div>
@@ -648,6 +653,15 @@ async function saveNotes(id) {
   await sb.from('mcl_clients').update({ notes }).eq('id', id);
 }
 
+async function saveField(id, field, value) {
+  const update = { [field]: value || null };
+  await sb.from('mcl_clients').update(update).eq('id', id);
+  // Refresh local data
+  const c = clients.find(x => x.id === id);
+  if (c) c[field] = value;
+  toast(`${field.replace(/_/g,' ')} updated ✓`);
+}
+
 // ═══════════════════════════════════════════════════
 // SEND EMAIL/SMS
 // ═══════════════════════════════════════════════════
@@ -674,17 +688,18 @@ function openSendModal(clientId, type) {
   document.getElementById('sendModal').classList.add('visible');
 }
 
-async function confirmSend() {
+async function confirmSend(mode) {
   if (!pendingSend) return;
   const c = clients.find(x => x.id === pendingSend.clientId);
   if (!c) return;
 
-  const sendSms = document.getElementById('sendAlsoSms').checked;
+  const doEmail = mode === 'email' || mode === 'both';
+  const doSms = mode === 'sms' || mode === 'both';
   const emailTpl = templates.find(t => t.key === pendingSend.emailKey);
   const smsTpl = templates.find(t => t.key === pendingSend.smsKey);
 
   // Send email via SendGrid function
-  if (emailTpl && c.email) {
+  if (doEmail && emailTpl && c.email) {
     try {
       const body = emailTpl.body.replace(/\{name\}/g, c.name.split(' ')[0]).replace(/\{agent\}/g, c.assigned_to || '');
       const res = await fetch(SEND_EMAIL_URL, {
@@ -702,7 +717,7 @@ async function confirmSend() {
   }
 
   // Send SMS via Zapier webhook
-  if (sendSms && smsTpl && c.phone) {
+  if (doSms && smsTpl && c.phone) {
     try {
       const smsBody = smsTpl.body.replace(/\{name\}/g, c.name.split(' ')[0]).replace(/\{agent\}/g, c.assigned_to || 'ASAP Credit Repair');
       const digits = (c.phone || '').replace(/\D/g, '');
@@ -724,7 +739,8 @@ async function confirmSend() {
   }
 
   closeModal('sendModal');
-  toast('Sent ✓');
+  const sentWhat = mode === 'both' ? 'Email + Text' : mode === 'sms' ? 'Text' : 'Email';
+  toast(`${sentWhat} sent ✓`);
   pendingSend = null;
   await loadData();
 }
