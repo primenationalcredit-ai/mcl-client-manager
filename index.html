@@ -709,8 +709,7 @@ async function confirmSend() {
       const phone = digits.length === 10 ? '+1' + digits : digits.length === 11 ? '+' + digits : c.phone;
       await fetch('https://hooks.zapier.com/hooks/catch/172130/uewbyeb/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ "Texting Cell": phone, "Person First Name": c.name.split(' ')[0], "SMS": smsBody, "Deal ID": c.deal_id || "" })
+        body: JSON.stringify({ "Texting Cell": phone, "Person First Name": c.name.split(' ')[0], "SMS": smsBody, "Deal ID": c.deal_id || "", "phoneNumberTo": phone, "text": smsBody })
       });
       await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'sms_sent', template_key: smsTpl.key, details: 'Sent via Zapier' });
     } catch (e) { toast('SMS send failed: ' + e.message); }

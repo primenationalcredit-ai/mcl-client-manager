@@ -190,12 +190,13 @@ export async function sendText({ to, body, clientName, dealId, webhookUrl }) {
   const phone = digits.length === 10 ? `+1${digits}` : digits.length === 11 ? `+${digits}` : to
   const r = await fetch(webhookUrl || 'https://hooks.zapier.com/hooks/catch/172130/uewbyeb/', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       "Texting Cell": phone,
       "Person First Name": firstName,
       "SMS": body,
-      "Deal ID": dealId || ""
+      "Deal ID": dealId || "",
+      "phoneNumberTo": phone,
+      "text": body
     })
   })
   if (!r.ok) throw new Error('Text webhook failed')
