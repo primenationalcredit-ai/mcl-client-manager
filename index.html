@@ -190,6 +190,7 @@ input,select,textarea{font-family:inherit;}
 <div class="topnav">
   <span class="topnav-brand">⚖️ MCL Client Manager</span>
   <div class="topnav-right">
+    <button class="btn btn-outline" style="color:#fff;border-color:rgba(255,255,255,0.3);font-size:12px;padding:4px 12px;" onclick="manualSync()">🔄 Sync Sheet</button>
     <span class="badge-alert" id="overdueGlobal">0 overdue</span>
   </div>
 </div>
@@ -345,6 +346,17 @@ async function loadData() {
   if (currentClientId) renderProfile(currentClientId);
 }
 
+async function manualSync() {
+  toast('Syncing sheet...');
+  try {
+    const res = await fetch('/.netlify/functions/sync-sheet');
+    const data = await res.json();
+    if (data.error) { toast('Sync error: ' + data.error); return; }
+    toast(`Sync done: ${data.new_inserted} new clients added`);
+    await loadData();
+  } catch (e) { toast('Sync failed: ' + e.message); }
+}
+
 // ═══════════════════════════════════════════════════
 // RENDER STAGES
 // ═══════════════════════════════════════════════════
@@ -456,6 +468,7 @@ function renderProfile(clientId) {
         <div class="info-row"><span class="info-lbl">Time in Stage</span><span class="days-badge ${daysInStage > 10 ? 'overdue' : 'ok'}">${daysInStage} days</span></div>
         <div class="info-row"><span class="info-lbl">Assigned To</span><span class="info-val">${c.assigned_to || '—'}</span></div>
         <div class="info-row"><span class="info-lbl">Intro Type</span><span class="info-val">${c.intro_type === 'lvm' ? 'Left Voicemail' : c.intro_type === 'spoke' ? 'Spoke' : 'No Answer'}</span></div>
+        <div class="info-row"><span class="info-lbl">Credit Error</span><span class="info-val"><input class="inline-edit" value="${c.credit_error || ''}" placeholder="Enter violation..." onblur="saveField('${c.id}','credit_error',this.value)" style="width:100%;"></span></div>
         <div class="info-row"><span class="info-lbl">Follow-up Status</span><span class="pill ${c.follow_up_status}">${statusLabel(c.follow_up_status)}</span></div>
       </div>
       <div class="info-card">

@@ -27,6 +27,7 @@ function parseCSV(text) {
     const introduced = (fields[1] || '').toUpperCase() === 'TRUE';
     const email = fields[2] || '';
     const phone = fields[3] || '';
+    const creditError = fields[4] || '';
     const notes = fields[5] || '';
     
     if (!name || name === '`') continue;
@@ -34,7 +35,7 @@ function parseCSV(text) {
     // Validate email (basic check)
     const validEmail = email.includes('@') && email.includes('.') ? email : null;
     
-    rows.push({ name, introduced, email: validEmail, phone: phone || null, notes: notes || null });
+    rows.push({ name, introduced, email: validEmail, phone: phone || null, creditError: creditError || null, notes: notes || null });
   }
   return rows;
 }
@@ -75,6 +76,7 @@ async function doSync() {
       name: row.name,
       email: row.email,
       phone: row.phone,
+      credit_error: row.creditError,
       stage: 'no_answer',
       intro_type: 'no_answer',
       notes: row.notes,
@@ -111,5 +113,5 @@ export default async (req) => {
 };
 
 export const config = {
-  schedule: "* * * * *"
+  schedule: "0 * * * *"
 };
