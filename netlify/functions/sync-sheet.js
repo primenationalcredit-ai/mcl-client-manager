@@ -4,7 +4,7 @@
 // Auto-called by app every 2 minutes via setInterval
 // ═══════════════════════════════════════════════════════════
 
-const SHEET_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR88Iv_3es_j6u6c0JLRlNXfKf3wa0H8GpcfI0Qn-7ePrrtHWgADquxPoBoRkoAzw/pub?gid=1509920646&single=true&output=csv';
+const SHEET_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS-aIG0R1yc8KPTTmXLfUoAOjIv9oVVfGgDc_-M_i009NwwOJEiaoG9yLNkKDBZ4zMTBkYcOHw9qMn-/pub?gid=0&single=true&output=csv';
 
 function parseCSV(text) {
   const lines = text.split('\n');
