@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -108,7 +108,7 @@ input,select,textarea{font-family:inherit;}
 .flow-stage:last-child::before{display:none;}
 .flow-dot{position:absolute;left:5px;top:5px;width:18px;height:18px;border-radius:50%;border:3px solid var(--g300);background:#fff;z-index:2;}
 .flow-dot.done{background:var(--green);border-color:var(--green);}
-.flow-dot.done::after{content:'âœ“';color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;height:100%;}
+.flow-dot.done::after{content:'';color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;height:100%;}
 .flow-dot.current{background:var(--navy);border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,63,135,.2);}
 .flow-dot.current::after{content:'';width:5px;height:5px;background:#fff;border-radius:50%;display:block;margin:3.5px auto;}
 .flow-head{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
@@ -200,9 +200,9 @@ input,select,textarea{font-family:inherit;}
 <body>
 
 <div class="topnav">
-  <span class="topnav-brand">âš–ï¸ MCL Client Manager</span>
+  <span class="topnav-brand"> MCL Client Manager</span>
   <div class="topnav-right">
-    <button class="btn btn-outline" style="color:#fff;border-color:rgba(255,255,255,0.3);font-size:12px;padding:4px 12px;" onclick="manualSync()">ðŸ”„ Sync Sheet</button>
+    <button class="btn btn-outline" style="color:#fff;border-color:rgba(255,255,255,0.3);font-size:12px;padding:4px 12px;" onclick="manualSync()"> Sync Sheet</button>
     <span class="badge-alert" id="overdueGlobal">0 overdue</span>
   </div>
 </div>
@@ -219,7 +219,7 @@ input,select,textarea{font-family:inherit;}
   </div>
   <div class="main" id="mainPanel">
     <div class="empty">
-      <div class="empty-icon">ðŸ‘ˆ</div>
+      <div class="empty-icon"></div>
       <p>Select a client from the sidebar to view their profile</p>
     </div>
   </div>
@@ -228,7 +228,7 @@ input,select,textarea{font-family:inherit;}
 <!-- ADD CLIENT MODAL -->
 <div class="modal-bg" id="addModal">
   <div class="modal">
-    <div class="modal-head"><h3>Add New Client</h3><button class="modal-close" onclick="closeModal('addModal')">âœ•</button></div>
+    <div class="modal-head"><h3>Add New Client</h3><button class="modal-close" onclick="closeModal('addModal')"></button></div>
     <div class="modal-body">
       <div class="form-row"><label class="form-label">Full Name *</label><input class="form-input" id="addName"></div>
       <div class="form-row-2">
@@ -250,11 +250,11 @@ input,select,textarea{font-family:inherit;}
       <div class="form-row-2">
         <div class="form-row"><label class="form-label">Starting Stage</label>
           <select class="form-input" id="addStage">
-            <option value="need_to_call">ðŸ“ž Need to Call</option>
-            <option value="lvm">ðŸ“ž LVM</option>
-            <option value="contacted">ðŸ’¬ Contacted</option>
-            <option value="waiting_mcl">â³ Waiting on MCL</option>
-            <option value="packet_sent">ðŸ“¬ Packet Sent</option>
+            <option value="need_to_call"> Need to Call</option>
+            <option value="lvm"> LVM</option>
+            <option value="contacted"> Contacted</option>
+            <option value="waiting_mcl"> Waiting on MCL</option>
+            <option value="packet_sent"> Packet Sent</option>
           </select>
         </div>
         <div class="form-row"><label class="form-label">Intro Type</label>
@@ -269,7 +269,7 @@ input,select,textarea{font-family:inherit;}
     </div>
     <div class="modal-foot">
       <button class="btn btn-outline" onclick="closeModal('addModal')">Cancel</button>
-      <button class="btn btn-navy" onclick="addClient()">Add Client â†’</button>
+      <button class="btn btn-navy" onclick="addClient()">Add Client </button>
     </div>
   </div>
 </div>
@@ -277,7 +277,7 @@ input,select,textarea{font-family:inherit;}
 <!-- SEND EMAIL MODAL -->
 <div class="modal-bg" id="sendModal">
   <div class="modal">
-    <div class="modal-head"><h3 id="sendModalTitle">Send Follow-up</h3><button class="modal-close" onclick="closeModal('sendModal')">âœ•</button></div>
+    <div class="modal-head"><h3 id="sendModalTitle">Send Follow-up</h3><button class="modal-close" onclick="closeModal('sendModal')"></button></div>
     <div class="modal-body">
       <div class="form-row"><label class="form-label">Template</label><div id="sendTemplateInfo" style="font-size:13px;color:var(--g700);padding:8px 10px;background:var(--g50);border-radius:8px;"></div></div>
       <div class="form-row"><label class="form-label">Subject</label><div id="sendSubject" style="font-size:13px;color:var(--g700);padding:8px 10px;background:var(--g50);border-radius:8px;"></div></div>
@@ -285,9 +285,9 @@ input,select,textarea{font-family:inherit;}
     </div>
     <div class="modal-foot" style="display:flex;gap:8px;justify-content:flex-end;">
       <button class="btn btn-outline" onclick="closeModal('sendModal')">Cancel</button>
-      <button class="btn btn-navy" onclick="confirmSend('email')">ðŸ“§ Email Only</button>
-      <button class="btn btn-green" onclick="confirmSend('sms')">ðŸ’¬ Text Only</button>
-      <button class="btn btn-gold" onclick="confirmSend('both')">ðŸ“§ðŸ’¬ Send Both</button>
+      <button class="btn btn-navy" onclick="confirmSend('email')"> Email Only</button>
+      <button class="btn btn-green" onclick="confirmSend('sms')"> Text Only</button>
+      <button class="btn btn-gold" onclick="confirmSend('both')"> Send Both</button>
     </div>
   </div>
 </div>
@@ -295,18 +295,18 @@ input,select,textarea{font-family:inherit;}
 <div class="toast" id="toast"></div>
 
 <script>
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// 
 // CONFIG - UPDATE THESE WITH YOUR SUPABASE CREDENTIALS
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// 
 const SUPABASE_URL = 'https://ffhjkrpflhyrhekzczal.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmaGprcnBmbGh5cmhla3pjemFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0NTU1NDIsImV4cCI6MjA4NjAzMTU0Mn0.Lg7CfMP6_BQYwAPWhmeXQhihtv8kir1ZreGTurjG-DA'; // Get from Supabase â†’ Settings â†’ API â†’ anon public key
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmaGprcnBmbGh5cmhla3pjemFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0NTU1NDIsImV4cCI6MjA4NjAzMTU0Mn0.Lg7CfMP6_BQYwAPWhmeXQhihtv8kir1ZreGTurjG-DA'; // Get from Supabase  Settings  API  anon public key
 const SEND_EMAIL_URL = 'https://stupendous-melomakarona-97abc8.netlify.app/.netlify/functions/send-email';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// 
 // STATE
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// 
 let clients = [];
 let templates = [];
 let currentStage = 'need_to_call';
@@ -314,19 +314,19 @@ let currentClientId = null;
 let pendingSend = null;
 
 const STAGES = [
-  { key: 'need_to_call', icon: 'ðŸ“ž', label: 'Need to Call' },
-  { key: 'lvm', icon: 'ðŸ“ž', label: 'LVM' },
-  { key: 'contacted', icon: 'ðŸ’¬', label: 'Contacted' },
-  { key: 'waiting_mcl', icon: 'â³', label: 'Waiting on MCL' },
-  { key: 'packet_sent', icon: 'ðŸ“¬', label: 'Packet Sent' },
-  { key: 'disputes_mailed', icon: 'ðŸ“®', label: 'Disputes Mailed' },
-  { key: 'waiting_reports', icon: 'ðŸ“Š', label: 'Waiting on Reports' },
-  { key: 'litigation', icon: 'âš–ï¸', label: 'Litigation ($500)' },
-  { key: 'won', icon: 'âœ…', label: 'Won' },
-  { key: 'lost', icon: 'âŒ', label: 'Lost' },
+  { key: 'need_to_call', icon: '', label: 'Need to Call' },
+  { key: 'lvm', icon: '', label: 'LVM' },
+  { key: 'contacted', icon: '', label: 'Contacted' },
+  { key: 'waiting_mcl', icon: '', label: 'Waiting on MCL' },
+  { key: 'packet_sent', icon: '', label: 'Packet Sent' },
+  { key: 'disputes_mailed', icon: '', label: 'Disputes Mailed' },
+  { key: 'waiting_reports', icon: '', label: 'Waiting on Reports' },
+  { key: 'litigation', icon: '', label: 'Litigation ($500)' },
+  { key: 'won', icon: '', label: 'Won' },
+  { key: 'lost', icon: '', label: 'Lost' },
 ];
 
-const STAGE_ICONS = { need_to_call:'ðŸ“ž', lvm:'ðŸ“ž', contacted:'ðŸ’¬', waiting_mcl:'â³', packet_sent:'ðŸ“¬', disputes_mailed:'ðŸ“®', waiting_reports:'ðŸ“Š', litigation:'âš–ï¸', won:'âœ…', lost:'âŒ' };
+const STAGE_ICONS = { need_to_call:'', lvm:'', contacted:'', waiting_mcl:'', packet_sent:'', disputes_mailed:'', waiting_reports:'', litigation:'', won:'', lost:'' };
 
 // Follow-up days per stage (null = no auto follow-up)
 const STAGE_FU_DAYS = { lvm: 2, contacted: 2, packet_sent: 4, waiting_reports: 2 };
@@ -350,9 +350,9 @@ function getTemplateKeys(stage, lastFu) {
   return { email: stageMap[lastFu] || null, sms: smsStageMap[lastFu] || null };
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// 
 // DATA LOADING
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// 
 async function loadData() {
   const [cRes, tRes] = await Promise.all([
     sb.from('mcl_client_status').select('*').order('days_since_contact', { ascending: false, nullsFirst: true }),
@@ -377,9 +377,9 @@ async function manualSync() {
   } catch (e) { toast('Sync failed: ' + e.message); }
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// 
 // RENDER STAGES
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// 
 function renderStages() {
   const container = document.getElementById('stagesContainer');
   container.innerHTML = '<div class="sb-title">Pipeline</div>';
@@ -404,12 +404,12 @@ function renderStages() {
   });
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// 
 // RENDER CLIENT LIST
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// 
 function renderClientList() {
   const stageClients = getStageClients();
-  document.getElementById('stageClientsTitle').textContent = `${STAGE_ICONS[currentStage]||'ðŸ'} ${STAGES.find(s=>s.key===currentStage)?.label||'Clients'} â€” ${stageClients.length}`;
+  document.getElementById('stageClientsTitle').textContent = `${STAGE_ICONS[currentStage]||''} ${STAGES.find(s=>s.key===currentStage)?.label||'Clients'}  ${stageClients.length}`;
   renderFilteredClients(stageClients);
 }
 
@@ -442,7 +442,7 @@ function renderFilteredClients(list, skipFilter) {
     const stageIcon = STAGE_ICONS[c.outcome || c.stage] || '';
     const stageName = STAGES.find(s => s.key === (c.outcome || c.stage))?.label || '';
     li.innerHTML = `
-      <div class="ci-left"><div class="ci-name">${c.name}</div><div class="ci-sub">${stageIcon} ${stageName} Â· ${fuLabel} Â· ${daysLabel}</div></div>
+      <div class="ci-left"><div class="ci-name">${c.name}</div><div class="ci-sub">${stageIcon} ${stageName}  ${fuLabel}  ${daysLabel}</div></div>
       <div><span class="dot ${c.follow_up_status}"></span></div>`;
     ul.appendChild(li);
   });
@@ -453,23 +453,23 @@ function filterClients() {
   if (q) {
     // Search across ALL clients, not just current stage
     const allMatches = clients.filter(c => c.name.toLowerCase().includes(q) || (c.email||'').toLowerCase().includes(q) || (c.phone||'').includes(q));
-    document.getElementById('stageClientsTitle').textContent = `ðŸ” Search â€” ${allMatches.length} results`;
+    document.getElementById('stageClientsTitle').textContent = ` Search  ${allMatches.length} results`;
     renderFilteredClients(allMatches, true);
   } else {
     renderClientList();
   }
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// 
 // RENDER PROFILE
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// 
 function renderProfile(clientId) {
   const c = clients.find(x => x.id === clientId);
   if (!c) return;
   const main = document.getElementById('mainPanel');
 
   const stageLabel = STAGES.find(s=>s.key===c.stage)?.label || c.stage;
-  const stageIcon = STAGE_ICONS[c.stage] || 'ðŸ“‹';
+  const stageIcon = STAGE_ICONS[c.stage] || '';
   const daysInStage = c.days_in_stage || 0;
 
   // Determine next action
@@ -484,18 +484,18 @@ function renderProfile(clientId) {
       <div>
         <div class="prof-name">${c.name}</div>
         <div class="prof-meta">
-          <span>ðŸ“§ <input class="inline-edit ${!c.email ? 'missing-field' : ''}" id="editEmail" value="${c.email || ''}" placeholder="âš  ADD EMAIL" onblur="saveField('${c.id}','email',this.value)" style="width:220px;"></span>
-          <span>ðŸ“± <input class="inline-edit ${!c.phone ? 'missing-field' : ''}" id="editPhone" value="${c.phone || ''}" placeholder="âš  ADD PHONE" onblur="saveField('${c.id}','phone',this.value)" style="width:140px;"></span>
-          ${c.pipedrive_id ? `<span>ðŸ“‹ PD #${c.pipedrive_id}</span>` : ''}
+          <span> <input class="inline-edit ${!c.email ? 'missing-field' : ''}" id="editEmail" value="${c.email || ''}" placeholder=" ADD EMAIL" onblur="saveField('${c.id}','email',this.value)" style="width:220px;"></span>
+          <span> <input class="inline-edit ${!c.phone ? 'missing-field' : ''}" id="editPhone" value="${c.phone || ''}" placeholder=" ADD PHONE" onblur="saveField('${c.id}','phone',this.value)" style="width:140px;"></span>
+          ${c.pipedrive_id ? `<span> PD #${c.pipedrive_id}</span>` : ''}
         </div>
-        ${!c.email || !c.phone ? `<div class="missing-alert">âš ï¸ ${!c.email && !c.phone ? 'Email and phone number are missing' : !c.email ? 'Email is missing' : 'Phone number is missing'} â€” add before contacting</div>` : ''}
+        ${!c.email || !c.phone ? `<div class="missing-alert"> ${!c.email && !c.phone ? 'Email and phone number are missing' : !c.email ? 'Email is missing' : 'Phone number is missing'}  add before contacting</div>` : ''}
       </div>
       <div class="prof-actions">
-        ${!c.responded && !c.outcome ? `<button class="btn btn-gold btn-sm" onclick="markResponded('${c.id}')">âœ“ Responded</button>` : ''}
-        ${!c.outcome ? `<button class="btn btn-green btn-sm" onclick="markOutcome('${c.id}','won')">âœ… Won</button>` : ''}
-        ${!c.outcome ? `<button class="btn btn-outline btn-sm" onclick="markOutcome('${c.id}','litigation')">âš–ï¸ Litigation</button>` : ''}
-        ${!c.outcome ? `<button class="btn btn-red btn-sm" onclick="markOutcome('${c.id}','lost')">âŒ Lost</button>` : ''}
-        <button class="btn btn-outline btn-sm" style="color:var(--red);border-color:var(--red);margin-left:8px;" onclick="deleteClient('${c.id}','${c.name.replace(/'/g,"\\'")}')">ðŸ—‘ Delete</button>
+        ${!c.responded && !c.outcome ? `<button class="btn btn-gold btn-sm" onclick="markResponded('${c.id}')"> Responded</button>` : ''}
+        ${!c.outcome ? `<button class="btn btn-green btn-sm" onclick="markOutcome('${c.id}','won')"> Won</button>` : ''}
+        ${!c.outcome ? `<button class="btn btn-outline btn-sm" onclick="markOutcome('${c.id}','litigation')"> Litigation</button>` : ''}
+        ${!c.outcome ? `<button class="btn btn-red btn-sm" onclick="markOutcome('${c.id}','lost')"> Lost</button>` : ''}
+        <button class="btn btn-outline btn-sm" style="color:var(--red);border-color:var(--red);margin-left:8px;" onclick="deleteClient('${c.id}','${c.name.replace(/'/g,"\\'")}')"> Delete</button>
       </div>
     </div>
 
@@ -505,7 +505,7 @@ function renderProfile(clientId) {
         <div class="info-card-title">Client Details</div>
         <div class="info-row"><span class="info-lbl">Current Stage</span><span class="stage-badge">${stageIcon} ${stageLabel}</span></div>
         <div class="info-row"><span class="info-lbl">Time in Stage</span><span class="days-badge ${daysInStage > 10 ? 'overdue' : 'ok'}">${daysInStage} days</span></div>
-        <div class="info-row"><span class="info-lbl">Assigned To</span><span class="info-val">${c.assigned_to || 'â€”'}</span></div>
+        <div class="info-row"><span class="info-lbl">Assigned To</span><span class="info-val">${c.assigned_to || ''}</span></div>
         <div class="info-row"><span class="info-lbl">Intro Type</span><span class="info-val">${c.intro_type === 'lvm' ? 'Left Voicemail' : c.intro_type === 'spoke' ? 'Spoke' : 'No Answer'}</span></div>
         <div class="info-row"><span class="info-lbl">Credit Error</span><span class="info-val"><input class="inline-edit" value="${c.credit_error || ''}" placeholder="Enter violation..." onblur="saveField('${c.id}','credit_error',this.value)" style="width:100%;"></span></div>
         <div class="info-row"><span class="info-lbl">Follow-up Status</span><span class="pill ${c.follow_up_status}">${statusLabel(c.follow_up_status)}</span></div>
@@ -513,18 +513,18 @@ function renderProfile(clientId) {
       <div class="info-card">
         <div class="info-card-title">Key Dates</div>
         <div class="info-row"><span class="info-lbl">Lead Created</span><span class="info-val">${fmtDate(c.created_at)}</span></div>
-        <div class="info-row"><span class="info-lbl">Intro Sent</span><span class="info-val ${!c.intro_sent_at?'muted':''}">${c.intro_sent_at ? fmtDate(c.intro_sent_at) : 'â€” not yet'}</span></div>
-        <div class="info-row"><span class="info-lbl">Client Responded</span><span class="info-val ${!c.responded_at?'muted':''}">${c.responded_at ? fmtDate(c.responded_at) : 'â€” not yet'}</span></div>
+        <div class="info-row"><span class="info-lbl">Intro Sent</span><span class="info-val ${!c.intro_sent_at?'muted':''}">${c.intro_sent_at ? fmtDate(c.intro_sent_at) : ' not yet'}</span></div>
+        <div class="info-row"><span class="info-lbl">Client Responded</span><span class="info-val ${!c.responded_at?'muted':''}">${c.responded_at ? fmtDate(c.responded_at) : ' not yet'}</span></div>
         <div class="info-row"><span class="info-lbl">Packet Sent to Client</span><span class="info-val"><input type="date" class="date-edit" value="${c.disputes_mailed_to_client || ''}" onchange="saveField('${c.id}','disputes_mailed_to_client',this.value)"></span></div>
         <div class="info-row"><span class="info-lbl">Disputes Mailed to CRA</span><span class="info-val"><input type="date" class="date-edit" value="${c.disputes_mailed_to_cra || ''}" onchange="saveField('${c.id}','disputes_mailed_to_cra',this.value)"></span></div>
         <div class="info-row"><span class="info-lbl">Round Over Date</span><span class="info-val">${c.round_over_date ? `<span class="days-badge ${c.days_until_round_over <= 0 ? 'overdue' : 'ok'}">${c.round_over_date} ${c.days_until_round_over > 0 ? '(' + c.days_until_round_over + ' days left)' : c.days_until_round_over === 0 ? '(TODAY!)' : '(ROUND OVER)'}</span>` : '<input type="date" class="date-edit" value="" onchange="saveField(\'' + c.id + '\',\'round_over_date\',this.value)">'}</span></div>
-        <div class="info-row"><span class="info-lbl">Outcome</span><span class="info-val ${!c.outcome?'muted':''}">${c.outcome ? c.outcome.toUpperCase() : 'â€” pending'}</span></div>
+        <div class="info-row"><span class="info-lbl">Outcome</span><span class="info-val ${!c.outcome?'muted':''}">${c.outcome ? c.outcome.toUpperCase() : ' pending'}</span></div>
       </div>
     </div>
 
     <!-- TIMELINE -->
     <div class="timeline-card">
-      <div class="timeline-title">ðŸ“‹ Follow-up Timeline</div>
+      <div class="timeline-title"> Follow-up Timeline</div>
       <div class="flow">
         ${renderTimeline(c)}
       </div>
@@ -532,17 +532,17 @@ function renderProfile(clientId) {
       <div class="move-bar">
         <label>Move to:</label>
         <select class="move-select" id="moveSelect">
-          <option value="need_to_call">ðŸ“ž Need to Call</option>
-          <option value="lvm">ðŸ“ž LVM</option>
-          <option value="contacted">ðŸ’¬ Contacted</option>
-          <option value="waiting_mcl">â³ Waiting on MCL</option>
-          <option value="packet_sent">ðŸ“¬ Packet Sent</option>
-          <option value="disputes_mailed">ðŸ“® Disputes Mailed</option>
-          <option value="waiting_reports">ðŸ“Š Waiting on Reports</option>
+          <option value="need_to_call"> Need to Call</option>
+          <option value="lvm"> LVM</option>
+          <option value="contacted"> Contacted</option>
+          <option value="waiting_mcl"> Waiting on MCL</option>
+          <option value="packet_sent"> Packet Sent</option>
+          <option value="disputes_mailed"> Disputes Mailed</option>
+          <option value="waiting_reports"> Waiting on Reports</option>
         </select>
-        <button class="btn btn-navy btn-sm" onclick="moveStage('${c.id}')">Move â†’</button>
-        <button class="btn btn-green btn-sm" style="margin-left:4px;" onclick="markOutcome('${c.id}','won')">âœ… Won</button>
-        <button class="btn btn-outline btn-sm" style="margin-left:4px;" onclick="markOutcome('${c.id}','litigation')">âš–ï¸ Litigation</button>
+        <button class="btn btn-navy btn-sm" onclick="moveStage('${c.id}')">Move </button>
+        <button class="btn btn-green btn-sm" style="margin-left:4px;" onclick="markOutcome('${c.id}','won')"> Won</button>
+        <button class="btn btn-outline btn-sm" style="margin-left:4px;" onclick="markOutcome('${c.id}','litigation')"> Litigation</button>
       </div>` : ''}
     </div>
 
@@ -554,20 +554,20 @@ function renderProfile(clientId) {
 
     ${!c.outcome ? `
     <div class="compose-card" style="margin-top:16px;">
-      <div class="form-label">✉️ Send Manual Message</div>
+      <div class="form-label"> Send Manual Message</div>
       <div style="margin-bottom:8px;">
         <input class="form-input" id="composeSubject" placeholder="Subject (email only)" style="margin-bottom:6px;">
         <textarea class="notes-area" id="composeBody" placeholder="Type your message here..." style="min-height:80px;"></textarea>
       </div>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-navy btn-sm" onclick="sendManualEmail('${c.id}')">📧 Send Email</button>
-        <button class="btn btn-green btn-sm" onclick="sendManualText('${c.id}')">💬 Send Text</button>
-        <button class="btn btn-outline btn-sm" onclick="sendManualBoth('${c.id}')">📧+💬 Send Both</button>
+        <button class="btn btn-navy btn-sm" onclick="sendManualEmail('${c.id}')"> Send Email</button>
+        <button class="btn btn-green btn-sm" onclick="sendManualText('${c.id}')"> Send Text</button>
+        <button class="btn btn-outline btn-sm" onclick="sendManualBoth('${c.id}')">+ Send Both</button>
       </div>
     </div>` : ''}
 
     <div style="margin-top:16px;">
-      <div class="form-label">📜 Activity History</div>
+      <div class="form-label"> Activity History</div>
       <div id="activityLog" class="activity-log">Loading...</div>
     </div>
   `;
@@ -583,11 +583,11 @@ function renderTimeline(c) {
   const events = [];
   
   // Intro
-  if (c.intro_sent_at) events.push({ type: 'intro', label: 'Intro email + SMS sent', date: c.intro_sent_at, icon: 'ðŸ“§' });
-  if (c.fu1_sent_at) events.push({ type: 'fu1', label: 'Follow-up #1 sent', date: c.fu1_sent_at, icon: 'ðŸ“§' });
-  if (c.fu2_sent_at) events.push({ type: 'fu2', label: 'Follow-up #2 sent', date: c.fu2_sent_at, icon: 'ðŸ“§' });
-  if (c.fu3_sent_at) events.push({ type: 'fu3', label: 'Follow-up #3 sent', date: c.fu3_sent_at, icon: 'ðŸ“§' });
-  if (c.fu4_sent_at) events.push({ type: 'fu4', label: 'Follow-up #4 sent', date: c.fu4_sent_at, icon: 'ðŸ“§' });
+  if (c.intro_sent_at) events.push({ type: 'intro', label: 'Intro email + SMS sent', date: c.intro_sent_at, icon: '' });
+  if (c.fu1_sent_at) events.push({ type: 'fu1', label: 'Follow-up #1 sent', date: c.fu1_sent_at, icon: '' });
+  if (c.fu2_sent_at) events.push({ type: 'fu2', label: 'Follow-up #2 sent', date: c.fu2_sent_at, icon: '' });
+  if (c.fu3_sent_at) events.push({ type: 'fu3', label: 'Follow-up #3 sent', date: c.fu3_sent_at, icon: '' });
+  if (c.fu4_sent_at) events.push({ type: 'fu4', label: 'Follow-up #4 sent', date: c.fu4_sent_at, icon: '' });
 
   // Current stage
   const stageIcon = STAGE_ICONS[c.stage];
@@ -599,11 +599,11 @@ function renderTimeline(c) {
     <div class="flow-dot current"></div>
     <div class="flow-head">
       <span class="flow-label">${stageIcon} ${stageLabel}</span>
-      <span class="flow-date">${fmtDate(c.intro_sent_at || c.created_at)} â†’ now</span>
+      <span class="flow-date">${fmtDate(c.intro_sent_at || c.created_at)}  now</span>
       <span class="flow-dur ${durClass}">${daysInStage} days</span>
     </div>
     <ul class="flow-events">
-      ${events.length === 0 ? `<li class="flow-event"><span class="fe-icon">âšª</span><span class="fe-text">No follow-ups sent yet</span></li>` : ''}
+      ${events.length === 0 ? `<li class="flow-event"><span class="fe-icon"></span><span class="fe-text">No follow-ups sent yet</span></li>` : ''}
       ${events.map(e => `<li class="flow-event"><span class="fe-icon">${e.icon}</span><span class="fe-text">${e.label}</span><span class="fe-date">${fmtDate(e.date)}</span></li>`).join('')}
     </ul>`;
 
@@ -612,31 +612,31 @@ function renderTimeline(c) {
     // Stage-specific actions
     if (c.stage === 'need_to_call') {
       html += `<div class="next-action" style="border-color:var(--navy);background:var(--navy-light);">
-        <div class="na-left"><span class="na-icon">ðŸ“ž</span>
+        <div class="na-left"><span class="na-icon"></span>
           <div><div class="na-text">Call this client about the credit error</div><div class="na-sub">${c.credit_error || 'Check sheet for details'}</div></div>
         </div>
         <div class="na-btns">
-          <button class="btn btn-navy btn-sm" onclick="moveStage('${c.id}','lvm')">ðŸ“ž No Answer â†’ LVM</button>
-          <button class="btn btn-green btn-sm" onclick="moveStage('${c.id}','contacted')">ðŸ’¬ Spoke â†’ Contacted</button>
+          <button class="btn btn-navy btn-sm" onclick="moveStage('${c.id}','lvm')"> No Answer  LVM</button>
+          <button class="btn btn-green btn-sm" onclick="moveStage('${c.id}','contacted')"> Spoke  Contacted</button>
         </div>
       </div>`;
     } else if (c.stage === 'waiting_mcl') {
       html += `<div class="next-action" style="border-color:var(--gold);background:#fef9e7;">
-        <div class="na-left"><span class="na-icon">â³</span>
+        <div class="na-left"><span class="na-icon"></span>
           <div><div class="na-text">Waiting on McCarthy Law to contact client</div><div class="na-sub">Move to Packet Sent when MCL sends the packet</div></div>
         </div>
         <div class="na-btns">
-          <button class="btn btn-navy btn-sm" onclick="moveStage('${c.id}','packet_sent')">ðŸ“¬ Packet Sent</button>
+          <button class="btn btn-navy btn-sm" onclick="moveStage('${c.id}','packet_sent')"> Packet Sent</button>
         </div>
       </div>`;
     } else if (c.stage === 'disputes_mailed') {
       const daysLeft = c.days_until_round_over;
-      const roundText = daysLeft === null ? 'Enter "Disputes Mailed to CRA" date to start 31-day clock' : daysLeft > 0 ? 'ðŸŸ¢ ' + daysLeft + ' days until round is over' : daysLeft === 0 ? 'ðŸŸ¡ Round ends TODAY' : 'ðŸ”´ ROUND OVER â€” move to Waiting on Reports';
+      const roundText = daysLeft === null ? 'Enter "Disputes Mailed to CRA" date to start 31-day clock' : daysLeft > 0 ? ' ' + daysLeft + ' days until round is over' : daysLeft === 0 ? ' Round ends TODAY' : ' ROUND OVER  move to Waiting on Reports';
       html += `<div class="next-action" style="border-color:var(--gold);background:#fef9e7;">
-        <div class="na-left"><span class="na-icon">ðŸ“®</span>
-          <div><div class="na-text">Disputes mailed â€” 31-day clock running</div><div class="na-sub">${roundText}</div></div>
+        <div class="na-left"><span class="na-icon"></span>
+          <div><div class="na-text">Disputes mailed  31-day clock running</div><div class="na-sub">${roundText}</div></div>
         </div>
-        ${daysLeft !== null && daysLeft <= 0 ? `<div class="na-btns"><button class="btn btn-navy btn-sm" onclick="moveStage('${c.id}','waiting_reports')">ðŸ“Š Move to Waiting on Reports</button></div>` : ''}
+        ${daysLeft !== null && daysLeft <= 0 ? `<div class="na-btns"><button class="btn btn-navy btn-sm" onclick="moveStage('${c.id}','waiting_reports')"> Move to Waiting on Reports</button></div>` : ''}
       </div>`;
     } else {
       const lastFu = c.last_followup || 'none';
@@ -645,19 +645,19 @@ function renderTimeline(c) {
         const tpl = templates.find(t => t.key === fuKeys.email);
         const nextNum = lastFu === 'none' ? 'Intro' : `FU #${parseInt(lastFu.replace('fu','')) + 1}`;
         const fuDays = STAGE_FU_DAYS[c.stage] || 2;
-        const dueText = c.follow_up_status === 'overdue' ? `ðŸ”´ OVERDUE â€” ${c.days_since_contact} days since last contact` : c.follow_up_status === 'due_today' ? 'ðŸŸ¡ Due today' : `ðŸŸ¢ Due in ${fuDays - (c.days_since_contact || 0)} days`;
+        const dueText = c.follow_up_status === 'overdue' ? ` OVERDUE  ${c.days_since_contact} days since last contact` : c.follow_up_status === 'due_today' ? ' Due today' : ` Due in ${fuDays - (c.days_since_contact || 0)} days`;
         html += `<div class="next-action">
-          <div class="na-left"><span class="na-icon">${c.follow_up_status === 'overdue' ? 'ðŸ”´' : 'ðŸ“¨'}</span>
-            <div><div class="na-text">Next: Send ${nextNum}${tpl ? ` â€” "${tpl.subject}"` : ''}</div><div class="na-sub">${dueText}</div></div>
+          <div class="na-left"><span class="na-icon">${c.follow_up_status === 'overdue' ? '' : ''}</span>
+            <div><div class="na-text">Next: Send ${nextNum}${tpl ? `  "${tpl.subject}"` : ''}</div><div class="na-sub">${dueText}</div></div>
           </div>
           <div class="na-btns">
-            <button class="btn btn-navy btn-sm" onclick="openSendModal('${c.id}','email')">ðŸ“§ Send Email</button>
-            <button class="btn btn-green btn-sm" onclick="openSendModal('${c.id}','sms')">ðŸ’¬ Send Text</button>
+            <button class="btn btn-navy btn-sm" onclick="openSendModal('${c.id}','email')"> Send Email</button>
+            <button class="btn btn-green btn-sm" onclick="openSendModal('${c.id}','sms')"> Send Text</button>
           </div>
         </div>`;
       } else {
         html += `<div class="next-action">
-          <div class="na-left"><span class="na-icon">âœ…</span>
+          <div class="na-left"><span class="na-icon"></span>
             <div><div class="na-text">All follow-ups sent for this stage</div><div class="na-sub">Consider calling again or moving to next stage</div></div>
           </div>
         </div>`;
@@ -665,7 +665,7 @@ function renderTimeline(c) {
     }
   } else if (c.responded) {
     html += `<div class="next-action" style="border-color:var(--green);background:var(--green-light);">
-      <div class="na-left"><span class="na-icon">âœ…</span>
+      <div class="na-left"><span class="na-icon"></span>
         <div><div class="na-text" style="color:var(--green);">Client responded ${c.responded_at ? 'on ' + fmtDate(c.responded_at) : ''}</div></div>
       </div>
     </div>`;
@@ -678,31 +678,31 @@ function renderTimeline(c) {
   for (let i = currentIdx + 1; i < allStages.length; i++) {
     const ps = STAGES.find(s => s.key === allStages[i]);
     const descs = {
-      lvm: 'No answer â†’ leave voicemail, follow up every 2 days',
-      contacted: 'Spoke to client â†’ send intro email, waiting for "Yes"',
-      waiting_mcl: 'Client replied "Yes" â†’ McCarthy Law contacting them',
-      packet_sent: 'MCL sent packet â†’ follow up in 4 days to confirm receipt',
-      disputes_mailed: 'Client mailed disputes â†’ 31-day clock starts',
-      waiting_reports: 'Round over â†’ request updated credit reports',
+      lvm: 'No answer  leave voicemail, follow up every 2 days',
+      contacted: 'Spoke to client  send intro email, waiting for "Yes"',
+      waiting_mcl: 'Client replied "Yes"  McCarthy Law contacting them',
+      packet_sent: 'MCL sent packet  follow up in 4 days to confirm receipt',
+      disputes_mailed: 'Client mailed disputes  31-day clock starts',
+      waiting_reports: 'Round over  request updated credit reports',
     };
     html += `<div class="flow-stage"><div class="flow-dot"></div>
       <div class="flow-head"><span class="flow-label pending">${ps.icon} ${ps.label}</span></div>
       <div class="flow-pending-desc">${descs[allStages[i]] || ''}</div></div>`;
   }
   html += `<div class="flow-stage"><div class="flow-dot"></div>
-    <div class="flow-head"><span class="flow-label pending">ðŸ Won / âš–ï¸ Litigation</span></div>
+    <div class="flow-head"><span class="flow-label pending"> Won /  Litigation</span></div>
     <div class="flow-pending-desc">Error corrected = Won | Not corrected = Litigation ($500)</div></div>`;
 
   return html;
 }
 
 function renderEmptyMain() {
-  document.getElementById('mainPanel').innerHTML = `<div class="empty"><div class="empty-icon">ðŸ‘ˆ</div><p>Select a client from the sidebar</p></div>`;
+  document.getElementById('mainPanel').innerHTML = `<div class="empty"><div class="empty-icon"></div><p>Select a client from the sidebar</p></div>`;
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// 
 // ACTIONS
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// 
 async function addClient() {
   const name = document.getElementById('addName').value.trim();
   if (!name) { toast('Name is required'); return; }
@@ -718,7 +718,7 @@ async function addClient() {
   }).select().single();
   if (error) { toast('Error: ' + error.message); return; }
   closeModal('addModal');
-  toast('Client added âœ“');
+  toast('Client added ');
   currentStage = data.stage;
   currentClientId = data.id;
   await loadData();
@@ -727,14 +727,14 @@ async function addClient() {
 async function markResponded(id) {
   await sb.from('mcl_clients').update({ responded: true, responded_at: new Date().toISOString() }).eq('id', id);
   await sb.from('mcl_activity_log').insert({ client_id: id, action: 'responded', details: 'Manually marked as responded' });
-  toast('Marked as responded âœ“');
+  toast('Marked as responded ');
   await loadData();
 }
 
 async function markOutcome(id, outcome) {
   await sb.from('mcl_clients').update({ outcome, outcome_at: new Date().toISOString(), stage: outcome }).eq('id', id);
   await sb.from('mcl_activity_log').insert({ client_id: id, action: outcome, details: `Marked as ${outcome}` });
-  toast(`Marked as ${outcome} âœ“`);
+  toast(`Marked as ${outcome} `);
   await loadData();
 }
 
@@ -751,7 +751,7 @@ async function moveStage(id, targetStage) {
   }).eq('id', id);
   await sb.from('mcl_activity_log').insert({ client_id: id, action: 'stage_changed', details: `Moved from ${c.stage} to ${newStage}` });
   const label = STAGES.find(s => s.key === newStage)?.label || newStage;
-  toast(`Moved to ${label} âœ“`);
+  toast(`Moved to ${label} `);
   currentStage = newStage;
   await loadData();
 }
@@ -786,14 +786,14 @@ async function saveField(id, field, value) {
     c[field] = value;
     if (update.round_over_date) c.round_over_date = update.round_over_date;
   }
-  toast(`${field.replace(/_/g,' ')} updated âœ“`);
+  toast(`${field.replace(/_/g,' ')} updated `);
   if (update.round_over_date) toast(`Round over date auto-set: ${update.round_over_date}`);
   if (currentClientId === id) renderProfile(id);
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// 
 // SEND EMAIL/SMS
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// 
 function openSendModal(clientId, type) {
   const c = clients.find(x => x.id === clientId);
   if (!c) return;
@@ -805,7 +805,7 @@ function openSendModal(clientId, type) {
   if (!tpl) { toast('No template found for this step'); return; }
 
   const nextNum = lastFu === 'none' ? 'Intro' : `Follow-up #${parseInt(lastFu.replace('fu','')) + 1}`;
-  document.getElementById('sendModalTitle').textContent = `ðŸ“§ Send ${nextNum} to ${c.name}`;
+  document.getElementById('sendModalTitle').textContent = ` Send ${nextNum} to ${c.name}`;
   document.getElementById('sendTemplateInfo').textContent = `${tpl.name} (${tpl.key})`;
   document.getElementById('sendSubject').textContent = tpl.subject || '(SMS - no subject)';
 
@@ -825,8 +825,8 @@ async function confirmSend(mode) {
   const doEmail = mode === 'email' || mode === 'both';
   const doSms = mode === 'sms' || mode === 'both';
 
-  if (doEmail && !c.email) { toast('âš ï¸ Cannot send email â€” no email address! Add it first.'); return; }
-  if (doSms && !c.phone) { toast('âš ï¸ Cannot send text â€” no phone number! Add it first.'); return; }
+  if (doEmail && !c.email) { toast(' Cannot send email  no email address! Add it first.'); return; }
+  if (doSms && !c.phone) { toast(' Cannot send text  no phone number! Add it first.'); return; }
 
   const emailTpl = templates.find(t => t.key === pendingSend.emailKey);
   const smsTpl = templates.find(t => t.key === pendingSend.smsKey);
@@ -873,27 +873,27 @@ async function confirmSend(mode) {
 
   closeModal('sendModal');
   const sentWhat = mode === 'both' ? 'Email + Text' : mode === 'sms' ? 'Text' : 'Email';
-  toast(`${sentWhat} sent âœ“`);
+  toast(`${sentWhat} sent `);
   pendingSend = null;
   await loadData();
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// 
 // HELPERS
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// 
 function fmtDate(d) {
-  if (!d) return 'â€”';
+  if (!d) return '';
   const dt = new Date(d);
   return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function statusLabel(s) {
-  return { overdue: 'âš  Overdue', due_today: 'â— Due Today', on_track: 'âœ“ On Track', responded: 'âœ“ Responded', needs_intro: 'ðŸ“ž Needs Call', resolved: 'â— Resolved' }[s] || s;
+  return { overdue: ' Overdue', due_today: ' Due Today', on_track: ' On Track', responded: ' Responded', needs_intro: ' Needs Call', resolved: ' Resolved' }[s] || s;
 }
 
 function updateOverdueBadge() {
   const overdue = clients.filter(c => c.follow_up_status === 'overdue').length;
-  document.getElementById('overdueGlobal').textContent = overdue > 0 ? `${overdue} overdue` : 'âœ“ All clear';
+  document.getElementById('overdueGlobal').textContent = overdue > 0 ? `${overdue} overdue` : ' All clear';
   document.getElementById('overdueGlobal').style.background = overdue > 0 ? 'var(--red)' : 'var(--green)';
 }
 
@@ -923,9 +923,9 @@ document.querySelectorAll('.modal-bg').forEach(m => {
   m.addEventListener('click', e => { if (e.target === m) m.classList.remove('visible'); });
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// 
 // INIT
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// 
 loadData();
 // Auto-refresh data every 60 seconds
 setInterval(loadData, 60000);
@@ -935,7 +935,7 @@ async function autoSync() {
     const res = await fetch('/.netlify/functions/sync-sheet');
     const data = await res.json();
     if (data.new_inserted > 0) {
-      toast(`ðŸ”„ ${data.new_inserted} new client(s) synced from sheet`);
+      toast(` ${data.new_inserted} new client(s) synced from sheet`);
       await loadData();
     }
   } catch (e) { /* silent fail on auto-sync */ }
