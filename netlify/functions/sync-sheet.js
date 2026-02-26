@@ -13,7 +13,7 @@ function parseCSV(text) {
       current += ch;
     }
     fields.push(current.trim());
-    var name = fields[0] || ''; if (!name) continue;
+    var name = fields[0] || ''; if (!name || name.includes('@') || name.includes('TRUE') || name.includes('FALSE') || name.length < 3) continue;
     var email = fields[5] || '';
     var validEmail = email.includes('@') && email.includes('.') ? email : null;
     rows.push({ name:name, mclNotes:fields[1]||'', joesNotes:fields[2]||'', phone:fields[4]||null, email:validEmail,
