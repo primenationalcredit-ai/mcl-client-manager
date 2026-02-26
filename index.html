@@ -315,19 +315,19 @@ let pendingSend = null;
 let isSending = false;
 
 const STAGES = [
-  { key: 'need_to_call', icon: '', label: 'Need to Call' },
-  { key: 'lvm', icon: '', label: 'LVM' },
-  { key: 'contacted', icon: '', label: 'Contacted' },
-  { key: 'waiting_mcl', icon: '', label: 'Waiting on MCL' },
-  { key: 'packet_sent', icon: '', label: 'Packet Sent' },
-  { key: 'disputes_mailed', icon: '', label: 'Disputes Mailed' },
-  { key: 'waiting_reports', icon: '', label: 'Waiting on Reports' },
-  { key: 'litigation', icon: '', label: 'Litigation ($500)' },
-  { key: 'won', icon: '', label: 'Won' },
-  { key: 'lost', icon: '', label: 'Lost' },
+  { key: 'need_to_call', icon: '&#128222;', label: 'Need to Call' },
+  { key: 'lvm', icon: '&#128222;', label: 'LVM' },
+  { key: 'contacted', icon: '&#128172;', label: 'Contacted' },
+  { key: 'waiting_mcl', icon: '&#9203;', label: 'Waiting on MCL' },
+  { key: 'packet_sent', icon: '&#128236;', label: 'Packet Sent' },
+  { key: 'disputes_mailed', icon: '&#128238;', label: 'Disputes Mailed' },
+  { key: 'waiting_reports', icon: '&#128202;', label: 'Waiting on Reports' },
+  { key: 'litigation', icon: '&#9878;', label: 'Litigation ($500)' },
+  { key: 'won', icon: '&#9989;', label: 'Won' },
+  { key: 'lost', icon: '&#10060;', label: 'Lost' },
 ];
 
-const STAGE_ICONS = { need_to_call:'', lvm:'', contacted:'', waiting_mcl:'', packet_sent:'', disputes_mailed:'', waiting_reports:'', litigation:'', won:'', lost:'' };
+const STAGE_ICONS = { need_to_call:'&#128222;', lvm:'&#128222;', contacted:'&#128172;', waiting_mcl:'&#9203;', packet_sent:'&#128236;', disputes_mailed:'&#128238;', waiting_reports:'&#128202;', litigation:'&#9878;', won:'&#9989;', lost:'&#10060;' };
 
 // Follow-up days per stage (null = no auto follow-up)
 const STAGE_FU_DAYS = { lvm: 2, contacted: 2, packet_sent: 4, waiting_reports: 2 };
