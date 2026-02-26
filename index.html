@@ -312,7 +312,6 @@ let templates = [];
 let currentStage = 'need_to_call';
 let currentClientId = null;
 let pendingSend = null;
-let isSending = false;
 
 const STAGES = [
   { key: 'need_to_call', icon: '&#128222;', label: 'Need to Call' },
@@ -778,9 +777,7 @@ async function loadActivityLog(clientId) {
 }
 
 async function sendManualEmail(clientId) {
-  if(isSending)return;isSending=true;var btns=document.querySelectorAll(".compose-card button");btns.forEach(function(b){b.disabled=true;b.style.opacity="0.5";});
-  try {
-  var c = clients.find(function(x){return x.id===clientId;});
+    var c = clients.find(function(x){return x.id===clientId;});
   if (!c) return;
   if (!c.email) { toast('No email! Add it first.'); return; }
   var subject = document.getElementById('composeSubject').value.trim();
@@ -800,9 +797,7 @@ async function sendManualEmail(clientId) {
 }
 
 async function sendManualText(clientId) {
-  if(isSending)return;isSending=true;var btns=document.querySelectorAll(".compose-card button");btns.forEach(function(b){b.disabled=true;b.style.opacity="0.5";});
-  try {
-  var c = clients.find(function(x){return x.id===clientId;});
+    var c = clients.find(function(x){return x.id===clientId;});
   if (!c) return;
   if (!c.phone) { toast('No phone! Add it first.'); return; }
   var body = document.getElementById('composeBody').value.trim();
@@ -819,9 +814,7 @@ async function sendManualText(clientId) {
 }
 
 async function sendManualBoth(clientId) {
-  if(isSending)return;isSending=true;var btns=document.querySelectorAll(".compose-card button");btns.forEach(function(b){b.disabled=true;b.style.opacity="0.5";});
-  try {
-  var c = clients.find(function(x){return x.id===clientId;});
+    var c = clients.find(function(x){return x.id===clientId;});
   if (!c) return;
   if (!c.email) { toast('No email! Add it first.'); return; }
   if (!c.phone) { toast('No phone! Add it first.'); return; }
