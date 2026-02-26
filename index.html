@@ -312,6 +312,7 @@ let templates = [];
 let currentStage = 'need_to_call';
 let currentClientId = null;
 let pendingSend = null;
+let isSending = false;
 
 const STAGES = [
   { key: 'need_to_call', icon: '', label: 'Need to Call' },
@@ -560,9 +561,9 @@ function renderProfile(clientId) {
         <textarea class="notes-area" id="composeBody" placeholder="Type your message here..." style="min-height:80px;"></textarea>
       </div>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-navy btn-sm" onclick="sendManualEmail('${c.id}')"> Send Email</button>
-        <button class="btn btn-green btn-sm" onclick="sendManualText('${c.id}')"> Send Text</button>
-        <button class="btn btn-outline btn-sm" onclick="sendManualBoth('${c.id}')">+ Send Both</button>
+        <button class="btn btn-navy btn-sm" onclick="this.disabled=true;this.textContent='Sending...';sendManualEmail('${c.id}')"> Send Email</button>
+        <button class="btn btn-green btn-sm" onclick="this.disabled=true;this.textContent='Sending...';sendManualText('${c.id}')"> Send Text</button>
+        <button class="btn btn-outline btn-sm" onclick="this.disabled=true;this.textContent='Sending...';sendManualBoth('${c.id}')">+ Send Both</button>
       </div>
     </div>` : ''}
 
@@ -777,6 +778,8 @@ async function loadActivityLog(clientId) {
 }
 
 async function sendManualEmail(clientId) {
+  if(isSending)return;isSending=true;var btns=document.querySelectorAll(".compose-card button");btns.forEach(function(b){b.disabled=true;b.style.opacity="0.5";});
+  try {
   var c = clients.find(function(x){return x.id===clientId;});
   if (!c) return;
   if (!c.email) { toast('No email! Add it first.'); return; }
@@ -797,6 +800,8 @@ async function sendManualEmail(clientId) {
 }
 
 async function sendManualText(clientId) {
+  if(isSending)return;isSending=true;var btns=document.querySelectorAll(".compose-card button");btns.forEach(function(b){b.disabled=true;b.style.opacity="0.5";});
+  try {
   var c = clients.find(function(x){return x.id===clientId;});
   if (!c) return;
   if (!c.phone) { toast('No phone! Add it first.'); return; }
@@ -814,6 +819,8 @@ async function sendManualText(clientId) {
 }
 
 async function sendManualBoth(clientId) {
+  if(isSending)return;isSending=true;var btns=document.querySelectorAll(".compose-card button");btns.forEach(function(b){b.disabled=true;b.style.opacity="0.5";});
+  try {
   var c = clients.find(function(x){return x.id===clientId;});
   if (!c) return;
   if (!c.email) { toast('No email! Add it first.'); return; }
