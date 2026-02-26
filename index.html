@@ -761,6 +761,79 @@ async function saveNotes(id) {
   await sb.from('mcl_clients').update({ notes }).eq('id', id);
 }
 
+
+async function loadActivityLog(clientId) {
+  var el = document.getElementById('activityLog');
+  if (!el) return;
+  var resp = await sb.from('mcl_activity_log').select('*').eq('client_id', clientId).order('created_at', { ascending: false }).limit(50);
+  var data = resp.data;
+  if (!data || data.length === 0) { el.innerHTML = '<div style="text-align:center;padding:12px;color:var(--g400);font-size:13px;">No activity yet</div>'; return; }
+  var icons = { email_sent:'E', sms_sent:'T', manual_email:'E', manual_sms:'T', manual_both:'ET', stage_changed:'S', responded:'R', won:'W', lost:'L', litigation:'J' };
+  el.innerHTML = data.map(function(a) {
+    var icon = icons[a.action] || '-';
+    var label = a.action.replace(/_/g,' ');
+    return '<div class="activity-item"><div class="activity-icon">[' + icon + ']</div><div class="activity-content"><div class="activity-action">' + label + '</div><div class="activity-details">' + (a.details||'') + '</div></div><div class="activity-date">' + fmtDate(a.created_at) + '</div></div>';
+  }).join('');
+}
+
+async function sendManualEmail(clientId) {
+  var c = clients.find(function(x){return x.id===clientId;});
+  if (!c) return;
+  if (!c.email) { toast('No email! Add it first.'); return; }
+  var subject = document.getElementById('composeSubject').value.trim();
+  var body = document.getElementById('composeBody').value.trim();
+  if (!body) { toast('Write a message first'); return; }
+  if (!subject) { toast('Add a subject line'); return; }
+  try {
+    var res = await fetch(SEND_EMAIL_URL, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:c.email,subject:subject,body:body})});
+    var data = await res.json();
+    if (data.ok) {
+      await sb.from('mcl_activity_log').insert({client_id:c.id,action:'manual_email',details:'Subject: '+subject+'\n'+body});
+      toast('Email sent to '+c.email);
+      document.getElementById('composeSubject').value=''; document.getElementById('composeBody').value='';
+      loadActivityLog(c.id);
+    } else { toast('Email error: '+(data.error||'unknown')); }
+  } catch(e) { toast('Email failed: '+e.message); }
+}
+
+async function sendManualText(clientId) {
+  var c = clients.find(function(x){return x.id===clientId;});
+  if (!c) return;
+  if (!c.phone) { toast('No phone! Add it first.'); return; }
+  var body = document.getElementById('composeBody').value.trim();
+  if (!body) { toast('Write a message first'); return; }
+  try {
+    var digits=(c.phone||'').replace(/[^0-9]/g,'');
+    var phone=digits.length===10?'+1'+digits:digits.length===11?'+'+digits:c.phone;
+    await fetch('/.netlify/functions/send-sms',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:phone,firstName:c.name.split(' ')[0],message:body,dealId:''})});
+    await sb.from('mcl_activity_log').insert({client_id:c.id,action:'manual_sms',details:body});
+    toast('Text sent to '+c.phone);
+    document.getElementById('composeBody').value='';
+    loadActivityLog(c.id);
+  } catch(e) { toast('Text failed: '+e.message); }
+}
+
+async function sendManualBoth(clientId) {
+  var c = clients.find(function(x){return x.id===clientId;});
+  if (!c) return;
+  if (!c.email) { toast('No email! Add it first.'); return; }
+  if (!c.phone) { toast('No phone! Add it first.'); return; }
+  var subject = document.getElementById('composeSubject').value.trim();
+  var body = document.getElementById('composeBody').value.trim();
+  if (!body) { toast('Write a message first'); return; }
+  if (!subject) { toast('Add a subject line'); return; }
+  try {
+    await fetch(SEND_EMAIL_URL, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:c.email,subject:subject,body:body})});
+    var digits=(c.phone||'').replace(/[^0-9]/g,'');
+    var phone=digits.length===10?'+1'+digits:digits.length===11?'+'+digits:c.phone;
+    await fetch('/.netlify/functions/send-sms',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:phone,firstName:c.name.split(' ')[0],message:body,dealId:''})});
+    await sb.from('mcl_activity_log').insert({client_id:c.id,action:'manual_both',details:'Subject: '+subject+'\n'+body});
+    toast('Email + Text sent');
+    document.getElementById('composeSubject').value=''; document.getElementById('composeBody').value='';
+    loadActivityLog(c.id);
+  } catch(e) { toast('Send failed: '+e.message); }
+}
+
 async function deleteClient(id, name) {
   if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
   await sb.from('mcl_activity_log').delete().eq('client_id', id);
