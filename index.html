@@ -174,6 +174,25 @@ input,select,textarea{font-family:inherit;}
 .pill.responded{background:var(--navy-light);color:var(--navy);}
 .pill.needs_intro{background:var(--g100);color:var(--g500);}
 
+/* ERROR DETAILS */
+.error-box{background:#fff;border:1px solid var(--g200);border-radius:10px;padding:16px 18px;margin-bottom:14px;}
+.error-box textarea{width:100%;min-height:50px;padding:8px 10px;border:1px solid var(--g200);border-radius:8px;font-size:13px;color:var(--g700);resize:vertical;outline:none;font-family:inherit;margin-top:6px;}
+.error-box textarea:focus{border-color:var(--navy);}
+
+/* COMM LOG */
+.comm-log{background:#fff;border:1px solid var(--g200);border-radius:10px;padding:16px 18px;margin-top:14px;}
+.comm-log-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--g400);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
+.comm-entry{display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--g50);font-size:13px;}
+.comm-entry:last-child{border-bottom:none;}
+.comm-date{flex-shrink:0;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--g400);min-width:80px;margin-top:2px;}
+.comm-agent{flex-shrink:0;font-weight:600;color:var(--navy);font-size:12px;min-width:40px;margin-top:2px;}
+.comm-text{flex:1;color:var(--g700);line-height:1.4;}
+.comm-add{display:flex;gap:6px;margin-top:10px;}
+.comm-add input{flex-shrink:0;width:60px;padding:6px 8px;border:1px solid var(--g200);border-radius:6px;font-size:12px;outline:none;text-align:center;}
+.comm-add input:focus{border-color:var(--navy);}
+.comm-add textarea{flex:1;padding:6px 8px;border:1px solid var(--g200);border-radius:6px;font-size:12px;outline:none;resize:none;min-height:32px;font-family:inherit;}
+.comm-add textarea:focus{border-color:var(--navy);}
+
 /* MANUAL MESSAGE */
 .manual-msg{background:#fff;border:1px solid var(--g200);border-radius:10px;padding:18px;margin-top:16px;}
 .manual-msg-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--g500);margin-bottom:10px;}
@@ -241,14 +260,10 @@ input,select,textarea{font-family:inherit;}
       <div class="form-row-2">
         <div class="form-row"><label class="form-label">Starting Stage</label>
           <select class="form-input" id="addStage">
-            <option value="need_to_call">📞 Need to Call</option>
-            <option value="do_not_call">🚫 Do Not Call</option>
-            <option value="lvm">📞 LVM</option>
+            <option value="no_answer">📞 No Answer</option>
             <option value="contacted">💬 Contacted</option>
-            <option value="waiting_mcl">⏳ Waiting on MCL</option>
-            <option value="packet_sent">📬 Packet Sent</option>
-            <option value="disputes_mailed">📮 Disputes Mailed</option>
-            <option value="waiting_reports">📊 Waiting on Reports</option>
+            <option value="mailing">📬 Mailing</option>
+            <option value="day31">⏳ Day 31</option>
           </select>
         </div>
         <div class="form-row"><label class="form-label">Intro Type</label>
@@ -297,7 +312,7 @@ input,select,textarea{font-family:inherit;}
 const SUPABASE_URL = 'https://ffhjkrpflhyrhekzczal.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmaGprcnBmbGh5cmhla3pjemFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0NTU1NDIsImV4cCI6MjA4NjAzMTU0Mn0.Lg7CfMP6_BQYwAPWhmeXQhihtv8kir1ZreGTurjG-DA'; // Get from Supabase → Settings → API → anon public key
 const SEND_EMAIL_URL = 'https://stupendous-melomakarona-97abc8.netlify.app/.netlify/functions/send-email';
-const SEND_SMS_URL = ''; // Set your Zapier webhook URL here
+const SEND_SMS_URL = ''; // Set to your Zapier webhook URL for SMS
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -306,44 +321,34 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ═══════════════════════════════════════════════════
 let clients = [];
 let templates = [];
-let currentStage = 'need_to_call';
+let currentStage = 'no_answer';
 let currentClientId = null;
 let pendingSend = null;
 
 const STAGES = [
-  { key: 'need_to_call', icon: '📞', label: 'Need to Call' },
-  { key: 'do_not_call', icon: '🚫', label: 'Do Not Call' },
-  { key: 'lvm', icon: '📞', label: 'LVM' },
+  { key: 'no_answer', icon: '📞', label: 'No Answer' },
   { key: 'contacted', icon: '💬', label: 'Contacted' },
-  { key: 'waiting_mcl', icon: '⏳', label: 'Waiting on MCL' },
-  { key: 'packet_sent', icon: '📬', label: 'Packet Sent' },
-  { key: 'disputes_mailed', icon: '📮', label: 'Disputes Mailed' },
-  { key: 'waiting_reports', icon: '📊', label: 'Waiting on Reports' },
-  { key: 'litigation', icon: '⚖️', label: 'Litigation ($500)' },
+  { key: 'mailing', icon: '📬', label: 'Mailing' },
+  { key: 'day31', icon: '⏳', label: 'Day 31' },
+  { key: 'won', icon: '✅', label: 'Won' },
   { key: 'lost', icon: '❌', label: 'Lost' },
 ];
 
-const STAGE_ICONS = { need_to_call:'📞', do_not_call:'🚫', lvm:'📞', contacted:'💬', waiting_mcl:'⏳', packet_sent:'📬', disputes_mailed:'📮', waiting_reports:'📊', litigation:'⚖️', lost:'❌' };
+const STAGE_ICONS = { no_answer:'📞', contacted:'💬', mailing:'📬', day31:'⏳', won:'✅', lost:'❌' };
 
 // Template key mapping per stage
 function getTemplateKeys(stage, lastFu) {
   const map = {
-    need_to_call: { none:'intro_email_no_answer', intro:'fu1_email_no_answer', fu1:'fu2_email_no_answer', fu2:'fu3_email_no_answer', fu3:'fu4_email_no_answer' },
-    lvm: { none:'intro_email_no_answer', intro:'fu1_email_no_answer', fu1:'fu2_email_no_answer', fu2:'fu3_email_no_answer', fu3:'fu4_email_no_answer' },
+    no_answer: { none:'intro_email_no_answer', intro:'fu1_email_no_answer', fu1:'fu2_email_no_answer', fu2:'fu3_email_no_answer' },
     contacted: { none:'fu1_email_contacted', intro:'fu1_email_contacted', fu1:'fu2_email_contacted', fu2:'fu3_email_contacted', fu3:'fu4_email_contacted' },
-    waiting_mcl: { none:'intro_email_mailing', intro:'fu1_email_mailing', fu1:'fu2_email_mailing', fu2:'fu3_email_mailing', fu3:'fu4_email_mailing' },
-    packet_sent: { none:'intro_email_mailing', intro:'fu1_email_mailing', fu1:'fu2_email_mailing', fu2:'fu3_email_mailing', fu3:'fu4_email_mailing' },
-    disputes_mailed: { none:'intro_email_mailing', intro:'fu1_email_mailing', fu1:'fu2_email_mailing', fu2:'fu3_email_mailing' },
-    waiting_reports: { none:'followup_31day_email', intro:'fu2_email_reports', fu1:'fu2_email_reports', fu2:'fu3_email_reports', fu3:'fu4_email_reports' },
+    mailing: { none:'intro_email_mailing', intro:'fu1_email_mailing', fu1:'fu2_email_mailing', fu2:'fu3_email_mailing' },
+    day31: { none:'followup_31day_email', intro:'fu2_email_reports', fu1:'fu2_email_reports', fu2:'fu3_email_reports', fu3:'fu4_email_reports' },
   };
   const smsMap = {
-    need_to_call: { none:'intro_text_no_answer', intro:'fu1_text_no_answer', fu1:'fu2_text_no_answer', fu2:'fu3_text_no_answer', fu3:'fu4_text_no_answer' },
-    lvm: { none:'intro_text_no_answer', intro:'fu1_text_no_answer', fu1:'fu2_text_no_answer', fu2:'fu3_text_no_answer', fu3:'fu4_text_no_answer' },
+    no_answer: { none:'intro_text_no_answer', intro:'fu1_text_no_answer', fu1:'fu2_text_no_answer', fu2:'fu3_text_no_answer' },
     contacted: { none:'fu1_text_contacted', intro:'fu1_text_contacted', fu1:'fu2_text_contacted', fu2:'fu3_text_contacted', fu3:'fu4_text_contacted' },
-    waiting_mcl: { none:'intro_text_mailing', intro:'fu1_text_mailing', fu1:'fu2_text_mailing', fu2:'fu3_text_mailing', fu3:'fu4_text_mailing' },
-    packet_sent: { none:'intro_text_mailing', intro:'fu1_text_mailing', fu1:'fu2_text_mailing', fu2:'fu3_text_mailing', fu3:'fu4_text_mailing' },
-    disputes_mailed: { none:'intro_text_mailing', intro:'fu1_text_mailing', fu1:'fu2_text_mailing', fu2:'fu3_text_mailing' },
-    waiting_reports: { none:'followup_31day_text', intro:'fu2_text_reports', fu1:'fu2_text_reports', fu2:'fu3_text_reports', fu3:'fu4_text_reports' },
+    mailing: { none:'intro_text_mailing', intro:'fu1_text_mailing', fu1:'fu2_text_mailing', fu2:'fu3_text_mailing' },
+    day31: { none:'followup_31day_text', intro:'fu2_text_reports', fu1:'fu2_text_reports', fu2:'fu3_text_reports', fu3:'fu4_text_reports' },
   };
   const stageMap = map[stage] || {};
   const smsStageMap = smsMap[stage] || {};
@@ -374,9 +379,8 @@ function renderStages() {
   container.innerHTML = '<div class="sb-title">Pipeline</div>';
   STAGES.forEach(s => {
     const stageClients = clients.filter(c => {
-      if (s.key === 'do_not_call') return c.stage === 'do_not_call' && !c.outcome;
-      if (s.key === 'litigation') return c.outcome === 'litigation';
-      if (s.key === 'lost') return c.outcome === 'lost' || c.outcome === 'won';
+      if (s.key === 'won') return c.outcome === 'won';
+      if (s.key === 'lost') return c.outcome === 'lost';
       return c.stage === s.key && !c.outcome;
     });
     const overdue = stageClients.filter(c => c.follow_up_status === 'overdue').length;
@@ -404,7 +408,8 @@ function renderClientList() {
 
 function getStageClients() {
   let list;
-  if (currentStage === 'lost') list = clients.filter(c => c.outcome === 'lost');
+  if (currentStage === 'won') list = clients.filter(c => c.outcome === 'won');
+  else if (currentStage === 'lost') list = clients.filter(c => c.outcome === 'lost');
   else list = clients.filter(c => c.stage === currentStage && !c.outcome);
   // Sort: overdue first, then due_today, then on_track
   const priority = { overdue: 0, due_today: 1, needs_intro: 2, on_track: 3, responded: 4, resolved: 5 };
@@ -455,7 +460,7 @@ function renderProfile(clientId) {
     <!-- PROFILE HEADER -->
     <div class="prof-header">
       <div>
-        <div class="prof-name"><input class="inline-edit" value="${c.name}" style="font-size:22px;font-weight:700;width:100%;border:1px solid transparent;padding:2px 4px;background:transparent;border-radius:6px;" onblur="saveField('${c.id}','name',this.value)" onfocus="this.style.borderColor='var(--navy)';this.style.background='#fff'" /></div>
+        <div class="prof-name">${c.name}</div>
         <div class="prof-meta">
           ${c.email ? `<span>📧 <a href="mailto:${c.email}">${c.email}</a></span>` : ''}
           ${c.phone ? `<span>📱 ${c.phone}</span>` : ''}
@@ -464,7 +469,7 @@ function renderProfile(clientId) {
       </div>
       <div class="prof-actions">
         ${!c.responded && !c.outcome ? `<button class="btn btn-gold btn-sm" onclick="markResponded('${c.id}')">✓ Responded</button>` : ''}
-        ${!c.outcome ? `<button class="btn btn-green btn-sm" onclick="markOutcome('${c.id}','litigation')">⚖️ Litigation</button>` : ''}
+        ${!c.outcome ? `<button class="btn btn-green btn-sm" onclick="markOutcome('${c.id}','won')">✅ Won</button>` : ''}
         ${!c.outcome ? `<button class="btn btn-red btn-sm" onclick="markOutcome('${c.id}','lost')">❌ Lost</button>` : ''}
       </div>
     </div>
@@ -479,6 +484,12 @@ function renderProfile(clientId) {
         <div class="info-row"><span class="info-lbl">Intro Type</span><span class="info-val">${c.intro_type === 'lvm' ? 'Left Voicemail' : c.intro_type === 'spoke' ? 'Spoke' : 'No Answer'}</span></div>
         <div class="info-row"><span class="info-lbl">Follow-up Status</span><span class="pill ${c.follow_up_status}">${statusLabel(c.follow_up_status)}</span></div>
       </div>
+      
+      <!-- ERROR DETAILS -->
+      <div class="error-box" style="grid-column:1/3;">
+        <div class="info-card-title">⚠️ Credit Report Error</div>
+        <textarea id="errorDetails" onblur="saveField('${c.id}','error_details',this.value)" placeholder="Describe the credit report error (e.g. Balance on paid WFC EX pg. 5)...">${c.error_details || ''}</textarea>
+      </div>
       <div class="info-card">
         <div class="info-card-title">Key Dates</div>
         <div class="info-row"><span class="info-lbl">Lead Created</span><span class="info-val">${fmtDate(c.created_at)}</span></div>
@@ -486,6 +497,22 @@ function renderProfile(clientId) {
         <div class="info-row"><span class="info-lbl">Responded</span><span class="info-val ${!c.responded_at?'muted':''}">${c.responded_at ? fmtDate(c.responded_at) : '— not yet'}</span></div>
         <div class="info-row"><span class="info-lbl">Date Mailed</span><span class="info-val ${!c.date_mailed?'muted':''}">${c.date_mailed || '— not yet'}</span></div>
         <div class="info-row"><span class="info-lbl">Outcome</span><span class="info-val ${!c.outcome?'muted':''}">${c.outcome ? c.outcome.toUpperCase() : '— pending'}</span></div>
+      </div>
+    </div>
+
+    <!-- COMMUNICATION LOG -->
+    <div class="comm-log">
+      <div class="comm-log-title">
+        <span>📞 Communication Log</span>
+        <span style="font-size:11px;font-weight:400;color:var(--g400);">Click + to add</span>
+      </div>
+      <div id="commEntries">
+        ${renderCommLog(c)}
+      </div>
+      <div class="comm-add">
+        <input id="commAgent" placeholder="Init." value="JOE" maxlength="5">
+        <textarea id="commNote" placeholder="Add call note..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();addCommEntry('${c.id}')}"></textarea>
+        <button class="btn btn-navy btn-sm" onclick="addCommEntry('${c.id}')" style="align-self:flex-end;">+ Add</button>
       </div>
     </div>
 
@@ -499,14 +526,10 @@ function renderProfile(clientId) {
       <div class="move-bar">
         <label>Move to:</label>
         <select class="move-select" id="moveSelect">
-          <option value="need_to_call">📞 Need to Call</option>
-          <option value="do_not_call">🚫 Do Not Call</option>
-          <option value="lvm">📞 LVM</option>
+          <option value="no_answer">📞 No Answer</option>
           <option value="contacted">💬 Contacted</option>
-          <option value="waiting_mcl">⏳ Waiting on MCL</option>
-          <option value="packet_sent">📬 Packet Sent</option>
-          <option value="disputes_mailed">📮 Disputes Mailed</option>
-          <option value="waiting_reports">📊 Waiting on Reports</option>
+          <option value="mailing">📬 Mailing</option>
+          <option value="day31">⏳ Day 31</option>
         </select>
         <button class="btn btn-navy btn-sm" onclick="moveStage('${c.id}')">Move →</button>
       </div>` : ''}
@@ -521,12 +544,13 @@ function renderProfile(clientId) {
     <!-- MANUAL MESSAGE -->
     <div class="manual-msg">
       <div class="manual-msg-title">Send Manual Message</div>
-      <input id="manualSubject" placeholder="Subject (for email)">
+      <input id="manualSubject" placeholder="Subject (for email)" value="">
       <textarea id="manualBody" placeholder="Type your message..."></textarea>
       <div class="manual-btns">
-        <button class="btn btn-navy btn-sm" onclick="sendManual('${c.id}','email')">?? Send Email</button>
-        <button class="btn btn-green btn-sm" onclick="sendManual('${c.id}','sms')">?? Send Text</button>
+        <button class="btn btn-navy btn-sm" onclick="sendManual('${c.id}','email')">📧 Send Email</button>
+        <button class="btn btn-green btn-sm" onclick="sendManual('${c.id}','sms')">💬 Send Text</button>
         <button class="btn btn-outline btn-sm" onclick="sendManual('${c.id}','both')">+ Send Both</button>
+        <button class="btn btn-gold btn-sm" onclick="prefillMcCarthy('${c.id}')">⚖️ Email McCarthy Law</button>
       </div>
     </div>
   `;
@@ -566,12 +590,7 @@ function renderTimeline(c) {
     </ul>`;
 
   // Next action
-  if (c.stage === 'do_not_call' && !c.outcome) {
-    html += '<div class="next-action" style="border-color:var(--g300);background:var(--g50);">' +
-      '<div class="na-left"><span class="na-icon">🚫</span>' +
-      '<div><div class="na-text">On Hold — Do Not Call</div><div class="na-sub">Move to Need to Call when ready to contact</div></div></div>' +
-      '<div class="na-btns"><button class="btn btn-navy btn-sm" onclick="moveStage(\''+c.id+'\')">📞 Ready to Call</button></div></div>';
-  } else if (!c.responded && !c.outcome) {
+  if (!c.responded && !c.outcome) {
     const lastFu = c.last_followup || 'none';
     const fuKeys = getTemplateKeys(c.stage, lastFu);
     if (fuKeys.email) {
@@ -590,7 +609,7 @@ function renderTimeline(c) {
     } else {
       html += `<div class="next-action">
         <div class="na-left"><span class="na-icon">✅</span>
-          <div><div class="na-text">All follow-ups sent</div><div class="na-sub">Consider calling again or marking as Litigation/Lost</div></div>
+          <div><div class="na-text">All follow-ups sent</div><div class="na-sub">Consider calling again or marking as Won/Lost</div></div>
         </div>
         <div class="na-btns">
           <button class="btn btn-outline btn-sm" onclick="markResponded('${c.id}')">✓ Responded</button>
@@ -608,26 +627,22 @@ function renderTimeline(c) {
   html += `</div>`;
 
   // Pending stages
-  const allStages = ['need_to_call','do_not_call','lvm','contacted','waiting_mcl','packet_sent','disputes_mailed','waiting_reports'];
+  const allStages = ['no_answer','contacted','mailing','day31'];
   const currentIdx = allStages.indexOf(c.stage);
   for (let i = currentIdx + 1; i < allStages.length; i++) {
     const ps = STAGES.find(s => s.key === allStages[i]);
     const descs = {
-      do_not_call: 'Temporarily on hold until ready to contact',
-      lvm: 'No answer — left voicemail, awaiting callback',
-      contacted: 'Spoke with client — awaiting MCL email reply',
-      waiting_mcl: 'Client agreed — McCarthy Law reviewing case',
-      packet_sent: 'Dispute packet sent to client to mail out',
-      disputes_mailed: 'Client mailed disputes to bureaus',
-      waiting_reports: '30-day clock done — need updated credit reports',
+      contacted: 'Client replies "Yes" to email → move here',
+      mailing: 'Packet sent → client mails & confirms date',
+      day31: '30-day clock expires → request updated reports',
     };
     html += `<div class="flow-stage"><div class="flow-dot"></div>
       <div class="flow-head"><span class="flow-label pending">${ps.icon} ${ps.label}</span></div>
       <div class="flow-pending-desc">${descs[allStages[i]] || ''}</div></div>`;
   }
   html += `<div class="flow-stage"><div class="flow-dot"></div>
-    <div class="flow-head"><span class="flow-label pending">⚖️ Litigation / ❌ Lost</span></div>
-    <div class="flow-pending-desc">Not corrected = Litigation ($500) | Cannot help = Lost</div></div>`;
+    <div class="flow-head"><span class="flow-label pending">🏁 Won or Lost</span></div>
+    <div class="flow-pending-desc">Final outcome</div></div>`;
 
   return html;
 }
@@ -668,7 +683,7 @@ async function markResponded(id) {
 }
 
 async function markOutcome(id, outcome) {
-  await sb.from('mcl_clients').update({ outcome, outcome_at: new Date().toISOString() }).eq('id', id);
+  await sb.from('mcl_clients').update({ outcome, outcome_at: new Date().toISOString(), stage: outcome }).eq('id', id);
   await sb.from('mcl_activity_log').insert({ client_id: id, action: outcome, details: `Marked as ${outcome}` });
   toast(`Marked as ${outcome} ✓`);
   await loadData();
@@ -691,46 +706,123 @@ async function moveStage(id) {
   await loadData();
 }
 
-async function saveField(id, field, value) {
-  await sb.from('mcl_clients').update({ [field]: value }).eq('id', id);
-  toast(field + ' updated ✓');
-  await loadData();
-}
-
 async function sendManual(id, mode) {
   const c = clients.find(x => x.id === id);
   if (!c) return;
   const subject = document.getElementById('manualSubject').value.trim();
   const body = document.getElementById('manualBody').value.trim();
   if (!body) { toast('Please type a message'); return; }
-  if ((mode === 'email' || mode === 'both') && c.email) {
+
+  // Send Email
+  const toOverride = document.getElementById('manualTo')?.value?.trim();
+  const sendToEmail = toOverride || c.email;
+  if ((mode === 'email' || mode === 'both') && sendToEmail) {
     try {
       const res = await fetch(SEND_EMAIL_URL, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: c.email, subject: subject || 'Follow-up from ASAP Credit Repair', body })
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: sendToEmail, subject: subject || 'Follow-up from ASAP Credit Repair', body })
       });
       const data = await res.json();
       if (data.ok) {
-        await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'email_sent', details: 'Manual: ' + (subject || '(no subject)') });
-        toast('Email sent ?');
-      } else { toast('Email error: ' + (data.error || 'unknown')); }
+        await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'email_sent', details: 'Manual email: ' + (subject || '(no subject)') });
+        toast('Email sent ✓');
+      } else {
+        toast('Email error: ' + (data.error || 'unknown'));
+      }
     } catch (e) { toast('Email failed: ' + e.message); }
-  } else if ((mode === 'email' || mode === 'both') && !c.email) { toast('No email on file'); }
+  } else if ((mode === 'email' || mode === 'both') && !c.email) {
+    toast('No email address on file');
+  }
+
+  // Send SMS
   if ((mode === 'sms' || mode === 'both') && c.phone) {
     if (SEND_SMS_URL) {
       try {
-        await fetch(SEND_SMS_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone: c.phone, message: body, name: c.name }) });
-        await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'sms_sent', details: 'Manual SMS via webhook' });
-        toast('Text sent ?');
+        const res = await fetch(SEND_SMS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: c.phone, message: body, name: c.name })
+        });
+        await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'sms_sent', details: 'Manual SMS sent via webhook' });
+        toast('Text sent ✓');
       } catch (e) { toast('SMS failed: ' + e.message); }
     } else {
-      await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'sms_sent', details: 'Manual SMS logged (no webhook)' });
-      toast('Text logged ? (no webhook URL set)');
+      await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'sms_sent', details: 'Manual SMS logged (no webhook configured)' });
+      toast('Text logged ✓ (send manually — no webhook URL set)');
     }
-  } else if ((mode === 'sms' || mode === 'both') && !c.phone) { toast('No phone on file'); }
+  } else if ((mode === 'sms' || mode === 'both') && !c.phone) {
+    toast('No phone number on file');
+  }
+
+  // Clear fields
   document.getElementById('manualSubject').value = '';
   document.getElementById('manualBody').value = '';
   await loadData();
+}
+
+function renderCommLog(c) {
+  const log = c.comm_log || [];
+  if (!log.length) return '<div style="text-align:center;padding:12px;color:var(--g400);font-size:12px;">No call notes yet</div>';
+  return log.slice().reverse().map(e => 
+    '<div class="comm-entry">' +
+    '<span class="comm-date">' + e.date + '</span>' +
+    '<span class="comm-agent">' + (e.agent || '') + '</span>' +
+    '<span class="comm-text">' + (e.text || '') + '</span>' +
+    '</div>'
+  ).join('');
+}
+
+async function addCommEntry(id) {
+  const c = clients.find(x => x.id === id);
+  if (!c) return;
+  const agent = document.getElementById('commAgent').value.trim() || 'JOE';
+  const text = document.getElementById('commNote').value.trim();
+  if (!text) { toast('Type a note first'); return; }
+  const log = c.comm_log || [];
+  const now = new Date();
+  const dateStr = (now.getMonth()+1).toString().padStart(2,'0') + '/' + now.getDate().toString().padStart(2,'0');
+  log.push({ date: dateStr, agent, text });
+  await sb.from('mcl_clients').update({ comm_log: log }).eq('id', id);
+  await sb.from('mcl_activity_log').insert({ client_id: id, action: 'call_note', details: agent + ': ' + text });
+  toast('Note added ✓');
+  document.getElementById('commNote').value = '';
+  await loadData();
+}
+
+async function saveField(id, field, value) {
+  await sb.from('mcl_clients').update({ [field]: value }).eq('id', id);
+  toast(field.replace('_',' ') + ' saved ✓');
+}
+
+function prefillMcCarthy(id) {
+  const c = clients.find(x => x.id === id);
+  if (!c) return;
+  const error = c.error_details || document.getElementById('errorDetails')?.value || '(not specified)';
+  document.getElementById('manualSubject').value = 'Client Inquiry: ' + c.name + ' - Credit Report Error';
+  document.getElementById('manualBody').value = 
+    'Hello McCarthy Law Team,\n\n' +
+    'I am reaching out regarding our client:\n\n' +
+    'Name: ' + c.name + '\n' +
+    'Email: ' + (c.email || 'N/A') + '\n' +
+    'Phone: ' + (c.phone || 'N/A') + '\n\n' +
+    'Credit Report Error:\n' + error + '\n\n' +
+    'Please advise on the status of this case.\n\n' +
+    'Best regards,\nASAP Credit Repair USA';
+  // Swap the "to" field to MCL
+  if (!document.getElementById('manualTo')) {
+    const subj = document.getElementById('manualSubject');
+    const toInput = document.createElement('input');
+    toInput.id = 'manualTo';
+    toInput.value = 'FCRA@McCarthyLawyer.com';
+    toInput.placeholder = 'To email address';
+    toInput.style.cssText = subj.style.cssText || '';
+    toInput.className = subj.className || '';
+    subj.parentNode.insertBefore(toInput, subj);
+  } else {
+    document.getElementById('manualTo').value = 'FCRA@McCarthyLawyer.com';
+  }
+  toast('Pre-filled for McCarthy Law — review and click Send Email');
 }
 
 async function saveNotes(id) {
@@ -803,25 +895,6 @@ async function confirmSend() {
     await sb.from('mcl_clients').update({ [updateField]: new Date().toISOString() }).eq('id', c.id);
   }
 
-  // Auto-lose after 5 follow-ups
-  const autoLoseStages = ['need_to_call','lvm','contacted','packet_sent'];
-  if (autoLoseStages.includes(c.stage)) {
-    let fuCount = 0;
-    if (c.intro_sent_at) fuCount++;
-    if (c.fu1_sent_at) fuCount++;
-    if (c.fu2_sent_at) fuCount++;
-    if (c.fu3_sent_at) fuCount++;
-    if (c.fu4_sent_at) fuCount++;
-    if (fuCount >= 5) {
-      await sb.from('mcl_clients').update({outcome:'lost',outcome_at:new Date().toISOString()}).eq('id',c.id);
-      await sb.from('mcl_activity_log').insert({client_id:c.id,action:'lost',details:'Auto-lost: 5 follow-up attempts with no response'});
-      toast('Client auto-moved to Lost after 5 attempts');
-      closeModal('sendModal');
-      pendingSend = null;
-      await loadData();
-      return;
-    }
-  }
   closeModal('sendModal');
   toast('Sent ✓');
   pendingSend = null;
@@ -853,7 +926,7 @@ function openAddModal() {
   document.getElementById('addPhone').value = '';
   document.getElementById('addPipedrive').value = '';
   document.getElementById('addAssigned').value = '';
-  document.getElementById('addStage').value = currentStage === 'litigation' || currentStage === 'lost' ? 'need_to_call' : currentStage;
+  document.getElementById('addStage').value = currentStage === 'won' || currentStage === 'lost' ? 'no_answer' : currentStage;
   document.getElementById('addIntroType').value = 'no_answer';
   document.getElementById('addNotes').value = '';
   document.getElementById('addModal').classList.add('visible');
