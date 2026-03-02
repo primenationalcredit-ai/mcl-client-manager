@@ -174,6 +174,14 @@ input,select,textarea{font-family:inherit;}
 .pill.responded{background:var(--navy-light);color:var(--navy);}
 .pill.needs_intro{background:var(--g100);color:var(--g500);}
 
+/* MANUAL MESSAGE */
+.manual-msg{background:#fff;border:1px solid var(--g200);border-radius:10px;padding:18px;margin-top:16px;}
+.manual-msg-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--g500);margin-bottom:10px;}
+.manual-msg input,.manual-msg textarea{width:100%;padding:8px 10px;border:1px solid var(--g200);border-radius:8px;font-size:13px;outline:none;font-family:inherit;margin-bottom:8px;}
+.manual-msg input:focus,.manual-msg textarea:focus{border-color:var(--navy);}
+.manual-msg textarea{min-height:80px;resize:vertical;}
+.manual-btns{display:flex;gap:6px;margin-top:4px;}
+
 /* TOAST */
 .toast{position:fixed;bottom:20px;right:20px;background:var(--g900);color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;z-index:300;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;}
 .toast.show{opacity:1;transform:translateY(0);}
@@ -289,6 +297,7 @@ input,select,textarea{font-family:inherit;}
 const SUPABASE_URL = 'https://ffhjkrpflhyrhekzczal.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmaGprcnBmbGh5cmhla3pjemFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0NTU1NDIsImV4cCI6MjA4NjAzMTU0Mn0.Lg7CfMP6_BQYwAPWhmeXQhihtv8kir1ZreGTurjG-DA'; // Get from Supabase → Settings → API → anon public key
 const SEND_EMAIL_URL = 'https://stupendous-melomakarona-97abc8.netlify.app/.netlify/functions/send-email';
+const SEND_SMS_URL = ''; // Set your Zapier webhook URL here
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -508,6 +517,18 @@ function renderProfile(clientId) {
       <div class="form-label">Notes</div>
       <textarea class="notes-area" id="notesArea" onblur="saveNotes('${c.id}')" placeholder="Add notes...">${c.notes || ''}</textarea>
     </div>
+
+    <!-- MANUAL MESSAGE -->
+    <div class="manual-msg">
+      <div class="manual-msg-title">Send Manual Message</div>
+      <input id="manualSubject" placeholder="Subject (for email)">
+      <textarea id="manualBody" placeholder="Type your message..."></textarea>
+      <div class="manual-btns">
+        <button class="btn btn-navy btn-sm" onclick="sendManual('${c.id}','email')">?? Send Email</button>
+        <button class="btn btn-green btn-sm" onclick="sendManual('${c.id}','sms')">?? Send Text</button>
+        <button class="btn btn-outline btn-sm" onclick="sendManual('${c.id}','both')">+ Send Both</button>
+      </div>
+    </div>
   `;
 
   // Set move select to current stage
@@ -673,6 +694,42 @@ async function moveStage(id) {
 async function saveField(id, field, value) {
   await sb.from('mcl_clients').update({ [field]: value }).eq('id', id);
   toast(field + ' updated ✓');
+  await loadData();
+}
+
+async function sendManual(id, mode) {
+  const c = clients.find(x => x.id === id);
+  if (!c) return;
+  const subject = document.getElementById('manualSubject').value.trim();
+  const body = document.getElementById('manualBody').value.trim();
+  if (!body) { toast('Please type a message'); return; }
+  if ((mode === 'email' || mode === 'both') && c.email) {
+    try {
+      const res = await fetch(SEND_EMAIL_URL, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: c.email, subject: subject || 'Follow-up from ASAP Credit Repair', body })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'email_sent', details: 'Manual: ' + (subject || '(no subject)') });
+        toast('Email sent ?');
+      } else { toast('Email error: ' + (data.error || 'unknown')); }
+    } catch (e) { toast('Email failed: ' + e.message); }
+  } else if ((mode === 'email' || mode === 'both') && !c.email) { toast('No email on file'); }
+  if ((mode === 'sms' || mode === 'both') && c.phone) {
+    if (SEND_SMS_URL) {
+      try {
+        await fetch(SEND_SMS_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone: c.phone, message: body, name: c.name }) });
+        await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'sms_sent', details: 'Manual SMS via webhook' });
+        toast('Text sent ?');
+      } catch (e) { toast('SMS failed: ' + e.message); }
+    } else {
+      await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'sms_sent', details: 'Manual SMS logged (no webhook)' });
+      toast('Text logged ? (no webhook URL set)');
+    }
+  } else if ((mode === 'sms' || mode === 'both') && !c.phone) { toast('No phone on file'); }
+  document.getElementById('manualSubject').value = '';
+  document.getElementById('manualBody').value = '';
   await loadData();
 }
 
