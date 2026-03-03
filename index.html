@@ -218,6 +218,7 @@ input,select,textarea{font-family:inherit;}
   <span class="topnav-brand">⚖️ MCL Client Manager</span>
   <div class="topnav-right">
     <span class="badge-alert" id="overdueGlobal">0 overdue</span>
+    <button class="btn btn-outline btn-sm" onclick="loadData()" style="font-size:13px;">↻ Sync</button>
   </div>
 </div>
 
@@ -312,6 +313,21 @@ input,select,textarea{font-family:inherit;}
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- DID THEY ANSWER MODAL -->
+<div class="modal-bg" id="answerModal">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-head"><h3>📞 Did They Answer?</h3><button class="modal-close" onclick="closeModal('answerModal')">✕</button></div>
+    <div class="modal-body" style="text-align:center;padding:24px 18px;">
+      <p style="font-size:15px;color:var(--g700);margin-bottom:20px;">Did the client pick up or did you leave a voicemail?</p>
+      <div style="display:flex;gap:12px;justify-content:center;">
+        <button class="btn btn-green" onclick="handleAnswer('spoke')" style="padding:12px 24px;font-size:14px;">✅ Yes — Spoke with them</button>
+        <button class="btn btn-outline" onclick="handleAnswer('lvm')" style="padding:12px 24px;font-size:14px;">📞 No — Left Voicemail</button>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="handleAnswer('no_answer')" style="margin-top:12px;font-size:12px;color:var(--g400);">No answer, no voicemail</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // ═══════════════════════════════════════════════════
@@ -593,12 +609,6 @@ function renderProfile(clientId) {
         </select>
         <button class="btn btn-navy btn-sm" onclick="moveStage('${c.id}')">Move →</button>
       </div>` : ''}
-    </div>
-
-    <!-- NOTES -->
-    <div style="margin-top:16px;">
-      <div class="form-label">Notes</div>
-      <textarea class="notes-area" id="notesArea" onblur="saveNotes('${c.id}')" placeholder="Add notes...">${c.notes || ''}</textarea>
     </div>
 
     <!-- MANUAL MESSAGE -->
@@ -962,7 +972,44 @@ async function confirmSend() {
   }
   closeModal('sendModal');
   toast('Sent ✓');
+
+  // Show "Did they answer?" for Need to Call clients after intro
+  if (c.stage === 'need_to_call' && pendingSend.lastFu === 'none') {
+    pendingAnswerClientId = c.id;
+    pendingSend = null;
+    await loadData();
+    document.getElementById('answerModal').classList.add('visible');
+    return;
+  }
+
   pendingSend = null;
+  await loadData();
+}
+
+let pendingAnswerClientId = null;
+
+async function handleAnswer(result) {
+  closeModal('answerModal');
+  if (!pendingAnswerClientId) return;
+  const id = pendingAnswerClientId;
+  pendingAnswerClientId = null;
+
+  if (result === 'spoke') {
+    // Spoke with them → move to contacted
+    await sb.from('mcl_clients').update({ stage: 'contacted', intro_type: 'spoke' }).eq('id', id);
+    await sb.from('mcl_activity_log').insert({ client_id: id, action: 'stage_change', details: 'Spoke with client → Contacted' });
+    toast('Moved to Contacted ✓');
+  } else if (result === 'lvm') {
+    // Left voicemail → move to LVM
+    await sb.from('mcl_clients').update({ stage: 'lvm', intro_type: 'lvm' }).eq('id', id);
+    await sb.from('mcl_activity_log').insert({ client_id: id, action: 'stage_change', details: 'Left voicemail → LVM' });
+    toast('Moved to LVM ✓');
+  } else {
+    // No answer, no voicemail → stay in need_to_call
+    await sb.from('mcl_clients').update({ intro_type: 'no_answer' }).eq('id', id);
+    await sb.from('mcl_activity_log').insert({ client_id: id, action: 'call_attempt', details: 'No answer, no voicemail' });
+    toast('Logged — staying in Need to Call');
+  }
   await loadData();
 }
 
