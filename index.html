@@ -61,6 +61,10 @@ input,select,textarea{font-family:inherit;}
 .dot.responded{background:var(--navy);}
 .dot.needs_intro{background:var(--g300);}
 .dot.resolved{background:var(--g300);}
+.client-item.overdue-item{background:var(--red-light);border-color:var(--red);}
+.client-item.overdue-item .ci-name{color:var(--red);}
+.ci-overdue-tag{font-size:10px;font-weight:700;color:var(--red);background:var(--red-light);padding:1px 6px;border-radius:8px;margin-left:4px;}
+.sb-overdue-active{outline:2px solid #fff;box-shadow:0 0 0 3px var(--red);}
 
 /* ADD CLIENT BTN */
 .add-btn{width:100%;padding:8px;border:2px dashed var(--g200);border-radius:8px;background:transparent;color:var(--g400);font-size:13px;font-weight:600;margin-top:8px;transition:all .12s;}
@@ -399,14 +403,40 @@ function renderStages() {
     });
     const overdue = stageClients.filter(c => c.follow_up_status === 'overdue').length;
     const btn = document.createElement('button');
-    btn.className = 'stage-btn' + (s.key === currentStage ? ' active' : '');
+    btn.className = 'stage-btn' + (s.key === currentStage && !overdueOnly ? ' active' : '');
     btn.onclick = () => { currentStage = s.key; overdueOnly = false; currentClientId = null; renderStages(); renderClientList(); renderEmptyMain(); };
-    btn.innerHTML = `
-      <span class="sb-left"><span class="sb-icon">${s.icon}</span><span class="sb-label">${s.label}</span></span>
-      <span class="sb-right">
-        <span class="sb-count">${stageClients.length}</span>
-        ${overdue > 0 ? `<span class="sb-overdue" style="cursor:pointer;" onclick="event.stopPropagation();currentStage='${s.key}';overdueOnly=true;currentClientId=null;renderStages();renderClientList();renderEmptyMain();">${overdue}</span>` : ''}
-      </span>`;
+    
+    const countSpan = document.createElement('span');
+    countSpan.className = 'sb-count';
+    countSpan.textContent = stageClients.length;
+
+    const leftSpan = document.createElement('span');
+    leftSpan.className = 'sb-left';
+    leftSpan.innerHTML = '<span class="sb-icon">' + s.icon + '</span><span class="sb-label">' + s.label + '</span>';
+
+    const rightSpan = document.createElement('span');
+    rightSpan.className = 'sb-right';
+    rightSpan.appendChild(countSpan);
+
+    if (overdue > 0) {
+      const odSpan = document.createElement('span');
+      odSpan.className = 'sb-overdue' + (s.key === currentStage && overdueOnly ? ' sb-overdue-active' : '');
+      odSpan.textContent = overdue;
+      odSpan.style.cursor = 'pointer';
+      odSpan.onclick = function(e) {
+        e.stopPropagation();
+        currentStage = s.key;
+        overdueOnly = true;
+        currentClientId = null;
+        renderStages();
+        renderClientList();
+        renderEmptyMain();
+      };
+      rightSpan.appendChild(odSpan);
+    }
+
+    btn.appendChild(leftSpan);
+    btn.appendChild(rightSpan);
     container.appendChild(btn);
   });
 }
@@ -444,8 +474,13 @@ function renderFilteredClients(list) {
     li.onclick = () => { currentClientId = c.id; renderClientList(); renderProfile(c.id); };
     const fuLabel = c.last_followup === 'none' ? 'No contact' : c.last_followup === 'intro' ? 'Intro sent' : `FU #${c.last_followup.replace('fu','')}`;
     const daysLabel = c.days_since_contact != null ? `${c.days_since_contact}d ago` : 'never';
+    const isOverdue = c.follow_up_status === 'overdue';
+    if (isOverdue) li.classList.add('overdue-item');
     li.innerHTML = `
-      <div class="ci-left"><div class="ci-name">${c.name}</div><div class="ci-sub">${fuLabel} · ${daysLabel}</div></div>
+      <div class="ci-left">
+        <div class="ci-name">${c.name}${isOverdue ? '<span class="ci-overdue-tag">OVERDUE</span>' : ''}</div>
+        <div class="ci-sub">${fuLabel} · ${daysLabel}${isOverdue ? ' · ⚠️ ' + (c.days_since_contact || '?') + 'd overdue' : ''}</div>
+      </div>
       <div><span class="dot ${c.follow_up_status}"></span></div>`;
     ul.appendChild(li);
   });
