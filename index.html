@@ -261,6 +261,7 @@ input,select,textarea{font-family:inherit;}
         <div class="form-row"><label class="form-label">Starting Stage</label>
           <select class="form-input" id="addStage">
             <option value="need_to_call">📞 Need to Call</option>
+          <option value="do_not_call">🚫 Do Not Call</option>
             <option value="lvm">📞 LVM</option>
             <option value="contacted">💬 Contacted</option>
             <option value="waiting_mcl">⏳ Waiting on MCL</option>
@@ -330,17 +331,17 @@ let pendingSend = null;
 
 const STAGES = [
   { key: 'need_to_call', icon: '📞', label: 'Need to Call' },
+  { key: 'do_not_call', icon: '🚫', label: 'Do Not Call' },
   { key: 'lvm', icon: '📞', label: 'LVM' },
   { key: 'contacted', icon: '💬', label: 'Contacted' },
   { key: 'waiting_mcl', icon: '⏳', label: 'Waiting on MCL' },
   { key: 'packet_sent', icon: '📬', label: 'Packet Sent' },
   { key: 'disputes_mailed', icon: '📮', label: 'Disputes Mailed' },
   { key: 'waiting_reports', icon: '📊', label: 'Waiting on Reports' },
-  { key: 'won', icon: '✅', label: 'Won' },
   { key: 'lost', icon: '❌', label: 'Lost' },
 ];
 
-const STAGE_ICONS = { need_to_call:'📞', lvm:'📞', contacted:'💬', waiting_mcl:'⏳', packet_sent:'📬', disputes_mailed:'📮', waiting_reports:'📊', won:'✅', lost:'❌' };
+const STAGE_ICONS = { need_to_call:'📞', do_not_call:'🚫', lvm:'📞', contacted:'💬', waiting_mcl:'⏳', packet_sent:'📬', disputes_mailed:'📮', waiting_reports:'📊', lost:'❌' };
 
 // Template key mapping per stage
 function getTemplateKeys(stage, lastFu) {
@@ -391,7 +392,7 @@ function renderStages() {
   container.innerHTML = '<div class="sb-title">Pipeline</div>';
   STAGES.forEach(s => {
     const stageClients = clients.filter(c => {
-      if (s.key === 'won') return c.outcome === 'won';
+      if (s.key === 'do_not_call') return c.stage === 'do_not_call' && !c.outcome;
       if (s.key === 'lost') return c.outcome === 'lost';
       return c.stage === s.key && !c.outcome;
     });
@@ -420,7 +421,7 @@ function renderClientList() {
 
 function getStageClients() {
   let list;
-  if (currentStage === 'won') list = clients.filter(c => c.outcome === 'won');
+  if (currentStage === 'do_not_call') list = clients.filter(c => c.stage === 'do_not_call' && !c.outcome);
   else if (currentStage === 'lost') list = clients.filter(c => c.outcome === 'lost');
   else list = clients.filter(c => c.stage === currentStage && !c.outcome);
   // Sort: overdue first, then due_today, then on_track
@@ -481,7 +482,6 @@ function renderProfile(clientId) {
       </div>
       <div class="prof-actions">
         ${!c.responded && !c.outcome ? `<button class="btn btn-gold btn-sm" onclick="markResponded('${c.id}')">✓ Responded</button>` : ''}
-        ${!c.outcome ? `<button class="btn btn-green btn-sm" onclick="markOutcome('${c.id}','won')">✅ Won</button>` : ''}
         ${!c.outcome ? `<button class="btn btn-red btn-sm" onclick="markOutcome('${c.id}','lost')">❌ Lost</button>` : ''}
       </div>
     </div>
@@ -546,6 +546,7 @@ function renderProfile(clientId) {
         <label>Move to:</label>
         <select class="move-select" id="moveSelect">
           <option value="need_to_call">📞 Need to Call</option>
+          <option value="do_not_call">🚫 Do Not Call</option>
           <option value="lvm">📞 LVM</option>
           <option value="contacted">💬 Contacted</option>
           <option value="waiting_mcl">⏳ Waiting on MCL</option>
@@ -649,11 +650,12 @@ function renderTimeline(c) {
   html += `</div>`;
 
   // Pending stages
-  const allStages = ['need_to_call','lvm','contacted','waiting_mcl','packet_sent','disputes_mailed','waiting_reports'];
+  const allStages = ['need_to_call','do_not_call','lvm','contacted','waiting_mcl','packet_sent','disputes_mailed','waiting_reports'];
   const currentIdx = allStages.indexOf(c.stage);
   for (let i = currentIdx + 1; i < allStages.length; i++) {
     const ps = STAGES.find(s => s.key === allStages[i]);
     const descs = {
+      do_not_call: 'On hold — do not contact yet',
       lvm: 'Left voicemail — awaiting callback',
       contacted: 'Spoke with client — awaiting MCL email reply',
       waiting_mcl: 'Client agreed — McCarthy Law reviewing',
@@ -902,6 +904,25 @@ async function confirmSend() {
     await sb.from('mcl_clients').update({ [updateField]: new Date().toISOString() }).eq('id', c.id);
   }
 
+  // Auto-lose after 5 follow-ups for need_to_call, lvm, contacted
+  const autoLoseStages = ['need_to_call','lvm','contacted'];
+  if (autoLoseStages.includes(c.stage)) {
+    let fuCount = 0;
+    if (c.intro_sent_at) fuCount++;
+    if (c.fu1_sent_at) fuCount++;
+    if (c.fu2_sent_at) fuCount++;
+    if (c.fu3_sent_at) fuCount++;
+    if (c.fu4_sent_at) fuCount++;
+    if (fuCount >= 5) {
+      await sb.from('mcl_clients').update({outcome:'lost',outcome_at:new Date().toISOString()}).eq('id',c.id);
+      await sb.from('mcl_activity_log').insert({client_id:c.id,action:'lost',details:'Auto-lost: 5 follow-ups with no response'});
+      toast('Client moved to Lost — 5 attempts, no response');
+      closeModal('sendModal');
+      pendingSend = null;
+      await loadData();
+      return;
+    }
+  }
   closeModal('sendModal');
   toast('Sent ✓');
   pendingSend = null;
@@ -933,7 +954,7 @@ function openAddModal() {
   document.getElementById('addPhone').value = '';
   document.getElementById('addPipedrive').value = '';
   document.getElementById('addAssigned').value = '';
-  document.getElementById('addStage').value = currentStage === 'won' || currentStage === 'lost' ? 'need_to_call' : currentStage;
+  document.getElementById('addStage').value = currentStage === 'lost' ? 'need_to_call' : currentStage;
   document.getElementById('addIntroType').value = 'no_answer';
   document.getElementById('addNotes').value = '';
   document.getElementById('addModal').classList.add('visible');
