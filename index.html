@@ -475,8 +475,8 @@ function renderProfile(clientId) {
       <div>
         <div class="prof-name"><input style="font-size:22px;font-weight:700;width:100%;border:1px solid transparent;padding:2px 4px;background:transparent;border-radius:6px;font-family:inherit;" value="${c.name}" onblur="saveField('${c.id}','name',this.value)" onfocus="this.style.borderColor='var(--navy)';this.style.background='#fff'" /></div>
         <div class="prof-meta">
-          ${c.email ? `<span>📧 <a href="mailto:${c.email}">${c.email}</a></span>` : ''}
-          ${c.phone ? `<span>📱 ${c.phone}</span>` : ''}
+          <span>📧 <input style="border:1px solid transparent;padding:1px 4px;font-size:13px;color:var(--navy);background:transparent;border-radius:4px;width:220px;font-family:inherit;" value="${c.email || ''}" placeholder="Add email..." onblur="saveField('${c.id}','email',this.value)" onfocus="this.style.borderColor='var(--navy)';this.style.background='#fff'" /></span>
+          <span>📱 <input style="border:1px solid transparent;padding:1px 4px;font-size:13px;color:var(--g500);background:transparent;border-radius:4px;width:140px;font-family:inherit;" value="${c.phone || ''}" placeholder="Add phone..." onblur="saveField('${c.id}','phone',this.value)" onfocus="this.style.borderColor='var(--navy)';this.style.background='#fff'" /></span>
           ${c.pipedrive_id ? `<span>📋 PD #${c.pipedrive_id}</span>` : ''}
         </div>
       </div>
