@@ -413,23 +413,7 @@ async function syncData() {
   if (btn) { btn.textContent = '⟳ Syncing...'; btn.disabled = true; }
   try {
     await loadData();
-
-    // AUDIT: Fix clients in wrong stages
-    let fixes = 0;
-
-    // Packet Sent audit: if disputes_mailed_to_client is null, they shouldn't be here
-    const badPacket = clients.filter(c => c.stage === 'packet_sent' && !c.outcome && !c.disputes_mailed_to_client);
-    for (const c of badPacket) {
-      await sb.from('mcl_clients').update({ stage: 'waiting_mcl' }).eq('id', c.id);
-      await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'audit_fix', details: 'Sync: moved from packet_sent → waiting_mcl (no packet date)' });
-      fixes++;
-    }
-
-    if (fixes > 0) {
-      await loadData(); // Reload after fixes
-    }
-
-    toast('Synced ✓ — ' + clients.length + ' clients' + (fixes ? ', ' + fixes + ' stage fixes' : ''));
+    toast('Synced ✓ — ' + clients.length + ' clients loaded');
   } catch(e) {
     toast('Sync failed: ' + e.message);
   }
