@@ -413,7 +413,23 @@ async function syncData() {
   if (btn) { btn.textContent = '⟳ Syncing...'; btn.disabled = true; }
   try {
     await loadData();
-    toast('Synced ✓ — ' + clients.length + ' clients loaded');
+
+    // AUDIT: Fix clients in wrong stages
+    let fixes = 0;
+
+    // Packet Sent audit: if disputes_mailed_to_client is null, they shouldn't be here
+    const badPacket = clients.filter(c => c.stage === 'packet_sent' && !c.outcome && !c.disputes_mailed_to_client);
+    for (const c of badPacket) {
+      await sb.from('mcl_clients').update({ stage: 'waiting_mcl' }).eq('id', c.id);
+      await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'audit_fix', details: 'Sync: moved from packet_sent → waiting_mcl (no packet date)' });
+      fixes++;
+    }
+
+    if (fixes > 0) {
+      await loadData(); // Reload after fixes
+    }
+
+    toast('Synced ✓ — ' + clients.length + ' clients' + (fixes ? ', ' + fixes + ' stage fixes' : ''));
   } catch(e) {
     toast('Sync failed: ' + e.message);
   }
@@ -577,6 +593,17 @@ function renderProfile(clientId) {
         <div class="info-row"><span class="info-lbl">Outcome</span><span class="info-val ${!c.outcome?'muted':''}">${c.outcome ? c.outcome.toUpperCase() : '— pending'}</span></div>
       </div>
     </div>
+
+    ${c.stage === 'need_to_call' && !c.outcome ? `
+    <!-- CALL OUTCOME -->
+    <div style="background:linear-gradient(135deg,#e8f5e9,#fff3e0);border:2px solid #4caf50;border-radius:10px;padding:16px 20px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:15px;font-weight:600;color:#2e7d32;">📞 Called this client?</span>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-green" onclick="callOutcome('${c.id}','spoke')" style="padding:10px 20px;font-size:14px;">✅ Spoke to Client</button>
+        <button class="btn btn-outline" onclick="callOutcome('${c.id}','lvm')" style="padding:10px 20px;font-size:14px;">📞 Left Voicemail</button>
+        <button class="btn btn-outline btn-sm" onclick="callOutcome('${c.id}','no_answer')" style="font-size:12px;color:var(--g400);">No answer</button>
+      </div>
+    </div>` : ''}
 
     <!-- ERROR DETAILS -->
     <div class="error-box">
@@ -1007,6 +1034,29 @@ async function confirmSend() {
 }
 
 let pendingAnswerClientId = null;
+
+async function callOutcome(id, result) {
+  if (result === 'spoke') {
+    await sb.from('mcl_clients').update({ stage: 'contacted', intro_type: 'spoke' }).eq('id', id);
+    await sb.from('mcl_activity_log').insert({ client_id: id, action: 'stage_change', details: 'Spoke with client → Contacted' });
+    toast('Moved to Contacted ✓');
+  } else if (result === 'lvm') {
+    await sb.from('mcl_clients').update({ stage: 'lvm', intro_type: 'lvm' }).eq('id', id);
+    await sb.from('mcl_activity_log').insert({ client_id: id, action: 'stage_change', details: 'Left voicemail → LVM' });
+    toast('Moved to LVM ✓');
+  } else {
+    await sb.from('mcl_clients').update({ intro_type: 'no_answer' }).eq('id', id);
+    await sb.from('mcl_activity_log').insert({ client_id: id, action: 'call_attempt', details: 'No answer, no voicemail' });
+    toast('Logged — staying in Need to Call');
+  }
+  await loadData();
+  if (result !== 'no_answer') {
+    currentClientId = null;
+    renderEmptyMain();
+  } else {
+    renderProfile(id);
+  }
+}
 
 async function handleAnswer(result) {
   closeModal('answerModal');
