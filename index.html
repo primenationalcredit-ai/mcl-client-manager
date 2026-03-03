@@ -473,7 +473,7 @@ function renderProfile(clientId) {
     <!-- PROFILE HEADER -->
     <div class="prof-header">
       <div>
-        <div class="prof-name">${c.name}</div>
+        <div class="prof-name"><input style="font-size:22px;font-weight:700;width:100%;border:1px solid transparent;padding:2px 4px;background:transparent;border-radius:6px;font-family:inherit;" value="${c.name}" onblur="saveField('${c.id}','name',this.value)" onfocus="this.style.borderColor='var(--navy)';this.style.background='#fff'" /></div>
         <div class="prof-meta">
           ${c.email ? `<span>📧 <a href="mailto:${c.email}">${c.email}</a></span>` : ''}
           ${c.phone ? `<span>📱 ${c.phone}</span>` : ''}
