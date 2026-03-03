@@ -218,7 +218,7 @@ input,select,textarea{font-family:inherit;}
   <span class="topnav-brand">⚖️ MCL Client Manager</span>
   <div class="topnav-right">
     <span class="badge-alert" id="overdueGlobal">0 overdue</span>
-    <button class="btn btn-outline btn-sm" onclick="loadData()" style="font-size:13px;">↻ Sync</button>
+    <button class="btn btn-outline btn-sm" onclick="syncData()" id="syncBtn" style="font-size:13px;">↻ Sync</button>
   </div>
 </div>
 
@@ -273,6 +273,7 @@ input,select,textarea{font-family:inherit;}
             <option value="packet_sent">📬 Packet Sent</option>
             <option value="disputes_mailed">📮 Disputes Mailed</option>
             <option value="waiting_reports">📊 Waiting on Reports</option>
+            <option value="litigation">⚖️ Litigation</option>
           </select>
         </div>
         <div class="form-row"><label class="form-label">Intro Type</label>
@@ -359,10 +360,12 @@ const STAGES = [
   { key: 'packet_sent', icon: '📬', label: 'Packet Sent' },
   { key: 'disputes_mailed', icon: '📮', label: 'Disputes Mailed' },
   { key: 'waiting_reports', icon: '📊', label: 'Waiting on Reports' },
+  { key: 'litigation', icon: '⚖️', label: 'Litigation' },
+  { key: 'won', icon: '✅', label: 'Won' },
   { key: 'lost', icon: '❌', label: 'Lost' },
 ];
 
-const STAGE_ICONS = { need_to_call:'📞', do_not_call:'🚫', lvm:'📞', contacted:'💬', waiting_mcl:'⏳', packet_sent:'📬', disputes_mailed:'📮', waiting_reports:'📊', lost:'❌' };
+const STAGE_ICONS = { need_to_call:'📞', do_not_call:'🚫', lvm:'📞', contacted:'💬', waiting_mcl:'⏳', packet_sent:'📬', disputes_mailed:'📮', waiting_reports:'📊', litigation:'⚖️', won:'✅', lost:'❌' };
 
 // Template key mapping per stage
 function getTemplateKeys(stage, lastFu) {
@@ -405,6 +408,18 @@ async function loadData() {
   if (currentClientId) renderProfile(currentClientId);
 }
 
+async function syncData() {
+  const btn = document.getElementById('syncBtn');
+  if (btn) { btn.textContent = '⟳ Syncing...'; btn.disabled = true; }
+  try {
+    await loadData();
+    toast('Synced ✓ — ' + clients.length + ' clients loaded');
+  } catch(e) {
+    toast('Sync failed: ' + e.message);
+  }
+  if (btn) { btn.textContent = '↻ Sync'; btn.disabled = false; }
+}
+
 // ═══════════════════════════════════════════════════
 // RENDER STAGES
 // ═══════════════════════════════════════════════════
@@ -414,6 +429,8 @@ function renderStages() {
   STAGES.forEach(s => {
     const stageClients = clients.filter(c => {
       if (s.key === 'do_not_call') return c.stage === 'do_not_call' && !c.outcome;
+      if (s.key === 'won') return c.outcome === 'won' || (c.stage === 'won' && !c.outcome);
+      if (s.key === 'litigation') return c.outcome === 'litigation';
       if (s.key === 'lost') return c.outcome === 'lost';
       return c.stage === s.key && !c.outcome;
     });
@@ -469,6 +486,8 @@ function renderClientList() {
 function getStageClients() {
   let list;
   if (currentStage === 'do_not_call') list = clients.filter(c => c.stage === 'do_not_call' && !c.outcome);
+  else if (currentStage === 'won') list = clients.filter(c => c.outcome === 'won' || (c.stage === 'won' && !c.outcome));
+  else if (currentStage === 'litigation') list = clients.filter(c => c.outcome === 'litigation');
   else if (currentStage === 'lost') list = clients.filter(c => c.outcome === 'lost');
   else list = clients.filter(c => c.stage === currentStage && !c.outcome);
   if (overdueOnly) list = list.filter(c => c.follow_up_status === 'overdue');
@@ -606,6 +625,7 @@ function renderProfile(clientId) {
           <option value="packet_sent">📬 Packet Sent</option>
           <option value="disputes_mailed">📮 Disputes Mailed</option>
           <option value="waiting_reports">📊 Waiting on Reports</option>
+          <option value="litigation">⚖️ Litigation</option>
         </select>
         <button class="btn btn-navy btn-sm" onclick="moveStage('${c.id}')">Move →</button>
       </div>` : ''}
