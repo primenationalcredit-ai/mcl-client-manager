@@ -328,6 +328,7 @@ let templates = [];
 let currentStage = 'need_to_call';
 let currentClientId = null;
 let pendingSend = null;
+let overdueOnly = false;
 
 const STAGES = [
   { key: 'need_to_call', icon: '📞', label: 'Need to Call' },
@@ -399,12 +400,12 @@ function renderStages() {
     const overdue = stageClients.filter(c => c.follow_up_status === 'overdue').length;
     const btn = document.createElement('button');
     btn.className = 'stage-btn' + (s.key === currentStage ? ' active' : '');
-    btn.onclick = () => { currentStage = s.key; currentClientId = null; renderStages(); renderClientList(); renderEmptyMain(); };
+    btn.onclick = () => { currentStage = s.key; overdueOnly = false; currentClientId = null; renderStages(); renderClientList(); renderEmptyMain(); };
     btn.innerHTML = `
       <span class="sb-left"><span class="sb-icon">${s.icon}</span><span class="sb-label">${s.label}</span></span>
       <span class="sb-right">
         <span class="sb-count">${stageClients.length}</span>
-        ${overdue > 0 ? `<span class="sb-overdue">${overdue}</span>` : ''}
+        ${overdue > 0 ? `<span class="sb-overdue" style="cursor:pointer;" onclick="event.stopPropagation();currentStage='${s.key}';overdueOnly=true;currentClientId=null;renderStages();renderClientList();renderEmptyMain();">${overdue}</span>` : ''}
       </span>`;
     container.appendChild(btn);
   });
@@ -415,7 +416,7 @@ function renderStages() {
 // ═══════════════════════════════════════════════════
 function renderClientList() {
   const stageClients = getStageClients();
-  document.getElementById('stageClientsTitle').textContent = `${STAGE_ICONS[currentStage]||'🏁'} ${STAGES.find(s=>s.key===currentStage)?.label||'Clients'} — ${stageClients.length}`;
+  document.getElementById('stageClientsTitle').textContent = `${STAGE_ICONS[currentStage]||'🏁'} ${STAGES.find(s=>s.key===currentStage)?.label||'Clients'}${overdueOnly ? ' (Overdue Only)' : ''} — ${stageClients.length}`;
   renderFilteredClients(stageClients);
 }
 
@@ -424,6 +425,7 @@ function getStageClients() {
   if (currentStage === 'do_not_call') list = clients.filter(c => c.stage === 'do_not_call' && !c.outcome);
   else if (currentStage === 'lost') list = clients.filter(c => c.outcome === 'lost');
   else list = clients.filter(c => c.stage === currentStage && !c.outcome);
+  if (overdueOnly) list = list.filter(c => c.follow_up_status === 'overdue');
   // Sort: overdue first, then due_today, then on_track
   const priority = { overdue: 0, due_today: 1, needs_intro: 2, on_track: 3, responded: 4, resolved: 5 };
   list.sort((a, b) => (priority[a.follow_up_status] || 9) - (priority[b.follow_up_status] || 9) || (b.days_since_contact || 0) - (a.days_since_contact || 0));
