@@ -610,7 +610,9 @@ function renderStages() {
       if (s.key === 'lost') return c.outcome === 'lost';
       return c.stage === s.key && !c.outcome;
     });
-    const overdue = s.key === 'do_not_call' ? 0 : stageClients.filter(c => c.follow_up_status === 'overdue' && !c.pause_reason).length;
+    const overdue = s.key === 'do_not_call' 
+      ? stageClients.filter(c => c.dnc_followup_date && new Date(c.dnc_followup_date) <= new Date()).length 
+      : stageClients.filter(c => c.follow_up_status === 'overdue' && !c.pause_reason).length;
     const btn = document.createElement('button');
     btn.className = 'stage-btn' + (s.key === currentStage && !overdueOnly ? ' active' : '');
     btn.onclick = () => { currentStage = s.key; overdueOnly = false; currentClientId = null; document.getElementById('searchInput').value = ''; renderStages(); renderClientList(); renderEmptyMain(); };
@@ -681,12 +683,13 @@ function renderFilteredClients(list) {
     li.onclick = () => { currentClientId = c.id; renderClientList(); renderProfile(c.id); };
     const fuLabel = c.last_followup === 'none' ? 'No contact' : c.last_followup === 'intro' ? 'Intro sent' : `FU #${c.last_followup.replace('fu','')}`;
     const daysLabel = c.days_since_contact != null ? `${c.days_since_contact}d ago` : 'never';
-    const isOverdue = c.follow_up_status === 'overdue' && c.stage !== 'do_not_call' && !c.pause_reason;
+    const dncDue = c.stage === 'do_not_call' && c.dnc_followup_date && new Date(c.dnc_followup_date) <= new Date();
+    const isOverdue = dncDue || (c.follow_up_status === 'overdue' && c.stage !== 'do_not_call' && !c.pause_reason);
     if (isOverdue) li.classList.add('overdue-item');
     li.innerHTML = `
       <div class="ci-left">
         <div class="ci-name">${c.name}${isOverdue ? '<span class="ci-overdue-tag">OVERDUE</span>' : ''}</div>
-        <div class="ci-sub">${fuLabel} · ${daysLabel}${isOverdue ? ' · ⚠️ ' + (c.days_since_contact || '?') + 'd overdue' : ''}</div>
+        <div class="ci-sub">${dncDue ? '🔴 Follow-up due!' : c.stage === 'do_not_call' && c.dnc_followup_date ? '📅 Follow-up: ' + new Date(c.dnc_followup_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : fuLabel + ' · ' + daysLabel}${isOverdue && !dncDue ? ' · ⚠️ ' + (c.days_since_contact || '?') + 'd overdue' : ''}</div>
       </div>
       <div><span class="dot ${c.follow_up_status}"></span></div>`;
     ul.appendChild(li);
@@ -744,9 +747,13 @@ function renderProfile(clientId) {
       </div>
     </div>
 
-    ${c.pause_reason ? `<div style="background:#fff3e0;border:2px solid #ffb74d;border-radius:10px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
-      <span style="font-size:20px;">⏸</span>
-      <div><div style="font-weight:600;color:#e65100;">Automations Paused</div><div style="font-size:13px;color:#bf360c;">${c.pause_reason}</div></div>
+    ${c.pause_reason ? `<div style="background:${c.stage === 'do_not_call' && c.dnc_followup_date && new Date(c.dnc_followup_date) <= new Date() ? '#ffebee;border:2px solid #c62828' : '#fff3e0;border:2px solid #ffb74d'};border-radius:10px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
+      <span style="font-size:20px;">${c.stage === 'do_not_call' && c.dnc_followup_date && new Date(c.dnc_followup_date) <= new Date() ? '🔴' : '⏸'}</span>
+      <div>
+        <div style="font-weight:600;color:${c.stage === 'do_not_call' && c.dnc_followup_date && new Date(c.dnc_followup_date) <= new Date() ? '#c62828' : '#e65100'};">${c.stage === 'do_not_call' && c.dnc_followup_date && new Date(c.dnc_followup_date) <= new Date() ? 'FOLLOW-UP DUE — Time to move this client back!' : 'Automations Paused'}</div>
+        <div style="font-size:13px;color:#bf360c;">${c.pause_reason}</div>
+        ${c.dnc_followup_date ? `<div style="font-size:12px;color:#555;margin-top:4px;">📅 Follow-up date: ${new Date(c.dnc_followup_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>` : ''}
+      </div>
     </div>` : ''}
 
     <!-- INFO CARDS -->
@@ -1185,11 +1192,32 @@ async function moveStage(id) {
   }
   
   // Reset follow-up tracking when moving to new stage
-  await sb.from('mcl_clients').update({
+  const updateData = {
     stage: newStage,
     intro_sent_at: null, fu1_sent_at: null, fu2_sent_at: null, fu3_sent_at: null, fu4_sent_at: null,
     responded: false, responded_at: null,
-  }).eq('id', id);
+  };
+  
+  // If moving to Do Not Call, ask for a follow-up date
+  if (newStage === 'do_not_call') {
+    const reason = prompt('Why is this client being moved to Do Not Call?\n\n(e.g. "In active services", "Client requested no contact until April")');
+    if (!reason) { toast('Move cancelled — reason required'); return; }
+    const dateStr = prompt('When should we follow up with this client?\n\nEnter a date (MM/DD/YYYY):');
+    if (dateStr) {
+      const parts = dateStr.split('/');
+      if (parts.length === 3) {
+        const yr = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+        updateData.dnc_followup_date = yr + '-' + parts[0].padStart(2,'0') + '-' + parts[1].padStart(2,'0');
+      }
+    }
+    updateData.pause_reason = reason;
+  } else {
+    // Clear DNC fields if moving out of do_not_call
+    updateData.dnc_followup_date = null;
+    if (c.stage === 'do_not_call') updateData.pause_reason = null;
+  }
+  
+  await sb.from('mcl_clients').update(updateData).eq('id', id);
   await sb.from('mcl_activity_log').insert({ client_id: id, action: 'stage_changed', details: `Moved from ${c.stage} to ${newStage}` });
   
   // Update Pipedrive label
@@ -1641,7 +1669,9 @@ function statusLabel(s) {
 }
 
 function updateOverdueBadge() {
-  const overdue = clients.filter(c => c.follow_up_status === 'overdue' && c.stage !== 'do_not_call' && !c.pause_reason).length;
+  const regularOverdue = clients.filter(c => c.follow_up_status === 'overdue' && c.stage !== 'do_not_call' && !c.pause_reason).length;
+  const dncDue = clients.filter(c => c.stage === 'do_not_call' && c.dnc_followup_date && new Date(c.dnc_followup_date) <= new Date()).length;
+  const overdue = regularOverdue + dncDue;
   document.getElementById('overdueGlobal').textContent = overdue > 0 ? `${overdue} overdue` : '✓ All clear';
   document.getElementById('overdueGlobal').style.background = overdue > 0 ? 'var(--red)' : 'var(--green)';
 }
