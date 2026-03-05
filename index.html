@@ -586,7 +586,7 @@ function renderStages() {
       if (s.key === 'lost') return c.outcome === 'lost';
       return c.stage === s.key && !c.outcome;
     });
-    const overdue = stageClients.filter(c => c.follow_up_status === 'overdue').length;
+    const overdue = s.key === 'do_not_call' ? 0 : stageClients.filter(c => c.follow_up_status === 'overdue').length;
     const btn = document.createElement('button');
     btn.className = 'stage-btn' + (s.key === currentStage && !overdueOnly ? ' active' : '');
     btn.onclick = () => { currentStage = s.key; overdueOnly = false; currentClientId = null; document.getElementById('searchInput').value = ''; renderStages(); renderClientList(); renderEmptyMain(); };
@@ -657,7 +657,7 @@ function renderFilteredClients(list) {
     li.onclick = () => { currentClientId = c.id; renderClientList(); renderProfile(c.id); };
     const fuLabel = c.last_followup === 'none' ? 'No contact' : c.last_followup === 'intro' ? 'Intro sent' : `FU #${c.last_followup.replace('fu','')}`;
     const daysLabel = c.days_since_contact != null ? `${c.days_since_contact}d ago` : 'never';
-    const isOverdue = c.follow_up_status === 'overdue';
+    const isOverdue = c.follow_up_status === 'overdue' && c.stage !== 'do_not_call';
     if (isOverdue) li.classList.add('overdue-item');
     li.innerHTML = `
       <div class="ci-left">
@@ -852,7 +852,7 @@ function renderTimeline(c) {
     </ul>`;
 
   // Next action
-  if (!c.responded && !c.outcome) {
+  if (!c.responded && !c.outcome && c.stage !== 'do_not_call') {
     const lastFu = c.last_followup || 'none';
     const fuKeys = getTemplateKeys(c.stage, lastFu);
     if (fuKeys.email) {
@@ -1316,7 +1316,7 @@ function statusLabel(s) {
 }
 
 function updateOverdueBadge() {
-  const overdue = clients.filter(c => c.follow_up_status === 'overdue').length;
+  const overdue = clients.filter(c => c.follow_up_status === 'overdue' && c.stage !== 'do_not_call').length;
   document.getElementById('overdueGlobal').textContent = overdue > 0 ? `${overdue} overdue` : '✓ All clear';
   document.getElementById('overdueGlobal').style.background = overdue > 0 ? 'var(--red)' : 'var(--green)';
 }
