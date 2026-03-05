@@ -355,7 +355,6 @@ const SEND_SMS_URL = 'https://hooks.zapier.com/hooks/catch/172130/u0vmgde/';
 const SHEET_UPDATE_URL = 'https://hooks.zapier.com/hooks/catch/172130/u0vj0pw/';
 const PIPEDRIVE_API_TOKEN = '328f4866f7d86c2bfbee1ed8b5c1895a1f6444d0';
 const PIPEDRIVE_BASE = 'https://api.pipedrive.com/v1';
-const PIPEDRIVE_PROXY_URL = 'https://stupendous-melomakarona-97abc8.netlify.app/.netlify/functions/pipedrive-proxy';
 const MCL_LABELS = {
   need_to_call: 'McCarthy - Need to Call',
   do_not_call: 'McCarthy - Do Not Call',
@@ -750,12 +749,7 @@ function getStageClients() {
   else if (currentStage === 'litigation') list = clients.filter(c => c.outcome === 'litigation');
   else if (currentStage === 'lost') list = clients.filter(c => c.outcome === 'lost');
   else list = clients.filter(c => c.stage === currentStage && !c.outcome);
-  if (overdueOnly) list = list.filter(c => {
-    if (c.pause_reason) return false;
-    if (currentStage === 'do_not_call') return c.next_followup_date && new Date(c.next_followup_date) <= new Date();
-    if (c.next_followup_date) return new Date(c.next_followup_date) <= new Date();
-    return c.follow_up_status === 'overdue';
-  });
+  if (overdueOnly) list = list.filter(c => c.follow_up_status === 'overdue');
   // Sort: overdue first, then due_today, then on_track
   const priority = { overdue: 0, due_today: 1, needs_intro: 2, on_track: 3, responded: 4, resolved: 5 };
   list.sort((a, b) => (priority[a.follow_up_status] || 9) - (priority[b.follow_up_status] || 9) || (b.days_since_contact || 0) - (a.days_since_contact || 0));
@@ -1219,36 +1213,42 @@ async function markOutcome(id, outcome) {
 // ═══════════════════════════════════════════════════
 // PIPEDRIVE LABEL SYNC
 // ═══════════════════════════════════════════════════
-// PIPEDRIVE — all calls go through Netlify proxy to avoid CORS
-// ═══════════════════════════════════════════════════
 async function loadPipedriveLabels() {
   try {
-    const res = await fetch(PIPEDRIVE_PROXY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'load_labels' })
-    });
+    const res = await fetch(PIPEDRIVE_BASE + '/dealFields?api_token=' + PIPEDRIVE_API_TOKEN);
     const data = await res.json();
-    if (!data.success) { console.error('Pipedrive load_labels error:', data); return; }
-    data.options.forEach(opt => { pipedriveLabels[opt.label] = opt.id; });
-    console.log('Pipedrive labels loaded via proxy:', Object.keys(pipedriveLabels).length);
+    if (!data.success) { console.error('Pipedrive fields error:', data); return; }
+    const labelField = data.data.find(f => f.key === 'label');
+    if (labelField && labelField.options) {
+      labelField.options.forEach(opt => { pipedriveLabels[opt.label] = opt.id; });
+      console.log('Pipedrive labels loaded:', Object.keys(pipedriveLabels).length);
+    }
   } catch (e) { console.error('Failed to load Pipedrive labels:', e); }
 }
 
 async function ensurePipedriveLabel(labelName) {
   if (pipedriveLabels[labelName]) return pipedriveLabels[labelName];
-  const colors = ['blue','green','red','yellow','purple','gray','orange','pink','cyan','brown'];
-  const color = colors[Object.keys(pipedriveLabels).length % colors.length];
+  // Create the label by adding it to the label field options
   try {
-    const res = await fetch(PIPEDRIVE_PROXY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'ensure_label', labelName, color })
-    });
+    const res = await fetch(PIPEDRIVE_BASE + '/dealFields?api_token=' + PIPEDRIVE_API_TOKEN);
     const data = await res.json();
-    if (data.success && data.options) {
-      data.options.forEach(opt => { pipedriveLabels[opt.label] = opt.id; });
-      return pipedriveLabels[labelName] || null;
+    const labelField = data.data.find(f => f.key === 'label');
+    if (!labelField) return null;
+    
+    const colors = ['blue','green','red','yellow','purple','gray','orange','pink','cyan','brown'];
+    const colorIdx = Object.keys(pipedriveLabels).length % colors.length;
+    const existingOptions = labelField.options || [];
+    existingOptions.push({ label: labelName, color: colors[colorIdx] });
+    
+    const updateRes = await fetch(PIPEDRIVE_BASE + '/dealFields/' + labelField.id + '?api_token=' + PIPEDRIVE_API_TOKEN, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ options: existingOptions })
+    });
+    const updateData = await updateRes.json();
+    if (updateData.success && updateData.data.options) {
+      updateData.data.options.forEach(opt => { pipedriveLabels[opt.label] = opt.id; });
+      return pipedriveLabels[labelName];
     }
   } catch (e) { console.error('Failed to create Pipedrive label:', e); }
   return null;
@@ -1258,31 +1258,48 @@ async function updatePipedriveLabel(dealId, stage) {
   if (!dealId) return;
   const labelName = MCL_LABELS[stage];
   if (!labelName) return;
-
+  
   let labelId = pipedriveLabels[labelName];
   if (!labelId) labelId = await ensurePipedriveLabel(labelName);
   if (!labelId) { console.error('Could not find/create label:', labelName); return; }
-
-  // Build array of all known McCarthy label IDs
-  const mclLabelIds = Object.values(MCL_LABELS)
-    .map(name => pipedriveLabels[name])
-    .filter(Boolean)
-    .map(String);
-
+  
+  // Build set of all McCarthy label IDs so we can identify them
+  const mclLabelIds = new Set();
+  for (const name of Object.values(MCL_LABELS)) {
+    if (pipedriveLabels[name]) mclLabelIds.add(String(pipedriveLabels[name]));
+  }
+  
   try {
-    const res = await fetch(PIPEDRIVE_PROXY_URL, {
-      method: 'POST',
+    // GET existing deal to read current labels
+    const getRes = await fetch(PIPEDRIVE_BASE + '/deals/' + dealId + '?api_token=' + PIPEDRIVE_API_TOKEN);
+    const getData = await getRes.json();
+    
+    let existingLabels = [];
+    if (getData.success && getData.data && getData.data.label) {
+      // Labels can be comma-separated IDs
+      existingLabels = String(getData.data.label).split(',').map(l => l.trim()).filter(Boolean);
+    }
+    
+    // Keep all non-McCarthy labels, remove any existing McCarthy labels
+    const keepLabels = existingLabels.filter(id => !mclLabelIds.has(id));
+    
+    // Add the new McCarthy label
+    keepLabels.push(String(labelId));
+    
+    // PUT combined labels back
+    const res = await fetch(PIPEDRIVE_BASE + '/deals/' + dealId + '?api_token=' + PIPEDRIVE_API_TOKEN, {
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'update_label', dealId, labelId: String(labelId), mclLabelIds })
+      body: JSON.stringify({ label: keepLabels.join(',') })
     });
     const data = await res.json();
     if (data.success) {
-      console.log('Pipedrive label updated via proxy:', labelName, 'on deal', dealId);
+      console.log('Pipedrive label updated:', labelName, 'on deal', dealId, '(kept', keepLabels.length - 1, 'existing labels)');
     } else {
       console.error('Pipedrive label update failed:', data);
-      toast('⚠️ Pipedrive label update failed — check deal ID');
+      toast('Pipedrive update failed — check deal ID');
     }
-  } catch (e) { console.error('Pipedrive proxy error:', e); toast('⚠️ Pipedrive sync failed'); }
+  } catch (e) { console.error('Pipedrive API error:', e); toast('Pipedrive sync failed'); }
 }
 
 async function moveStage(id) {
