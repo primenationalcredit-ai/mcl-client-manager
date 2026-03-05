@@ -1304,13 +1304,8 @@ function prefillMcCarthy(id) {
   const c = clients.find(x => x.id === id);
   if (!c) return;
   document.getElementById('manualSubject').value = 'Client Inquiry: ' + c.name;
-  document.getElementById('manualBody').value = 
-    'Hello McCarthy Law Team,\n\n' +
-    'I am reaching out regarding our client:\n\n' +
-    'Name: ' + c.name + '\n' +
-    'Email: ' + (c.email || 'N/A') + '\n' +
-    'Phone: ' + (c.phone || 'N/A') + '\n\n' +
-    'Please advise on the status of this case.';
+  document.getElementById('manualBody').value = '';
+  document.getElementById('manualBody').placeholder = 'Type your message to McCarthy Law here...';
   const subj = document.getElementById('manualSubject');
   if (!document.getElementById('manualTo')) {
     const toInput = document.createElement('input');
@@ -1322,10 +1317,68 @@ function prefillMcCarthy(id) {
   } else {
     document.getElementById('manualTo').value = 'FCRA@McCarthyLawyer.com';
   }
-  // Swap buttons to Send to McCarthy / Cancel
+  // Store client ID for McCarthy send
+  document.getElementById('manualBody').dataset.mclClient = id;
+  // Swap buttons
   document.getElementById('manualBtns').innerHTML = 
-    '<button class="btn btn-gold" onclick="sendManual(\'' + c.id + '\',\'email\')">\u2696\ufe0f Send to McCarthy Law</button>' +
+    '<button class="btn btn-gold" onclick="sendMcCarthy(\'' + c.id + '\')">\u2696\ufe0f Send to McCarthy Law</button>' +
     '<button class="btn btn-outline btn-sm" onclick="cancelMcCarthy(\'' + c.id + '\')">Cancel</button>';
+  document.getElementById('manualBody').focus();
+}
+
+async function sendMcCarthy(id) {
+  const c = clients.find(x => x.id === id);
+  if (!c) return;
+  const userMsg = document.getElementById('manualBody').value.trim();
+  if (!userMsg) { toast('Please type your message'); return; }
+  const subject = document.getElementById('manualSubject').value.trim() || 'Client Inquiry: ' + c.name;
+  
+  // Build the full email: client info + user message + signature
+  const fullBody = 'Hello McCarthy Law Team,\n\n' +
+    'Re: ' + c.name + '\n' +
+    'Email: ' + (c.email || 'N/A') + '\n' +
+    'Phone: ' + (c.phone || 'N/A') + '\n\n' +
+    userMsg;
+  
+  try {
+    const res = await fetch(SEND_EMAIL_URL, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to: 'FCRA@McCarthyLawyer.com', subject, body: fullBody })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      // Send copy to accounts
+      try {
+        await fetch(SEND_EMAIL_URL, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: 'accounts@asapcreditrepairusa.com', subject: '[Copy] ' + subject, body: fullBody })
+        });
+      } catch (e2) { console.error('Accounts copy error:', e2); }
+      await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'email_sent', details: 'McCarthy email: ' + subject });
+      // Log to comm log with content
+      const log = c.comm_log || [];
+      const now = new Date();
+      const dateStr = (now.getMonth()+1).toString().padStart(2,'0') + '/' + now.getDate().toString().padStart(2,'0');
+      const truncMsg = userMsg.length > 200 ? userMsg.substring(0, 200) + '...' : userMsg;
+      log.push({ date: dateStr, agent: 'JOE', text: '\u2696\ufe0f Email to McCarthy Law: ' + truncMsg });
+      c.comm_log = log;
+      await sb.from('mcl_clients').update({ comm_log: log }).eq('id', c.id);
+      document.getElementById('commEntries').innerHTML = renderCommLog(c);
+      toast('Sent to McCarthy Law + accounts \u2713');
+    } else { toast('Email error: ' + (data.error || 'unknown')); }
+  } catch (e) { toast('Email failed: ' + e.message); }
+  
+  // Clean up
+  document.getElementById('manualSubject').value = '';
+  document.getElementById('manualBody').value = '';
+  document.getElementById('manualBody').placeholder = 'Type your message...';
+  if (document.getElementById('manualTo')) document.getElementById('manualTo').remove();
+  // Restore buttons
+  document.getElementById('manualBtns').innerHTML = 
+    '<button class="btn btn-navy btn-sm" onclick="sendManual(\'' + id + '\',\'email\')">\ud83d\udce7 Send Email</button>' +
+    '<button class="btn btn-green btn-sm" onclick="sendManual(\'' + id + '\',\'sms\')">\ud83d\udcac Send Text</button>' +
+    '<button class="btn btn-outline btn-sm" onclick="sendManual(\'' + id + '\',\'both\')">+ Send Both</button>' +
+    '<button class="btn btn-gold btn-sm" onclick="prefillMcCarthy(\'' + id + '\')">\u2696\ufe0f Email McCarthy Law</button>';
 }
 
 function cancelMcCarthy(id) {
