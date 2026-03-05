@@ -340,6 +340,21 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const SEND_EMAIL_URL = 'https://stupendous-melomakarona-97abc8.netlify.app/.netlify/functions/send-email';
 const SEND_SMS_URL = 'https://hooks.zapier.com/hooks/catch/172130/u0vmgde/';
 const SHEET_UPDATE_URL = 'https://hooks.zapier.com/hooks/catch/172130/u0vj0pw/';
+const PIPEDRIVE_API_TOKEN = '328f4866f7d86c2bfbee1ed8b5c1895a1f6444d0';
+const PIPEDRIVE_BASE = 'https://api.pipedrive.com/v1';
+const MCL_LABELS = {
+  need_to_call: 'McCarthy - Need to Call',
+  do_not_call: 'McCarthy - Do Not Call',
+  lvm: 'McCarthy - LVM',
+  contacted: 'McCarthy - Contacted',
+  waiting_mcl: 'McCarthy - Waiting on MCL',
+  packet_sent: 'McCarthy - Packet Sent',
+  disputes_mailed: 'McCarthy - Disputes Mailed',
+  waiting_reports: 'McCarthy - Waiting on Reports',
+  litigation: 'McCarthy - Litigation',
+  lost: 'McCarthy - Lost',
+};
+let pipedriveLabels = {}; // Will be populated on init: { labelName: labelId }
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSs9OyAhWuv2BcenmZbtIEwD0R6UPZFpK0DYk0TfHkFZwO3ITY0mvMraxJ5X5BseiDaPtlbLpH1UKH-/pub?gid=1509920646&single=true&output=csv';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -718,7 +733,7 @@ function renderProfile(clientId) {
         <div class="prof-meta">
           <span>📧 <input style="border:1px solid transparent;padding:1px 4px;font-size:13px;color:var(--navy);background:transparent;border-radius:4px;width:220px;font-family:inherit;" value="${c.email || ''}" placeholder="Add email..." onblur="saveField('${c.id}','email',this.value)" onfocus="this.style.borderColor='var(--navy)';this.style.background='#fff'" /></span>
           <span>📱 <input style="border:1px solid transparent;padding:1px 4px;font-size:13px;color:var(--g500);background:transparent;border-radius:4px;width:140px;font-family:inherit;" value="${c.phone || ''}" placeholder="Add phone..." onblur="saveField('${c.id}','phone',this.value)" onfocus="this.style.borderColor='var(--navy)';this.style.background='#fff'" /></span>
-          ${c.pipedrive_id ? `<span>📋 PD #${c.pipedrive_id}</span>` : ''}
+          <span>📋 <input style="border:1px solid transparent;padding:1px 4px;font-size:13px;color:var(--navy);background:transparent;border-radius:4px;width:100px;font-family:inherit;" value="${c.pipedrive_id || ''}" placeholder="Deal ID..." onblur="saveField('${c.id}','pipedrive_id',this.value)" onfocus="this.style.borderColor='var(--navy)';this.style.background='#fff'" /></span>
         </div>
       </div>
       <div class="prof-actions">
@@ -992,6 +1007,7 @@ async function mclResponded(id) {
 
   // Move to waiting_mcl
   await sb.from('mcl_clients').update({ stage: 'waiting_mcl', responded: true, responded_at: new Date().toISOString() }).eq('id', id);
+  if (c.pipedrive_id) await updatePipedriveLabel(c.pipedrive_id, 'waiting_mcl');
 
   // Log it
   const log = c.comm_log || [];
@@ -1053,16 +1069,95 @@ async function deleteClient(id) {
 }
 
 async function markOutcome(id, outcome) {
+  const c = clients.find(x => x.id === id);
   await sb.from('mcl_clients').update({ outcome, outcome_at: new Date().toISOString(), stage: outcome }).eq('id', id);
   await sb.from('mcl_activity_log').insert({ client_id: id, action: outcome, details: `Marked as ${outcome}` });
+  if (c && c.pipedrive_id) await updatePipedriveLabel(c.pipedrive_id, outcome);
   toast(`Marked as ${outcome} ✓`);
   await loadData();
+}
+
+// ═══════════════════════════════════════════════════
+// PIPEDRIVE LABEL SYNC
+// ═══════════════════════════════════════════════════
+async function loadPipedriveLabels() {
+  try {
+    const res = await fetch(PIPEDRIVE_BASE + '/dealFields?api_token=' + PIPEDRIVE_API_TOKEN);
+    const data = await res.json();
+    if (!data.success) { console.error('Pipedrive fields error:', data); return; }
+    const labelField = data.data.find(f => f.key === 'label');
+    if (labelField && labelField.options) {
+      labelField.options.forEach(opt => { pipedriveLabels[opt.label] = opt.id; });
+      console.log('Pipedrive labels loaded:', Object.keys(pipedriveLabels).length);
+    }
+  } catch (e) { console.error('Failed to load Pipedrive labels:', e); }
+}
+
+async function ensurePipedriveLabel(labelName) {
+  if (pipedriveLabels[labelName]) return pipedriveLabels[labelName];
+  // Create the label by adding it to the label field options
+  try {
+    const res = await fetch(PIPEDRIVE_BASE + '/dealFields?api_token=' + PIPEDRIVE_API_TOKEN);
+    const data = await res.json();
+    const labelField = data.data.find(f => f.key === 'label');
+    if (!labelField) return null;
+    
+    const colors = ['blue','green','red','yellow','purple','gray','orange','pink','cyan','brown'];
+    const colorIdx = Object.keys(pipedriveLabels).length % colors.length;
+    const existingOptions = labelField.options || [];
+    existingOptions.push({ label: labelName, color: colors[colorIdx] });
+    
+    const updateRes = await fetch(PIPEDRIVE_BASE + '/dealFields/' + labelField.id + '?api_token=' + PIPEDRIVE_API_TOKEN, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ options: existingOptions })
+    });
+    const updateData = await updateRes.json();
+    if (updateData.success && updateData.data.options) {
+      updateData.data.options.forEach(opt => { pipedriveLabels[opt.label] = opt.id; });
+      return pipedriveLabels[labelName];
+    }
+  } catch (e) { console.error('Failed to create Pipedrive label:', e); }
+  return null;
+}
+
+async function updatePipedriveLabel(dealId, stage) {
+  if (!dealId) return;
+  const labelName = MCL_LABELS[stage];
+  if (!labelName) return;
+  
+  let labelId = pipedriveLabels[labelName];
+  if (!labelId) labelId = await ensurePipedriveLabel(labelName);
+  if (!labelId) { console.error('Could not find/create label:', labelName); return; }
+  
+  try {
+    const res = await fetch(PIPEDRIVE_BASE + '/deals/' + dealId + '?api_token=' + PIPEDRIVE_API_TOKEN, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ label: labelId })
+    });
+    const data = await res.json();
+    if (data.success) {
+      console.log('Pipedrive label updated:', labelName, 'on deal', dealId);
+    } else {
+      console.error('Pipedrive label update failed:', data);
+      toast('Pipedrive update failed — check deal ID');
+    }
+  } catch (e) { console.error('Pipedrive API error:', e); toast('Pipedrive sync failed'); }
 }
 
 async function moveStage(id) {
   const newStage = document.getElementById('moveSelect').value;
   const c = clients.find(x => x.id === id);
   if (!c || c.stage === newStage) return;
+  
+  // Require Deal ID before moving
+  if (!c.pipedrive_id) {
+    const dealId = prompt('Pipedrive Deal ID is required before moving stages.\n\nEnter the Deal ID for ' + c.name + ':');
+    if (!dealId) { toast('Move cancelled — Deal ID required'); return; }
+    await sb.from('mcl_clients').update({ pipedrive_id: dealId }).eq('id', id);
+    c.pipedrive_id = dealId;
+  }
   
   // Reset follow-up tracking when moving to new stage
   await sb.from('mcl_clients').update({
@@ -1071,6 +1166,10 @@ async function moveStage(id) {
     responded: false, responded_at: null,
   }).eq('id', id);
   await sb.from('mcl_activity_log').insert({ client_id: id, action: 'stage_changed', details: `Moved from ${c.stage} to ${newStage}` });
+  
+  // Update Pipedrive label
+  await updatePipedriveLabel(c.pipedrive_id, newStage);
+  
   toast(`Moved to ${newStage} ✓`);
   currentStage = newStage;
   await loadData();
@@ -1360,6 +1459,7 @@ async function confirmSend() {
     if (fuCount >= 5) {
       await sb.from('mcl_clients').update({outcome:'lost',outcome_at:new Date().toISOString()}).eq('id',c.id);
       await sb.from('mcl_activity_log').insert({client_id:c.id,action:'lost',details:'Auto-lost: 5 follow-ups with no response'});
+      if (c.pipedrive_id) await updatePipedriveLabel(c.pipedrive_id, 'lost');
       toast('Client moved to Lost — 5 attempts, no response');
       closeModal('sendModal');
       pendingSend = null;
@@ -1386,13 +1486,16 @@ async function confirmSend() {
 let pendingAnswerClientId = null;
 
 async function callOutcome(id, result) {
+  const c = clients.find(x => x.id === id);
   if (result === 'spoke') {
     await sb.from('mcl_clients').update({ stage: 'contacted', intro_type: 'spoke' }).eq('id', id);
     await sb.from('mcl_activity_log').insert({ client_id: id, action: 'stage_change', details: 'Spoke with client → Contacted' });
+    if (c && c.pipedrive_id) await updatePipedriveLabel(c.pipedrive_id, 'contacted');
     toast('Moved to Contacted ✓');
   } else if (result === 'lvm') {
     await sb.from('mcl_clients').update({ stage: 'lvm', intro_type: 'lvm' }).eq('id', id);
     await sb.from('mcl_activity_log').insert({ client_id: id, action: 'stage_change', details: 'Left voicemail → LVM' });
+    if (c && c.pipedrive_id) await updatePipedriveLabel(c.pipedrive_id, 'lvm');
     toast('Moved to LVM ✓');
   } else {
     await sb.from('mcl_clients').update({ intro_type: 'no_answer' }).eq('id', id);
@@ -1412,20 +1515,20 @@ async function handleAnswer(result) {
   closeModal('answerModal');
   if (!pendingAnswerClientId) return;
   const id = pendingAnswerClientId;
+  const c = clients.find(x => x.id === id);
   pendingAnswerClientId = null;
 
   if (result === 'spoke') {
-    // Spoke with them → move to contacted
     await sb.from('mcl_clients').update({ stage: 'contacted', intro_type: 'spoke' }).eq('id', id);
     await sb.from('mcl_activity_log').insert({ client_id: id, action: 'stage_change', details: 'Spoke with client → Contacted' });
+    if (c && c.pipedrive_id) await updatePipedriveLabel(c.pipedrive_id, 'contacted');
     toast('Moved to Contacted ✓');
   } else if (result === 'lvm') {
-    // Left voicemail → move to LVM
     await sb.from('mcl_clients').update({ stage: 'lvm', intro_type: 'lvm' }).eq('id', id);
     await sb.from('mcl_activity_log').insert({ client_id: id, action: 'stage_change', details: 'Left voicemail → LVM' });
+    if (c && c.pipedrive_id) await updatePipedriveLabel(c.pipedrive_id, 'lvm');
     toast('Moved to LVM ✓');
   } else {
-    // No answer, no voicemail → stay in need_to_call
     await sb.from('mcl_clients').update({ intro_type: 'no_answer' }).eq('id', id);
     await sb.from('mcl_activity_log').insert({ client_id: id, action: 'call_attempt', details: 'No answer, no voicemail' });
     toast('Logged — staying in Need to Call');
@@ -1482,6 +1585,7 @@ document.querySelectorAll('.modal-bg').forEach(m => {
 // INIT
 // ═══════════════════════════════════════════════════
 loadData();
+loadPipedriveLabels();
 // Auto-refresh from DB every 60 seconds
 setInterval(loadData, 60000);
 // Auto-sync from Google Sheet every 5 minutes
