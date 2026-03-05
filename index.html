@@ -978,17 +978,19 @@ async function mclResponded(id) {
   if (!c) return;
   if (!confirm('Confirm: ' + c.name + ' responded to McCarthy Law email?\n\nThis will:\n• Email McCarthy Law with client contact info\n• Move client to Waiting on MCL')) return;
 
-  const error = c.error_details || '(not specified)';
   const subject = 'Client Response: ' + c.name + ' - Ready for Review';
   const body = 'Hello McCarthy Law Team,\n\n' +
-    'Our client has responded to your email and is ready to proceed.\n\n' +
-    'Client Information:\n' +
+    'Our client ' + c.name + ' has confirmed they replied "Yes" to your email and is ready to move forward with their case.\n\n' +
+    'Client Contact Information:\n' +
     'Name: ' + c.name + '\n' +
     'Email: ' + (c.email || 'N/A') + '\n' +
     'Phone: ' + (c.phone || 'N/A') + '\n\n' +
-    'Credit Report Error:\n' + error + '\n\n' +
-    'Please reach out to the client directly to begin the process.\n\n' +
-    'Best regards,\nASAP Credit Repair USA';
+    'Please reach out to the client directly to begin the review process.\n\n' +
+    'Best regards,\n' +
+    'Kimberly Sanchez\n' +
+    'Account Manager\n' +
+    '281-545-5001 Ext 54\n' +
+    'kimberly@asapcreditrepairusa.com';
 
   // Send email to McCarthy Law + CC accounts
   try {
