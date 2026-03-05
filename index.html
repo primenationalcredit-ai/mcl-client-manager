@@ -1131,12 +1131,12 @@ async function sendManual(id, mode) {
   const body = document.getElementById('manualBody').value.trim();
   if (!body) { toast('Please type a message'); return; }
   const toOverride = document.getElementById('manualTo') ? document.getElementById('manualTo').value.trim() : '';
-  const ccOverride = document.getElementById('manualCc') ? document.getElementById('manualCc').value.trim() : '';
+  const ccOverride = document.getElementById('manualCc') ? document.getElementById('manualCc').value.trim() : 'accounts@asapcreditrepairusa.com';
   const sendToEmail = toOverride || c.email;
   if ((mode === 'email' || mode === 'both') && sendToEmail) {
     try {
       const emailPayload = { to: sendToEmail, subject: subject || 'Follow-up from ASAP Credit Repair', body };
-      if (ccOverride) emailPayload.cc = ccOverride;
+      emailPayload.cc = ccOverride;
       const res = await fetch(SEND_EMAIL_URL, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(emailPayload)
