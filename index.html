@@ -1819,7 +1819,22 @@ async function callOutcome(id, result) {
     await sb.from('mcl_activity_log').insert({ client_id: id, action: 'stage_change', details: 'Left voicemail → LVM' });
     if (c && c.pipedrive_id) await updatePipedriveLabel(c.pipedrive_id, 'lvm');
     toast('Moved to LVM ✓');
-  } else {
+  }
+  
+  // Update sheet with contact info + Contacted flag for spoke/lvm
+  if ((result === 'spoke' || result === 'lvm') && c) {
+    try {
+      const params = new URLSearchParams();
+      params.append('Name', c.name);
+      params.append('Client Email', c.email || '');
+      params.append('Phone Number', c.phone || '');
+      params.append('Contacted', 'TRUE');
+      params.append('Action', 'contacted');
+      await fetch(SHEET_UPDATE_URL, { method: 'POST', body: params });
+    } catch (e) { console.error('Sheet webhook failed:', e); }
+  }
+  
+  if (result === 'no_answer') {
     await sb.from('mcl_clients').update({ intro_type: 'no_answer' }).eq('id', id);
     await sb.from('mcl_activity_log').insert({ client_id: id, action: 'call_attempt', details: 'No answer, no voicemail' });
     toast('Logged — staying in Need to Call');
@@ -1872,7 +1887,22 @@ async function handleAnswer(result) {
     await sb.from('mcl_activity_log').insert({ client_id: id, action: 'stage_change', details: 'Left voicemail → LVM' });
     if (c && c.pipedrive_id) await updatePipedriveLabel(c.pipedrive_id, 'lvm');
     toast('Moved to LVM ✓');
-  } else {
+  }
+  
+  // Update sheet with contact info + Contacted flag for spoke/lvm
+  if ((result === 'spoke' || result === 'lvm') && c) {
+    try {
+      const params = new URLSearchParams();
+      params.append('Name', c.name);
+      params.append('Client Email', c.email || '');
+      params.append('Phone Number', c.phone || '');
+      params.append('Contacted', 'TRUE');
+      params.append('Action', 'contacted');
+      await fetch(SHEET_UPDATE_URL, { method: 'POST', body: params });
+    } catch (e) { console.error('Sheet webhook failed:', e); }
+  }
+  
+  if (result === 'no_answer') {
     await sb.from('mcl_clients').update({ intro_type: 'no_answer' }).eq('id', id);
     await sb.from('mcl_activity_log').insert({ client_id: id, action: 'call_attempt', details: 'No answer, no voicemail' });
     toast('Logged — staying in Need to Call');
