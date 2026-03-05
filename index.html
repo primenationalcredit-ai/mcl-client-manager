@@ -583,7 +583,7 @@ function renderStages() {
     const overdue = stageClients.filter(c => c.follow_up_status === 'overdue').length;
     const btn = document.createElement('button');
     btn.className = 'stage-btn' + (s.key === currentStage && !overdueOnly ? ' active' : '');
-    btn.onclick = () => { currentStage = s.key; overdueOnly = false; currentClientId = null; renderStages(); renderClientList(); renderEmptyMain(); };
+    btn.onclick = () => { currentStage = s.key; overdueOnly = false; currentClientId = null; document.getElementById('searchInput').value = ''; renderStages(); renderClientList(); renderEmptyMain(); };
     
     const countSpan = document.createElement('span');
     countSpan.className = 'sb-count';
@@ -624,9 +624,7 @@ function renderStages() {
 // RENDER CLIENT LIST
 // ═══════════════════════════════════════════════════
 function renderClientList() {
-  const stageClients = getStageClients();
-  document.getElementById('stageClientsTitle').textContent = `${STAGE_ICONS[currentStage]||'🏁'} ${STAGES.find(s=>s.key===currentStage)?.label||'Clients'}${overdueOnly ? ' (Overdue Only)' : ''} — ${stageClients.length}`;
-  renderFilteredClients(stageClients);
+  filterClients();
 }
 
 function getStageClients() {
@@ -644,8 +642,6 @@ function getStageClients() {
 }
 
 function renderFilteredClients(list) {
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  if (q) list = list.filter(c => c.name.toLowerCase().includes(q) || (c.email||'').toLowerCase().includes(q));
   const ul = document.getElementById('clientList');
   ul.innerHTML = '';
   if (!list.length) { ul.innerHTML = '<div style="text-align:center;padding:20px;color:var(--g400);font-size:13px;">No clients</div>'; return; }
@@ -667,7 +663,20 @@ function renderFilteredClients(list) {
   });
 }
 
-function filterClients() { renderFilteredClients(getStageClients()); }
+function filterClients() {
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  if (q) {
+    // Global search across ALL pipelines
+    const all = clients.filter(c => c.name.toLowerCase().includes(q) || (c.email||'').toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q));
+    document.getElementById('stageClientsTitle').textContent = `🔍 Search: "${q}" — ${all.length} results`;
+    renderFilteredClients(all);
+  } else {
+    // No search — show current stage
+    const stageClients = getStageClients();
+    document.getElementById('stageClientsTitle').textContent = `${STAGE_ICONS[currentStage]||'🏁'} ${STAGES.find(s=>s.key===currentStage)?.label||'Clients'}${overdueOnly ? ' (Overdue Only)' : ''} — ${stageClients.length}`;
+    renderFilteredClients(stageClients);
+  }
+}
 
 // ═══════════════════════════════════════════════════
 // RENDER PROFILE
