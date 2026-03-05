@@ -1243,25 +1243,21 @@ async function moveStage(id) {
     responded: false, responded_at: null,
   };
   
-  // If moving to Do Not Call, ask for a follow-up date
+  // If moving to Do Not Call, ask for reason and follow-up date
   if (newStage === 'do_not_call') {
     const reason = prompt('Why is this client being moved to Do Not Call?\n\n(e.g. "In active services", "Client requested no contact until April")');
     if (!reason) { toast('Move cancelled — reason required'); return; }
-    const dateStr = prompt('When should we follow up with this client?\n\nEnter a date (MM/DD/YYYY):');
-    if (dateStr) {
-      const parts = dateStr.split('/');
-      if (parts.length === 3) {
-        const yr = parts[2].length === 2 ? '20' + parts[2] : parts[2];
-        updateData.next_followup_date = yr + '-' + parts[0].padStart(2,'0') + '-' + parts[1].padStart(2,'0');
-      }
-    }
+    const dateStr = prompt('When should we follow up with this client?\n\nEnter a date (MM/DD/YYYY):\n\nThis client will turn red on this date as a reminder.');
+    if (!dateStr) { toast('Move cancelled — follow-up date required'); return; }
+    const parts = dateStr.split('/');
+    if (parts.length !== 3) { toast('Invalid date — use MM/DD/YYYY'); return; }
+    const yr = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+    updateData.next_followup_date = yr + '-' + parts[0].padStart(2,'0') + '-' + parts[1].padStart(2,'0');
     updateData.pause_reason = reason;
   } else {
-    // Clear DNC-specific fields if moving out of do_not_call
-    if (c.stage === 'do_not_call') {
-      updateData.pause_reason = null;
-      updateData.next_followup_date = null;
-    }
+    // Moving to any other stage — clear scheduled follow-up and pause
+    updateData.next_followup_date = null;
+    updateData.pause_reason = null;
   }
   
   await sb.from('mcl_clients').update(updateData).eq('id', id);
