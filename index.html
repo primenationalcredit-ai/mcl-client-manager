@@ -339,6 +339,7 @@ const SUPABASE_URL = 'https://ffhjkrpflhyrhekzczal.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmaGprcnBmbGh5cmhla3pjemFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0NTU1NDIsImV4cCI6MjA4NjAzMTU0Mn0.Lg7CfMP6_BQYwAPWhmeXQhihtv8kir1ZreGTurjG-DA'; // Get from Supabase → Settings → API → anon public key
 const SEND_EMAIL_URL = 'https://stupendous-melomakarona-97abc8.netlify.app/.netlify/functions/send-email';
 const SEND_SMS_URL = 'https://hooks.zapier.com/hooks/catch/172130/u0vmgde/';
+const SHEET_UPDATE_URL = 'https://hooks.zapier.com/hooks/catch/172130/u0vj0pw/';
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSs9OyAhWuv2BcenmZbtIEwD0R6UPZFpK0DYk0TfHkFZwO3ITY0mvMraxJ5X5BseiDaPtlbLpH1UKH-/pub?gid=1509920646&single=true&output=csv';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -976,51 +977,18 @@ async function markResponded(id) {
 async function mclResponded(id) {
   const c = clients.find(x => x.id === id);
   if (!c) return;
-  if (!confirm('Confirm: ' + c.name + ' responded to McCarthy Law email?\n\nThis will:\n• Email McCarthy Law with client contact info\n• Move client to Waiting on MCL')) return;
+  if (!confirm('Confirm: ' + c.name + ' responded to McCarthy Law email?\n\nThis will:\n• Update the Google Sheet with client email & phone\n• Move client to Waiting on MCL')) return;
 
-  const subject = 'Client Response: ' + c.name + ' - Ready for Review';
-  const body = 'Hello McCarthy Law Team,\n\n' +
-    'Our client ' + c.name + ' has confirmed they replied "Yes" to your email and is ready to move forward with their case.\n\n' +
-    'Client Contact Information:\n' +
-    'Name: ' + c.name + '\n' +
-    'Email: ' + (c.email || 'N/A') + '\n' +
-    'Phone: ' + (c.phone || 'N/A') + '\n\n' +
-    'Please reach out to the client directly to begin the review process.\n\n' +
-    'Best regards,\n' +
-    'Kimberly Sanchez\n' +
-    'Account Manager\n' +
-    '281-545-5001 Ext 54\n' +
-    'kimberly@asapcreditrepairusa.com';
-
-  // Send email to McCarthy Law + CC accounts
+  // Update Google Sheet with client contact info via Zapier
   try {
-    const res = await fetch(SEND_EMAIL_URL, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to: 'FCRA@McCarthyLawyer.com', subject, body })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      // Also send copy to accounts
-      try {
-        const res2 = await fetch(SEND_EMAIL_URL, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to: 'accounts@asapcreditrepairusa.com', subject: '[Copy] ' + subject, body })
-        });
-        const data2 = await res2.json();
-        if (data2.ok) {
-          toast('Email sent to McCarthy Law + accounts ✓');
-        } else {
-          toast('MCL email sent ✓ but accounts copy failed: ' + (data2.error || 'unknown'));
-          console.error('Accounts copy error:', data2);
-        }
-      } catch (e2) {
-        toast('MCL email sent ✓ but accounts copy failed: ' + e2.message);
-        console.error('Accounts copy error:', e2);
-      }
-    } else {
-      toast('Email error: ' + (data.error || 'unknown'));
-    }
-  } catch (e) { toast('Email failed: ' + e.message); }
+    const params = new URLSearchParams();
+    params.append('Name', c.name);
+    params.append('Client Email', c.email || '');
+    params.append('Phone Number', c.phone || '');
+    params.append('Action', 'mcl_responded');
+    await fetch(SHEET_UPDATE_URL, { method: 'POST', body: params });
+    toast('Sheet updated with client info ✓');
+  } catch (e) { toast('Sheet update failed: ' + e.message); }
 
   // Move to waiting_mcl
   await sb.from('mcl_clients').update({ stage: 'waiting_mcl', responded: true, responded_at: new Date().toISOString() }).eq('id', id);
@@ -1029,9 +997,9 @@ async function mclResponded(id) {
   const log = c.comm_log || [];
   const now = new Date();
   const dateStr = (now.getMonth()+1).toString().padStart(2,'0') + '/' + now.getDate().toString().padStart(2,'0');
-  log.push({ date: dateStr, agent: 'SYS', text: '⚖️ Client responded to MCL email — notified McCarthy Law, moved to Waiting on MCL' });
+  log.push({ date: dateStr, agent: 'SYS', text: '⚖️ Client responded to MCL email — updated sheet with contact info, moved to Waiting on MCL' });
   await sb.from('mcl_clients').update({ comm_log: log }).eq('id', id);
-  await sb.from('mcl_activity_log').insert({ client_id: id, action: 'mcl_responded', details: 'Client responded to MCL email - notified McCarthy Law' });
+  await sb.from('mcl_activity_log').insert({ client_id: id, action: 'mcl_responded', details: 'Client responded to MCL email - sheet updated with contact info' });
 
   await loadData();
   renderProfile(id);
@@ -1138,8 +1106,23 @@ async function addCommEntry(id) {
 }
 
 async function saveField(id, field, value) {
+  const c = clients.find(x => x.id === id);
   await sb.from('mcl_clients').update({ [field]: value }).eq('id', id);
   toast(field.replace(/_/g,' ') + ' saved ✓');
+  
+  // Sync name, email, phone changes to Google Sheet
+  if (c && (field === 'name' || field === 'email' || field === 'phone')) {
+    try {
+      const params = new URLSearchParams();
+      params.append('Name', field === 'name' ? c.name : c.name); // lookup by current name
+      if (field === 'name') params.append('New Name', value);
+      params.append('Client Email', field === 'email' ? value : (c.email || ''));
+      params.append('Phone Number', field === 'phone' ? value : (c.phone || ''));
+      params.append('Action', 'field_update');
+      params.append('Field', field);
+      await fetch(SHEET_UPDATE_URL, { method: 'POST', body: params });
+    } catch (e) { console.error('Sheet sync failed:', e); }
+  }
 }
 
 async function sendManual(id, mode) {
