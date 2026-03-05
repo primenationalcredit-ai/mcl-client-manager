@@ -1286,8 +1286,15 @@ async function sendManual(id, mode) {
   const log = c.comm_log || [];
   const now = new Date();
   const dateStr = (now.getMonth()+1).toString().padStart(2,'0') + '/' + now.getDate().toString().padStart(2,'0');
-  if (mode === 'email' || mode === 'both') log.push({ date: dateStr, agent: 'JOE', text: '📧 Manual email: ' + (subject || '(no subject)') });
-  if (mode === 'sms' || mode === 'both') log.push({ date: dateStr, agent: 'JOE', text: '💬 Manual text sent' });
+  if (mode === 'email' || mode === 'both') {
+    const toAddr = toOverride || c.email;
+    const truncBody = body.length > 200 ? body.substring(0, 200) + '...' : body;
+    log.push({ date: dateStr, agent: 'JOE', text: '📧 Email to ' + toAddr + ': ' + (subject || '(no subject)') + ' — ' + truncBody });
+  }
+  if (mode === 'sms' || mode === 'both') {
+    const truncBody = body.length > 200 ? body.substring(0, 200) + '...' : body;
+    log.push({ date: dateStr, agent: 'JOE', text: '💬 Text to ' + (c.phone || 'N/A') + ': ' + truncBody });
+  }
   c.comm_log = log;
   await sb.from('mcl_clients').update({ comm_log: log }).eq('id', c.id);
   document.getElementById('commEntries').innerHTML = renderCommLog(c);
@@ -1296,17 +1303,14 @@ async function sendManual(id, mode) {
 function prefillMcCarthy(id) {
   const c = clients.find(x => x.id === id);
   if (!c) return;
-  const error = c.error_details || document.getElementById('errorDetails')?.value || '(not specified)';
-  document.getElementById('manualSubject').value = 'Client Inquiry: ' + c.name + ' - Credit Report Error';
+  document.getElementById('manualSubject').value = 'Client Inquiry: ' + c.name;
   document.getElementById('manualBody').value = 
     'Hello McCarthy Law Team,\n\n' +
     'I am reaching out regarding our client:\n\n' +
     'Name: ' + c.name + '\n' +
     'Email: ' + (c.email || 'N/A') + '\n' +
     'Phone: ' + (c.phone || 'N/A') + '\n\n' +
-    'Credit Report Error:\n' + error + '\n\n' +
-    'Please advise on the status of this case.\n\n' +
-    'Best regards,\nKimberly Sanchez\nAccount Manager\n281-545-5001 Ext 54\nkimberly@asapcreditrepairusa.com';
+    'Please advise on the status of this case.';
   const subj = document.getElementById('manualSubject');
   if (!document.getElementById('manualTo')) {
     const toInput = document.createElement('input');
