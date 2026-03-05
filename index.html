@@ -499,8 +499,10 @@ async function syncData() {
       const existing = clients.find(c => c.name.toLowerCase() === nameLower);
       
       if (existing) {
+        // SKIP clients with any outcome — once resolved, stays resolved
+        if (existing.outcome) { continue; }
+        
         // Only update stage if sheet has a "higher" stage (don't move backwards due to stale sheet)
-        // But DO update contact info and dates always
         const stageOrder = ['need_to_call','do_not_call','lvm','contacted','waiting_mcl','packet_sent','disputes_mailed','waiting_reports','litigation'];
         const existingIdx = stageOrder.indexOf(existing.stage);
         const sheetIdx = stageOrder.indexOf(stage);
@@ -527,6 +529,10 @@ async function syncData() {
         if (error) { console.error('Update error for', name, error); errors++; }
         else updated++;
       } else {
+        // Check if this client was previously deleted — don't re-create
+        const { data: delLog } = await sb.from('mcl_activity_log').select('id').eq('action', 'deleted').ilike('details', '%' + name + '%').limit(1);
+        if (delLog && delLog.length > 0) { continue; }
+        
         // INSERT new client
         const insertData = {
           name,
@@ -946,6 +952,8 @@ async function deleteClient(id) {
   const c = clients.find(x => x.id === id);
   if (!c) return;
   if (!confirm('Permanently delete ' + c.name + '? This cannot be undone.')) return;
+  // Log deletion so sync won't re-create
+  await sb.from('mcl_activity_log').insert({ client_id: id, action: 'deleted', details: 'Deleted: ' + c.name });
   const { error } = await sb.from('mcl_clients').delete().eq('id', id);
   if (error) { toast('Delete failed: ' + error.message); return; }
   toast(c.name + ' deleted');
