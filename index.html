@@ -766,6 +766,15 @@ function renderProfile(clientId) {
       </div>
     </div>` : ''}
 
+    ${(c.stage === 'lvm' || c.stage === 'contacted') && !c.outcome ? `
+    <!-- MCL EMAIL RESPONSE -->
+    <div style="background:linear-gradient(135deg,#e3f2fd,#fff3e0);border:2px solid #1565c0;border-radius:10px;padding:16px 20px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:15px;font-weight:600;color:#1565c0;">⚖️ Did client respond to McCarthy Law email?</span>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-navy" onclick="mclResponded('${c.id}')" style="padding:10px 20px;font-size:14px;">✅ Yes — Notify McCarthy Law</button>
+      </div>
+    </div>` : ''}
+
     <!-- ERROR DETAILS -->
     <div class="error-box">
       <div class="info-card-title">⚠️ Credit Report Error</div>
@@ -962,6 +971,52 @@ async function markResponded(id) {
   await sb.from('mcl_activity_log').insert({ client_id: id, action: 'responded', details: 'Manually marked as responded' });
   toast('Marked as responded ✓');
   await loadData();
+}
+
+async function mclResponded(id) {
+  const c = clients.find(x => x.id === id);
+  if (!c) return;
+  if (!confirm('Confirm: ' + c.name + ' responded to McCarthy Law email?\n\nThis will:\n• Email McCarthy Law with client contact info\n• Move client to Waiting on MCL')) return;
+
+  const error = c.error_details || '(not specified)';
+  const subject = 'Client Response: ' + c.name + ' - Ready for Review';
+  const body = 'Hello McCarthy Law Team,\n\n' +
+    'Our client has responded to your email and is ready to proceed.\n\n' +
+    'Client Information:\n' +
+    'Name: ' + c.name + '\n' +
+    'Email: ' + (c.email || 'N/A') + '\n' +
+    'Phone: ' + (c.phone || 'N/A') + '\n\n' +
+    'Credit Report Error:\n' + error + '\n\n' +
+    'Please reach out to the client directly to begin the process.\n\n' +
+    'Best regards,\nASAP Credit Repair USA';
+
+  // Send email to McCarthy Law + CC accounts
+  try {
+    const res = await fetch(SEND_EMAIL_URL, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to: 'FCRA@McCarthyLawyer.com', cc: 'accounts@asapcreditrepairusa.com', subject, body })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      toast('Email sent to McCarthy Law ✓');
+    } else {
+      toast('Email error: ' + (data.error || 'unknown'));
+    }
+  } catch (e) { toast('Email failed: ' + e.message); }
+
+  // Move to waiting_mcl
+  await sb.from('mcl_clients').update({ stage: 'waiting_mcl', responded: true, responded_at: new Date().toISOString() }).eq('id', id);
+
+  // Log it
+  const log = c.comm_log || [];
+  const now = new Date();
+  const dateStr = (now.getMonth()+1).toString().padStart(2,'0') + '/' + now.getDate().toString().padStart(2,'0');
+  log.push({ date: dateStr, agent: 'SYS', text: '⚖️ Client responded to MCL email — notified McCarthy Law, moved to Waiting on MCL' });
+  await sb.from('mcl_clients').update({ comm_log: log }).eq('id', id);
+  await sb.from('mcl_activity_log').insert({ client_id: id, action: 'mcl_responded', details: 'Client responded to MCL email - notified McCarthy Law' });
+
+  await loadData();
+  renderProfile(id);
 }
 
 async function pauseClient(id) {
