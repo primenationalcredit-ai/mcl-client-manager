@@ -1677,6 +1677,17 @@ document.querySelectorAll('.modal-bg').forEach(m => {
 // ═══════════════════════════════════════════════════
 loadData();
 loadPipedriveLabels();
+
+// Show sync reminder once per session
+if (!sessionStorage.getItem('mcl_synced')) {
+  setTimeout(() => {
+    const doSync = confirm('Good morning! 👋\n\nPlease click OK to sync the app with the latest data before you start working.\n\nThis makes sure you have the most up-to-date client information.');
+    if (doSync) {
+      syncData();
+    }
+    sessionStorage.setItem('mcl_synced', 'true');
+  }, 1500);
+}
 // Auto-refresh from DB every 60 seconds
 setInterval(loadData, 60000);
 // Auto-sync from Google Sheet every 5 minutes
