@@ -664,11 +664,17 @@ function renderFilteredClients(list) {
 }
 
 function filterClients() {
-  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  const raw = document.getElementById('searchInput').value.trim();
+  const searchLost = raw.toLowerCase().startsWith('lost:');
+  const q = searchLost ? raw.slice(5).trim().toLowerCase() : raw.toLowerCase();
   if (q) {
     // Global search across ALL pipelines
-    const all = clients.filter(c => c.name.toLowerCase().includes(q) || (c.email||'').toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q));
-    document.getElementById('stageClientsTitle').textContent = `🔍 Search: "${q}" — ${all.length} results`;
+    let all = clients.filter(c => c.name.toLowerCase().includes(q) || (c.email||'').toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q));
+    // Exclude lost unless searching from Lost tab or using "lost:" prefix
+    if (!searchLost && currentStage !== 'lost') {
+      all = all.filter(c => c.outcome !== 'lost');
+    }
+    document.getElementById('stageClientsTitle').textContent = `🔍 Search: "${q}"${searchLost ? ' (incl. lost)' : ''} — ${all.length} results`;
     renderFilteredClients(all);
   } else {
     // No search — show current stage
@@ -710,6 +716,7 @@ function renderProfile(clientId) {
       <div class="prof-actions">
         ${!c.responded && !c.outcome ? `<button class="btn btn-gold btn-sm" onclick="markResponded('${c.id}')">✓ Responded</button>` : ''}
         ${!c.outcome ? `<button class="btn btn-red btn-sm" onclick="markOutcome('${c.id}','lost')">❌ Lost</button>` : ''}
+        <button class="btn btn-sm" onclick="deleteClient('${c.id}')" style="background:#fee;color:#c00;border:1px solid #fcc;font-size:11px;" title="Permanently delete this client">🗑 Delete</button>
       </div>
     </div>
 
@@ -939,6 +946,18 @@ async function markResponded(id) {
   await sb.from('mcl_clients').update({ responded: true, responded_at: new Date().toISOString() }).eq('id', id);
   await sb.from('mcl_activity_log').insert({ client_id: id, action: 'responded', details: 'Manually marked as responded' });
   toast('Marked as responded ✓');
+  await loadData();
+}
+
+async function deleteClient(id) {
+  const c = clients.find(x => x.id === id);
+  if (!c) return;
+  if (!confirm('Permanently delete ' + c.name + '? This cannot be undone.')) return;
+  const { error } = await sb.from('mcl_clients').delete().eq('id', id);
+  if (error) { toast('Delete failed: ' + error.message); return; }
+  toast(c.name + ' deleted');
+  currentClientId = null;
+  renderEmptyMain();
   await loadData();
 }
 
