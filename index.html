@@ -455,6 +455,14 @@ async function syncData() {
       if (notEligible) {
         stage = 'lost';
         outcome = 'lost';
+      } else if (clientConfirmedMailed && dueDate) {
+        // Client mailed disputes AND we have a due date
+        const dueParsed = parseDate(dueDate);
+        if (dueParsed && new Date(dueParsed) <= new Date()) {
+          stage = 'waiting_reports'; // Due date passed — time to request reports
+        } else {
+          stage = 'disputes_mailed'; // Still waiting for due date
+        }
       } else if (clientConfirmedMailed) {
         stage = 'disputes_mailed';
       } else if (disputeMailedToClient) {
@@ -586,7 +594,7 @@ function renderStages() {
       if (s.key === 'lost') return c.outcome === 'lost';
       return c.stage === s.key && !c.outcome;
     });
-    const overdue = s.key === 'do_not_call' ? 0 : stageClients.filter(c => c.follow_up_status === 'overdue').length;
+    const overdue = s.key === 'do_not_call' ? 0 : stageClients.filter(c => c.follow_up_status === 'overdue' && !c.pause_reason).length;
     const btn = document.createElement('button');
     btn.className = 'stage-btn' + (s.key === currentStage && !overdueOnly ? ' active' : '');
     btn.onclick = () => { currentStage = s.key; overdueOnly = false; currentClientId = null; document.getElementById('searchInput').value = ''; renderStages(); renderClientList(); renderEmptyMain(); };
@@ -657,7 +665,7 @@ function renderFilteredClients(list) {
     li.onclick = () => { currentClientId = c.id; renderClientList(); renderProfile(c.id); };
     const fuLabel = c.last_followup === 'none' ? 'No contact' : c.last_followup === 'intro' ? 'Intro sent' : `FU #${c.last_followup.replace('fu','')}`;
     const daysLabel = c.days_since_contact != null ? `${c.days_since_contact}d ago` : 'never';
-    const isOverdue = c.follow_up_status === 'overdue' && c.stage !== 'do_not_call';
+    const isOverdue = c.follow_up_status === 'overdue' && c.stage !== 'do_not_call' && !c.pause_reason;
     if (isOverdue) li.classList.add('overdue-item');
     li.innerHTML = `
       <div class="ci-left">
@@ -715,9 +723,15 @@ function renderProfile(clientId) {
       <div class="prof-actions">
         ${!c.responded && !c.outcome ? `<button class="btn btn-gold btn-sm" onclick="markResponded('${c.id}')">✓ Responded</button>` : ''}
         ${!c.outcome ? `<button class="btn btn-red btn-sm" onclick="markOutcome('${c.id}','lost')">❌ Lost</button>` : ''}
+        ${c.pause_reason ? `<button class="btn btn-sm" onclick="unpauseClient('${c.id}')" style="background:#e8f5e9;color:#2e7d32;border:1px solid #4caf50;font-size:11px;">▶ Unpause</button>` : `<button class="btn btn-sm" onclick="pauseClient('${c.id}')" style="background:#fff3e0;color:#e65100;border:1px solid #ffb74d;font-size:11px;">⏸ Pause</button>`}
         <button class="btn btn-sm" onclick="deleteClient('${c.id}')" style="background:#fee;color:#c00;border:1px solid #fcc;font-size:11px;" title="Permanently delete this client">🗑 Delete</button>
       </div>
     </div>
+
+    ${c.pause_reason ? `<div style="background:#fff3e0;border:2px solid #ffb74d;border-radius:10px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
+      <span style="font-size:20px;">⏸</span>
+      <div><div style="font-weight:600;color:#e65100;">Automations Paused</div><div style="font-size:13px;color:#bf360c;">${c.pause_reason}</div></div>
+    </div>` : ''}
 
     <!-- INFO CARDS -->
     <div class="info-grid">
@@ -734,7 +748,9 @@ function renderProfile(clientId) {
         <div class="info-row"><span class="info-lbl">Lead Created</span><span class="info-val">${fmtDate(c.created_at)}</span></div>
         <div class="info-row"><span class="info-lbl">Intro Sent</span><span class="info-val ${!c.intro_sent_at?'muted':''}">${c.intro_sent_at ? fmtDate(c.intro_sent_at) : '— not yet'}</span></div>
         <div class="info-row"><span class="info-lbl">Responded</span><span class="info-val ${!c.responded_at?'muted':''}">${c.responded_at ? fmtDate(c.responded_at) : '— not yet'}</span></div>
-        <div class="info-row"><span class="info-lbl">Date Mailed</span><span class="info-val ${!c.date_mailed?'muted':''}">${c.date_mailed || '— not yet'}</span></div>
+        <div class="info-row"><span class="info-lbl">Packet Mailed to Client</span><span class="info-val ${!c.disputes_mailed_to_client?'muted':''}">${c.disputes_mailed_to_client ? fmtDate(c.disputes_mailed_to_client) : '— not yet'}</span></div>
+        <div class="info-row"><span class="info-lbl">Client Confirmed Mailed</span><span class="info-val ${!c.disputes_mailed_to_cra?'muted':''}">${c.disputes_mailed_to_cra ? fmtDate(c.disputes_mailed_to_cra) : '— not yet'}</span></div>
+        <div class="info-row"><span class="info-lbl">Due Date (Round Over)</span><span class="info-val ${!c.round_over_date?'muted':''}">${c.round_over_date ? fmtDate(c.round_over_date) + (c.days_until_round_over != null ? ' (' + c.days_until_round_over + ' days)' : '') : '— not yet'}</span></div>
         <div class="info-row"><span class="info-lbl">Outcome</span><span class="info-val ${!c.outcome?'muted':''}">${c.outcome ? c.outcome.toUpperCase() : '— pending'}</span></div>
       </div>
     </div>
@@ -852,7 +868,7 @@ function renderTimeline(c) {
     </ul>`;
 
   // Next action
-  if (!c.responded && !c.outcome && c.stage !== 'do_not_call') {
+  if (!c.responded && !c.outcome && c.stage !== 'do_not_call' && !c.pause_reason) {
     const lastFu = c.last_followup || 'none';
     const fuKeys = getTemplateKeys(c.stage, lastFu);
     if (fuKeys.email) {
@@ -948,6 +964,39 @@ async function markResponded(id) {
   await loadData();
 }
 
+async function pauseClient(id) {
+  const c = clients.find(x => x.id === id);
+  if (!c) return;
+  const reason = prompt('Why are you pausing automations for ' + c.name + '?\n\n(e.g. "Waiting for client to send info", "Client on vacation")');
+  if (!reason) return;
+  await sb.from('mcl_clients').update({ pause_reason: reason }).eq('id', id);
+  const log = c.comm_log || [];
+  const now = new Date();
+  const dateStr = (now.getMonth()+1).toString().padStart(2,'0') + '/' + now.getDate().toString().padStart(2,'0');
+  log.push({ date: dateStr, agent: 'SYS', text: '⏸ Paused: ' + reason });
+  await sb.from('mcl_clients').update({ comm_log: log }).eq('id', id);
+  await sb.from('mcl_activity_log').insert({ client_id: id, action: 'paused', details: 'Paused: ' + reason });
+  toast('Automations paused for ' + c.name);
+  await loadData();
+  renderProfile(id);
+}
+
+async function unpauseClient(id) {
+  const c = clients.find(x => x.id === id);
+  if (!c) return;
+  if (!confirm('Resume automations for ' + c.name + '?')) return;
+  await sb.from('mcl_clients').update({ pause_reason: null }).eq('id', id);
+  const log = c.comm_log || [];
+  const now = new Date();
+  const dateStr = (now.getMonth()+1).toString().padStart(2,'0') + '/' + now.getDate().toString().padStart(2,'0');
+  log.push({ date: dateStr, agent: 'SYS', text: '▶ Unpaused - automations resumed' });
+  await sb.from('mcl_clients').update({ comm_log: log }).eq('id', id);
+  await sb.from('mcl_activity_log').insert({ client_id: id, action: 'unpaused', details: 'Automations resumed' });
+  toast('Automations resumed for ' + c.name);
+  await loadData();
+  renderProfile(id);
+}
+
 async function deleteClient(id) {
   const c = clients.find(x => x.id === id);
   if (!c) return;
@@ -1027,12 +1076,15 @@ async function sendManual(id, mode) {
   const body = document.getElementById('manualBody').value.trim();
   if (!body) { toast('Please type a message'); return; }
   const toOverride = document.getElementById('manualTo') ? document.getElementById('manualTo').value.trim() : '';
+  const ccOverride = document.getElementById('manualCc') ? document.getElementById('manualCc').value.trim() : '';
   const sendToEmail = toOverride || c.email;
   if ((mode === 'email' || mode === 'both') && sendToEmail) {
     try {
+      const emailPayload = { to: sendToEmail, subject: subject || 'Follow-up from ASAP Credit Repair', body };
+      if (ccOverride) emailPayload.cc = ccOverride;
       const res = await fetch(SEND_EMAIL_URL, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: sendToEmail, subject: subject || 'Follow-up from ASAP Credit Repair', body })
+        body: JSON.stringify(emailPayload)
       });
       const data = await res.json();
       if (data.ok) {
@@ -1041,6 +1093,7 @@ async function sendManual(id, mode) {
       } else { toast('Email error: ' + (data.error || 'unknown')); }
     } catch (e) { toast('Email failed: ' + e.message); }
     if (document.getElementById('manualTo')) document.getElementById('manualTo').remove();
+    if (document.getElementById('manualCc')) document.getElementById('manualCc').remove();
   } else if ((mode === 'email' || mode === 'both') && !sendToEmail) { toast('No email on file'); }
   if ((mode === 'sms' || mode === 'both') && c.phone) {
     if (SEND_SMS_URL) {
@@ -1057,7 +1110,15 @@ async function sendManual(id, mode) {
   } else if ((mode === 'sms' || mode === 'both') && !c.phone) { toast('No phone on file'); }
   document.getElementById('manualSubject').value = '';
   document.getElementById('manualBody').value = '';
-  await loadData();
+  // Don't reload — just update comm log in memory and re-render
+  const log = c.comm_log || [];
+  const now = new Date();
+  const dateStr = (now.getMonth()+1).toString().padStart(2,'0') + '/' + now.getDate().toString().padStart(2,'0');
+  if (mode === 'email' || mode === 'both') log.push({ date: dateStr, agent: 'JOE', text: '📧 Manual email: ' + (subject || '(no subject)') });
+  if (mode === 'sms' || mode === 'both') log.push({ date: dateStr, agent: 'JOE', text: '💬 Manual text sent' });
+  c.comm_log = log;
+  await sb.from('mcl_clients').update({ comm_log: log }).eq('id', c.id);
+  document.getElementById('commEntries').innerHTML = renderCommLog(c);
 }
 
 function prefillMcCarthy(id) {
@@ -1085,7 +1146,17 @@ function prefillMcCarthy(id) {
   } else {
     document.getElementById('manualTo').value = 'FCRA@McCarthyLawyer.com';
   }
-  toast('Pre-filled for McCarthy Law — review and Send Email');
+  if (!document.getElementById('manualCc')) {
+    const ccInput = document.createElement('input');
+    ccInput.id = 'manualCc';
+    ccInput.value = 'accounts@asapcreditrepairusa.com';
+    ccInput.placeholder = 'CC email address';
+    ccInput.style.cssText = 'width:100%;padding:8px 10px;border:1px solid var(--g200);border-radius:8px;font-size:13px;outline:none;font-family:inherit;margin-bottom:8px;';
+    subj.parentNode.insertBefore(ccInput, subj);
+  } else {
+    document.getElementById('manualCc').value = 'accounts@asapcreditrepairusa.com';
+  }
+  toast('Pre-filled for McCarthy Law - review and Send Email');
 }
 
 async function saveNotes(id) {
@@ -1316,7 +1387,7 @@ function statusLabel(s) {
 }
 
 function updateOverdueBadge() {
-  const overdue = clients.filter(c => c.follow_up_status === 'overdue' && c.stage !== 'do_not_call').length;
+  const overdue = clients.filter(c => c.follow_up_status === 'overdue' && c.stage !== 'do_not_call' && !c.pause_reason).length;
   document.getElementById('overdueGlobal').textContent = overdue > 0 ? `${overdue} overdue` : '✓ All clear';
   document.getElementById('overdueGlobal').style.background = overdue > 0 ? 'var(--red)' : 'var(--green)';
 }
@@ -1351,8 +1422,10 @@ document.querySelectorAll('.modal-bg').forEach(m => {
 // INIT
 // ═══════════════════════════════════════════════════
 loadData();
-// Auto-refresh every 60 seconds
+// Auto-refresh from DB every 60 seconds
 setInterval(loadData, 60000);
+// Auto-sync from Google Sheet every 5 minutes
+setInterval(() => { console.log('Auto-sync from sheet...'); syncData(); }, 300000);
 </script>
 </body>
 </html>
