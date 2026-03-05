@@ -994,11 +994,16 @@ async function mclResponded(id) {
   try {
     const res = await fetch(SEND_EMAIL_URL, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to: 'FCRA@McCarthyLawyer.com,accounts@asapcreditrepairusa.com', subject, body })
+      body: JSON.stringify({ to: 'FCRA@McCarthyLawyer.com', subject, body })
     });
     const data = await res.json();
     if (data.ok) {
-      toast('Email sent to McCarthy Law ✓');
+      // Also send copy to accounts
+      await fetch(SEND_EMAIL_URL, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: 'accounts@asapcreditrepairusa.com', subject: '[Copy] ' + subject, body })
+      });
+      toast('Email sent to McCarthy Law + accounts ✓');
     } else {
       toast('Email error: ' + (data.error || 'unknown'));
     }
@@ -1135,7 +1140,7 @@ async function sendManual(id, mode) {
   const sendToEmail = toOverride || c.email;
   if ((mode === 'email' || mode === 'both') && sendToEmail) {
     try {
-      const emailPayload = { to: sendToEmail + ',accounts@asapcreditrepairusa.com', subject: subject || 'Follow-up from ASAP Credit Repair', body };
+      const emailPayload = { to: sendToEmail, subject: subject || 'Follow-up from ASAP Credit Repair', body };
       const res = await fetch(SEND_EMAIL_URL, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(emailPayload)
@@ -1143,7 +1148,12 @@ async function sendManual(id, mode) {
       const data = await res.json();
       if (data.ok) {
         await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'email_sent', details: 'Manual to ' + sendToEmail + ': ' + (subject || '(no subject)') });
-        toast('Email sent to ' + sendToEmail + ' ✓');
+        // Send copy to accounts
+        await fetch(SEND_EMAIL_URL, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: 'accounts@asapcreditrepairusa.com', subject: '[Copy] ' + (subject || 'Follow-up from ASAP Credit Repair'), body })
+        });
+        toast('Email sent to ' + sendToEmail + ' + accounts ✓');
       } else { toast('Email error: ' + (data.error || 'unknown')); }
     } catch (e) { toast('Email failed: ' + e.message); }
     if (document.getElementById('manualTo')) document.getElementById('manualTo').remove();
