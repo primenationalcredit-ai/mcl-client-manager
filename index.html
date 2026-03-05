@@ -987,6 +987,7 @@ async function markResponded(id) {
   await sb.from('mcl_activity_log').insert({ client_id: id, action: 'responded', details: 'Manually marked as responded' });
   toast('Marked as responded ✓');
   await loadData();
+  renderProfile(id);
 }
 
 async function mclResponded(id) {
@@ -1075,6 +1076,7 @@ async function markOutcome(id, outcome) {
   if (c && c.pipedrive_id) await updatePipedriveLabel(c.pipedrive_id, outcome);
   toast(`Marked as ${outcome} ✓`);
   await loadData();
+  renderProfile(id);
 }
 
 // ═══════════════════════════════════════════════════
@@ -1173,6 +1175,7 @@ async function moveStage(id) {
   toast(`Moved to ${newStage} ✓`);
   currentStage = newStage;
   await loadData();
+  renderProfile(id);
 }
 
 function renderCommLog(c) {
@@ -1572,12 +1575,7 @@ async function callOutcome(id, result) {
     toast('Logged — staying in Need to Call');
   }
   await loadData();
-  if (result !== 'no_answer') {
-    currentClientId = null;
-    renderEmptyMain();
-  } else {
-    renderProfile(id);
-  }
+  renderProfile(id);
 }
 
 async function handleAnswer(result) {
@@ -1603,6 +1601,7 @@ async function handleAnswer(result) {
     toast('Logged — staying in Need to Call');
   }
   await loadData();
+  renderProfile(id);
 }
 
 // ═══════════════════════════════════════════════════
