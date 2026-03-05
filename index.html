@@ -316,6 +316,19 @@ input,select,textarea{font-family:inherit;}
 
 <div class="toast" id="toast"></div>
 
+<!-- CUSTOM PROMPT MODAL -->
+<div id="customPromptOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10000;justify-content:center;align-items:center;">
+  <div style="background:#fff;border-radius:12px;padding:24px 28px;max-width:460px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+    <div id="customPromptTitle" style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:12px;"></div>
+    <div id="customPromptMsg" style="font-size:14px;color:var(--g600);margin-bottom:16px;white-space:pre-line;"></div>
+    <input id="customPromptInput" style="width:100%;padding:10px 12px;border:2px solid var(--g200);border-radius:8px;font-size:14px;outline:none;font-family:inherit;box-sizing:border-box;" />
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;">
+      <button id="customPromptCancel" style="padding:8px 20px;border:1px solid var(--g200);border-radius:8px;background:#fff;color:var(--g600);font-size:14px;cursor:pointer;">Cancel</button>
+      <button id="customPromptOk" style="padding:8px 20px;border:none;border-radius:8px;background:var(--navy);color:#fff;font-size:14px;font-weight:600;cursor:pointer;">OK</button>
+    </div>
+  </div>
+</div>
+
 <!-- DID THEY ANSWER MODAL -->
 <div class="modal-bg" id="answerModal">
   <div class="modal" style="max-width:420px;">
@@ -358,6 +371,72 @@ let pipedriveLabels = {}; // Will be populated on init: { labelName: labelId }
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSs9OyAhWuv2BcenmZbtIEwD0R6UPZFpK0DYk0TfHkFZwO3ITY0mvMraxJ5X5BseiDaPtlbLpH1UKH-/pub?gid=1509920646&single=true&output=csv';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Custom prompt that stays on screen — won't dismiss on click-off
+function customPrompt(message, defaultVal) {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('customPromptOverlay');
+    const input = document.getElementById('customPromptInput');
+    const msgEl = document.getElementById('customPromptMsg');
+    const titleEl = document.getElementById('customPromptTitle');
+    const okBtn = document.getElementById('customPromptOk');
+    const cancelBtn = document.getElementById('customPromptCancel');
+    
+    const lines = message.split('\n');
+    titleEl.textContent = lines[0];
+    msgEl.textContent = lines.slice(1).join('\n').trim();
+    input.value = defaultVal || '';
+    input.placeholder = '';
+    input.style.display = 'block';
+    overlay.style.display = 'flex';
+    input.focus();
+    input.select();
+    
+    function cleanup() {
+      overlay.style.display = 'none';
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      input.removeEventListener('keydown', onKey);
+    }
+    function onOk() { cleanup(); resolve(input.value); }
+    function onCancel() { cleanup(); resolve(null); }
+    function onKey(e) { if (e.key === 'Enter') onOk(); if (e.key === 'Escape') onCancel(); }
+    
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    input.addEventListener('keydown', onKey);
+  });
+}
+
+function customConfirm(message) {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('customPromptOverlay');
+    const input = document.getElementById('customPromptInput');
+    const msgEl = document.getElementById('customPromptMsg');
+    const titleEl = document.getElementById('customPromptTitle');
+    const okBtn = document.getElementById('customPromptOk');
+    const cancelBtn = document.getElementById('customPromptCancel');
+    
+    const lines = message.split('\n');
+    titleEl.textContent = lines[0];
+    msgEl.textContent = lines.slice(1).join('\n').trim();
+    input.style.display = 'none';
+    overlay.style.display = 'flex';
+    okBtn.focus();
+    
+    function cleanup() {
+      overlay.style.display = 'none';
+      input.style.display = 'block';
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+    }
+    function onOk() { cleanup(); resolve(true); }
+    function onCancel() { cleanup(); resolve(false); }
+    
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+  });
+}
 
 // ═══════════════════════════════════════════════════
 // STATE
@@ -1016,7 +1095,7 @@ async function markResponded(id) {
 async function mclResponded(id) {
   const c = clients.find(x => x.id === id);
   if (!c) return;
-  if (!confirm('Confirm: ' + c.name + ' responded to McCarthy Law email?\n\nThis will:\n• Update the Google Sheet with client email & phone\n• Move client to Waiting on MCL')) return;
+  if (!(await customConfirm('Confirm: ' + c.name + ' responded to McCarthy Law email?\n\nThis will:\n• Update the Google Sheet with client email & phone\n• Move client to Waiting on MCL'))) return;
 
   // Update Google Sheet with client contact info via Zapier
   try {
@@ -1048,7 +1127,7 @@ async function mclResponded(id) {
 async function scheduleFollowup(id) {
   const c = clients.find(x => x.id === id);
   if (!c) return;
-  const dateStr = prompt('Schedule next follow-up for ' + c.name + '\n\nEnter a date (MM/DD/YYYY):');
+  const dateStr = await customPrompt('Schedule next follow-up for ' + c.name + '\n\nEnter a date (MM/DD/YYYY):');
   if (!dateStr) return;
   const parts = dateStr.split('/');
   if (parts.length !== 3) { toast('Invalid date format — use MM/DD/YYYY'); return; }
@@ -1067,7 +1146,7 @@ async function scheduleFollowup(id) {
 }
 
 async function clearFollowupDate(id) {
-  if (!confirm('Clear the scheduled follow-up date?')) return;
+  if (!(await customConfirm('Clear the scheduled follow-up date?'))) return;
   await sb.from('mcl_clients').update({ next_followup_date: null }).eq('id', id);
   toast('Follow-up date cleared ✓');
   await loadData();
@@ -1077,7 +1156,7 @@ async function clearFollowupDate(id) {
 async function pauseClient(id) {
   const c = clients.find(x => x.id === id);
   if (!c) return;
-  const reason = prompt('Why are you pausing automations for ' + c.name + '?\n\n(e.g. "Waiting for client to send info", "Client on vacation")');
+  const reason = await customPrompt('Why are you pausing automations for ' + c.name + '?\n\n(e.g. "Waiting for client to send info", "Client on vacation")');
   if (!reason) return;
   await sb.from('mcl_clients').update({ pause_reason: reason }).eq('id', id);
   const log = c.comm_log || [];
@@ -1094,7 +1173,7 @@ async function pauseClient(id) {
 async function unpauseClient(id) {
   const c = clients.find(x => x.id === id);
   if (!c) return;
-  if (!confirm('Resume automations for ' + c.name + '?')) return;
+  if (!(await customConfirm('Resume automations for ' + c.name + '?'))) return;
   await sb.from('mcl_clients').update({ pause_reason: null }).eq('id', id);
   const log = c.comm_log || [];
   const now = new Date();
@@ -1110,7 +1189,7 @@ async function unpauseClient(id) {
 async function deleteClient(id) {
   const c = clients.find(x => x.id === id);
   if (!c) return;
-  if (!confirm('Permanently delete ' + c.name + '? This cannot be undone.')) return;
+  if (!(await customConfirm('Permanently delete ' + c.name + '? This cannot be undone.'))) return;
   // Log deletion so sync won't re-create
   await sb.from('mcl_activity_log').insert({ client_id: id, action: 'deleted', details: 'Deleted: ' + c.name });
   const { error } = await sb.from('mcl_clients').delete().eq('id', id);
@@ -1230,7 +1309,7 @@ async function moveStage(id) {
   
   // Require Deal ID before moving
   if (!c.pipedrive_id) {
-    const dealId = prompt('Pipedrive Deal ID is required before moving stages.\n\nEnter the Deal ID for ' + c.name + ':');
+    const dealId = await customPrompt('Pipedrive Deal ID is required before moving stages.\n\nEnter the Deal ID for ' + c.name + ':');
     if (!dealId) { toast('Move cancelled — Deal ID required'); return; }
     await sb.from('mcl_clients').update({ pipedrive_id: dealId }).eq('id', id);
     c.pipedrive_id = dealId;
@@ -1239,13 +1318,13 @@ async function moveStage(id) {
   // Require email and phone before moving (except to lost)
   if (newStage !== 'lost') {
     if (!c.email) {
-      const email = prompt('Email is required before moving ' + c.name + '.\n\nEnter their email:');
+      const email = await customPrompt('Email is required before moving ' + c.name + '.\n\nEnter their email:');
       if (!email) { toast('Move cancelled — email required'); return; }
       await sb.from('mcl_clients').update({ email }).eq('id', id);
       c.email = email;
     }
     if (!c.phone) {
-      const phone = prompt('Phone number is required before moving ' + c.name + '.\n\nEnter their phone:');
+      const phone = await customPrompt('Phone number is required before moving ' + c.name + '.\n\nEnter their phone:');
       if (!phone) { toast('Move cancelled — phone required'); return; }
       await sb.from('mcl_clients').update({ phone }).eq('id', id);
       c.phone = phone;
@@ -1261,9 +1340,9 @@ async function moveStage(id) {
   
   // If moving to Do Not Call, ask for reason and follow-up date
   if (newStage === 'do_not_call') {
-    const reason = prompt('Why is this client being moved to Do Not Call?\n\n(e.g. "In active services", "Client requested no contact until April")');
+    const reason = await customPrompt('Why is this client being moved to Do Not Call?\n\n(e.g. "In active services", "Client requested no contact until April")');
     if (!reason) { toast('Move cancelled — reason required'); return; }
-    const dateStr = prompt('When should we follow up with this client?\n\nEnter a date (MM/DD/YYYY):\n\nThis client will turn red on this date as a reminder.');
+    const dateStr = await customPrompt('When should we follow up with this client?\n\nEnter a date (MM/DD/YYYY):\n\nThis client will turn red on this date as a reminder.');
     if (!dateStr) { toast('Move cancelled — follow-up date required'); return; }
     const parts = dateStr.split('/');
     if (parts.length !== 3) { toast('Invalid date — use MM/DD/YYYY'); return; }
@@ -1521,7 +1600,7 @@ async function resendFollowup(clientId, fuType) {
   const smsTpl = templates.find(t => t.key === fuKeys.sms);
   const label = fuType === 'intro' ? 'Intro' : 'FU #' + fuType.replace('fu','');
   
-  if (!confirm(`Resend ${label} to ${c.name}?\n\nEmail: ${emailTpl ? '✓ ' + emailTpl.subject : '✗ no template'}\nSMS: ${smsTpl ? '✓ will send' : '✗ no template'}`)) return;
+  if (!(await customConfirm(`Resend ${label} to ${c.name}?\n\nEmail: ${emailTpl ? '✓ ' + emailTpl.subject : '✗ no template'}\nSMS: ${smsTpl ? '✓ will send' : '✗ no template'}`))) return;
   
   // Resend email
   if (emailTpl && c.email) {
@@ -1673,13 +1752,13 @@ async function callOutcome(id, result) {
   // Require email and phone before moving out of need_to_call (except no_answer which stays)
   if (result !== 'no_answer' && c) {
     if (!c.email) {
-      const email = prompt('Email is required before moving ' + c.name + '.\n\nEnter their email:');
+      const email = await customPrompt('Email is required before moving ' + c.name + '.\n\nEnter their email:');
       if (!email) { toast('Move cancelled — email required'); return; }
       await sb.from('mcl_clients').update({ email }).eq('id', id);
       c.email = email;
     }
     if (!c.phone) {
-      const phone = prompt('Phone number is required before moving ' + c.name + '.\n\nEnter their phone:');
+      const phone = await customPrompt('Phone number is required before moving ' + c.name + '.\n\nEnter their phone:');
       if (!phone) { toast('Move cancelled — phone required'); return; }
       await sb.from('mcl_clients').update({ phone }).eq('id', id);
       c.phone = phone;
@@ -1715,13 +1794,13 @@ async function handleAnswer(result) {
   // Require email and phone before moving (except no_answer)
   if (result !== 'no_answer' && c) {
     if (!c.email) {
-      const email = prompt('Email is required before moving ' + c.name + '.\n\nEnter their email:');
+      const email = await customPrompt('Email is required before moving ' + c.name + '.\n\nEnter their email:');
       if (!email) { toast('Move cancelled — email required'); return; }
       await sb.from('mcl_clients').update({ email }).eq('id', id);
       c.email = email;
     }
     if (!c.phone) {
-      const phone = prompt('Phone number is required before moving ' + c.name + '.\n\nEnter their phone:');
+      const phone = await customPrompt('Phone number is required before moving ' + c.name + '.\n\nEnter their phone:');
       if (!phone) { toast('Move cancelled — phone required'); return; }
       await sb.from('mcl_clients').update({ phone }).eq('id', id);
       c.phone = phone;
@@ -1802,8 +1881,8 @@ loadPipedriveLabels();
 
 // Show sync reminder once per session
 if (!sessionStorage.getItem('mcl_synced')) {
-  setTimeout(() => {
-    const doSync = confirm('Good morning! 👋\n\nPlease click OK to sync the app with the latest data before you start working.\n\nThis makes sure you have the most up-to-date client information.');
+  setTimeout(async () => {
+    const doSync = await customConfirm('Good morning! 👋\n\nPlease click OK to sync the app with the latest data before you start working.\n\nThis makes sure you have the most up-to-date client information.');
     if (doSync) {
       syncData();
     }
