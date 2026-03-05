@@ -849,7 +849,7 @@ function renderProfile(clientId) {
       <div class="manual-msg-title">Send Manual Message</div>
       <input id="manualSubject" placeholder="Subject (for email)">
       <textarea id="manualBody" placeholder="Type your message..."></textarea>
-      <div class="manual-btns">
+      <div class="manual-btns" id="manualBtns">
         <button class="btn btn-navy btn-sm" onclick="sendManual('${c.id}','email')">📧 Send Email</button>
         <button class="btn btn-green btn-sm" onclick="sendManual('${c.id}','sms')">💬 Send Text</button>
         <button class="btn btn-outline btn-sm" onclick="sendManual('${c.id}','both')">+ Send Both</button>
@@ -1244,15 +1244,28 @@ async function sendManual(id, mode) {
       if (data.ok) {
         await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'email_sent', details: 'Manual to ' + sendToEmail + ': ' + (subject || '(no subject)') });
         // Send copy to accounts
-        await fetch(SEND_EMAIL_URL, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to: 'accounts@asapcreditrepairusa.com', subject: '[Copy] ' + (subject || 'Follow-up from ASAP Credit Repair'), body })
-        });
-        toast('Email sent to ' + sendToEmail + ' + accounts ✓');
+        try {
+          const copyRes = await fetch(SEND_EMAIL_URL, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ to: 'accounts@asapcreditrepairusa.com', subject: '[Copy] ' + (subject || 'Follow-up from ASAP Credit Repair'), body: body })
+          });
+          const copyData = await copyRes.json();
+          if (!copyData.ok) console.error('Accounts copy failed:', copyData);
+        } catch (copyErr) { console.error('Accounts copy error:', copyErr); }
+        toast('Email sent to ' + sendToEmail + ' ✓');
       } else { toast('Email error: ' + (data.error || 'unknown')); }
     } catch (e) { toast('Email failed: ' + e.message); }
     if (document.getElementById('manualTo')) document.getElementById('manualTo').remove();
     if (document.getElementById('manualCc')) document.getElementById('manualCc').remove();
+    // Restore original buttons if they were swapped for McCarthy
+    const btns = document.getElementById('manualBtns');
+    if (btns && !btns.querySelector('[onclick*="prefillMcCarthy"]')) {
+      btns.innerHTML = 
+        '<button class="btn btn-navy btn-sm" onclick="sendManual(\'' + id + '\',\'email\')">📧 Send Email</button>' +
+        '<button class="btn btn-green btn-sm" onclick="sendManual(\'' + id + '\',\'sms\')">💬 Send Text</button>' +
+        '<button class="btn btn-outline btn-sm" onclick="sendManual(\'' + id + '\',\'both\')">+ Send Both</button>' +
+        '<button class="btn btn-gold btn-sm" onclick="prefillMcCarthy(\'' + id + '\')">⚖️ Email McCarthy Law</button>';
+    }
   } else if ((mode === 'email' || mode === 'both') && !sendToEmail) { toast('No email on file'); }
   if ((mode === 'sms' || mode === 'both') && c.phone) {
     if (SEND_SMS_URL) {
@@ -1293,7 +1306,7 @@ function prefillMcCarthy(id) {
     'Phone: ' + (c.phone || 'N/A') + '\n\n' +
     'Credit Report Error:\n' + error + '\n\n' +
     'Please advise on the status of this case.\n\n' +
-    'Best regards,\nASAP Credit Repair USA';
+    'Best regards,\nKimberly Sanchez\nAccount Manager\n281-545-5001 Ext 54\nkimberly@asapcreditrepairusa.com';
   const subj = document.getElementById('manualSubject');
   if (!document.getElementById('manualTo')) {
     const toInput = document.createElement('input');
@@ -1305,17 +1318,23 @@ function prefillMcCarthy(id) {
   } else {
     document.getElementById('manualTo').value = 'FCRA@McCarthyLawyer.com';
   }
-  if (!document.getElementById('manualCc')) {
-    const ccInput = document.createElement('input');
-    ccInput.id = 'manualCc';
-    ccInput.value = 'accounts@asapcreditrepairusa.com';
-    ccInput.placeholder = 'CC email address';
-    ccInput.style.cssText = 'width:100%;padding:8px 10px;border:1px solid var(--g200);border-radius:8px;font-size:13px;outline:none;font-family:inherit;margin-bottom:8px;';
-    subj.parentNode.insertBefore(ccInput, subj);
-  } else {
-    document.getElementById('manualCc').value = 'accounts@asapcreditrepairusa.com';
-  }
-  toast('Pre-filled for McCarthy Law - review and Send Email');
+  // Swap buttons to Send to McCarthy / Cancel
+  document.getElementById('manualBtns').innerHTML = 
+    '<button class="btn btn-gold" onclick="sendManual(\'' + c.id + '\',\'email\')">\u2696\ufe0f Send to McCarthy Law</button>' +
+    '<button class="btn btn-outline btn-sm" onclick="cancelMcCarthy(\'' + c.id + '\')">Cancel</button>';
+}
+
+function cancelMcCarthy(id) {
+  document.getElementById('manualSubject').value = '';
+  document.getElementById('manualBody').value = '';
+  if (document.getElementById('manualTo')) document.getElementById('manualTo').remove();
+  if (document.getElementById('manualCc')) document.getElementById('manualCc').remove();
+  // Restore original buttons
+  document.getElementById('manualBtns').innerHTML = 
+    '<button class="btn btn-navy btn-sm" onclick="sendManual(\'' + id + '\',\'email\')">\ud83d\udce7 Send Email</button>' +
+    '<button class="btn btn-green btn-sm" onclick="sendManual(\'' + id + '\',\'sms\')">\ud83d\udcac Send Text</button>' +
+    '<button class="btn btn-outline btn-sm" onclick="sendManual(\'' + id + '\',\'both\')">+ Send Both</button>' +
+    '<button class="btn btn-gold btn-sm" onclick="prefillMcCarthy(\'' + id + '\')">\u2696\ufe0f Email McCarthy Law</button>';
 }
 
 async function saveNotes(id) {
