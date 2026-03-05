@@ -1309,8 +1309,14 @@ async function moveStage(id) {
   
   // Require Deal ID before moving
   if (!c.pipedrive_id) {
-    const dealId = await customPrompt('Pipedrive Deal ID is required before moving stages.\n\nEnter the Deal ID for ' + c.name + ':');
-    if (!dealId) { toast('Move cancelled — Deal ID required'); return; }
+    let dealId = null;
+    while (true) {
+      dealId = await customPrompt('Pipedrive Deal ID is required (6 digits).\n\nEnter the Deal ID for ' + c.name + ':');
+      if (!dealId) { toast('Move cancelled — Deal ID required'); return; }
+      if (/^\d{6}$/.test(dealId.replace(/\D/g, ''))) break;
+      toast('Deal ID must be exactly 6 digits');
+    }
+    dealId = dealId.replace(/\D/g, '');
     await sb.from('mcl_clients').update({ pipedrive_id: dealId }).eq('id', id);
     c.pipedrive_id = dealId;
   }
@@ -1318,14 +1324,25 @@ async function moveStage(id) {
   // Require email and phone before moving (except to lost)
   if (newStage !== 'lost') {
     if (!c.email) {
-      const email = await customPrompt('Email is required before moving ' + c.name + '.\n\nEnter their email:');
-      if (!email) { toast('Move cancelled — email required'); return; }
+      let email = null;
+      while (true) {
+        email = await customPrompt('Email is required before moving ' + c.name + '.\n\nEnter their email:');
+        if (!email) { toast('Move cancelled — email required'); return; }
+        if (email.includes('@')) break;
+        toast('Invalid email — must contain @');
+      }
       await sb.from('mcl_clients').update({ email }).eq('id', id);
       c.email = email;
     }
     if (!c.phone) {
-      const phone = await customPrompt('Phone number is required before moving ' + c.name + '.\n\nEnter their phone:');
-      if (!phone) { toast('Move cancelled — phone required'); return; }
+      let phone = null;
+      while (true) {
+        phone = await customPrompt('Phone number is required before moving ' + c.name + '.\n\nEnter their phone (10 digits):');
+        if (!phone) { toast('Move cancelled — phone required'); return; }
+        const digits = phone.replace(/\D/g, '');
+        if (digits.length >= 10 && digits.length <= 11) break;
+        toast('Invalid phone — must be 10-11 digits');
+      }
       await sb.from('mcl_clients').update({ phone }).eq('id', id);
       c.phone = phone;
     }
@@ -1398,7 +1415,22 @@ async function addCommEntry(id) {
 
 async function saveField(id, field, value) {
   const c = clients.find(x => x.id === id);
-  if (c) c[field] = value; // Update local data immediately
+  
+  // Validate fields
+  if (field === 'email' && value && !value.includes('@')) {
+    toast('Invalid email — must contain @'); return;
+  }
+  if (field === 'phone' && value) {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length < 10 || digits.length > 11) { toast('Invalid phone — must be 10-11 digits'); return; }
+  }
+  if (field === 'pipedrive_id' && value) {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length !== 6) { toast('Invalid Deal ID — must be 6 digits'); return; }
+    value = digits;
+  }
+  
+  if (c) c[field] = value;
   await sb.from('mcl_clients').update({ [field]: value }).eq('id', id);
   toast(field.replace(/_/g,' ') + ' saved ✓');
   
@@ -1753,14 +1785,25 @@ async function callOutcome(id, result) {
   // Require email and phone before moving out of need_to_call (except no_answer which stays)
   if (result !== 'no_answer' && c) {
     if (!c.email) {
-      const email = await customPrompt('Email is required before moving ' + c.name + '.\n\nEnter their email:');
-      if (!email) { toast('Move cancelled — email required'); return; }
+      let email = null;
+      while (true) {
+        email = await customPrompt('Email is required before moving ' + c.name + '.\n\nEnter their email:');
+        if (!email) { toast('Move cancelled — email required'); return; }
+        if (email.includes('@')) break;
+        toast('Invalid email — must contain @');
+      }
       await sb.from('mcl_clients').update({ email }).eq('id', id);
       c.email = email;
     }
     if (!c.phone) {
-      const phone = await customPrompt('Phone number is required before moving ' + c.name + '.\n\nEnter their phone:');
-      if (!phone) { toast('Move cancelled — phone required'); return; }
+      let phone = null;
+      while (true) {
+        phone = await customPrompt('Phone number is required before moving ' + c.name + '.\n\nEnter their phone (10 digits):');
+        if (!phone) { toast('Move cancelled — phone required'); return; }
+        const digits = phone.replace(/\D/g, '');
+        if (digits.length >= 10 && digits.length <= 11) break;
+        toast('Invalid phone — must be 10-11 digits');
+      }
       await sb.from('mcl_clients').update({ phone }).eq('id', id);
       c.phone = phone;
     }
@@ -1795,14 +1838,25 @@ async function handleAnswer(result) {
   // Require email and phone before moving (except no_answer)
   if (result !== 'no_answer' && c) {
     if (!c.email) {
-      const email = await customPrompt('Email is required before moving ' + c.name + '.\n\nEnter their email:');
-      if (!email) { toast('Move cancelled — email required'); return; }
+      let email = null;
+      while (true) {
+        email = await customPrompt('Email is required before moving ' + c.name + '.\n\nEnter their email:');
+        if (!email) { toast('Move cancelled — email required'); return; }
+        if (email.includes('@')) break;
+        toast('Invalid email — must contain @');
+      }
       await sb.from('mcl_clients').update({ email }).eq('id', id);
       c.email = email;
     }
     if (!c.phone) {
-      const phone = await customPrompt('Phone number is required before moving ' + c.name + '.\n\nEnter their phone:');
-      if (!phone) { toast('Move cancelled — phone required'); return; }
+      let phone = null;
+      while (true) {
+        phone = await customPrompt('Phone number is required before moving ' + c.name + '.\n\nEnter their phone (10 digits):');
+        if (!phone) { toast('Move cancelled — phone required'); return; }
+        const digits = phone.replace(/\D/g, '');
+        if (digits.length >= 10 && digits.length <= 11) break;
+        toast('Invalid phone — must be 10-11 digits');
+      }
       await sb.from('mcl_clients').update({ phone }).eq('id', id);
       c.phone = phone;
     }
