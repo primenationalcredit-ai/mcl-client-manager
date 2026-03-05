@@ -848,7 +848,7 @@ function renderTimeline(c) {
     </div>
     <ul class="flow-events">
       ${events.length === 0 ? `<li class="flow-event"><span class="fe-icon">⚪</span><span class="fe-text">No follow-ups sent yet</span></li>` : ''}
-      ${events.map(e => `<li class="flow-event"><span class="fe-icon">${e.icon}</span><span class="fe-text">${e.label}</span><span class="fe-date">${fmtDate(e.date)}</span></li>`).join('')}
+      ${events.map(e => `<li class="flow-event"><span class="fe-icon">${e.icon}</span><span class="fe-text">${e.label}</span><span class="fe-date">${fmtDate(e.date)}</span><button class="btn btn-outline btn-sm" onclick="resendFollowup('${c.id}','${e.type}')" style="font-size:10px;padding:2px 8px;margin-left:6px;">↻ Resend</button></li>`).join('')}
     </ul>`;
 
   // Next action
@@ -1096,6 +1096,52 @@ async function saveNotes(id) {
 // ═══════════════════════════════════════════════════
 // SEND EMAIL/SMS
 // ═══════════════════════════════════════════════════
+async function resendFollowup(clientId, fuType) {
+  const c = clients.find(x => x.id === clientId);
+  if (!c) return;
+  
+  // Map fuType back to lastFu for template lookup
+  const prevMap = { intro: 'none', fu1: 'intro', fu2: 'fu1', fu3: 'fu2', fu4: 'fu3' };
+  const lastFu = prevMap[fuType] || 'none';
+  const fuKeys = getTemplateKeys(c.stage, lastFu);
+  
+  const emailTpl = templates.find(t => t.key === fuKeys.email);
+  const smsTpl = templates.find(t => t.key === fuKeys.sms);
+  const label = fuType === 'intro' ? 'Intro' : 'FU #' + fuType.replace('fu','');
+  
+  if (!confirm(`Resend ${label} to ${c.name}?\n\nEmail: ${emailTpl ? '✓ ' + emailTpl.subject : '✗ no template'}\nSMS: ${smsTpl ? '✓ will send' : '✗ no template'}`)) return;
+  
+  // Resend email
+  if (emailTpl && c.email) {
+    try {
+      const body = emailTpl.body.replace(/\{name\}/g, c.name.split(' ')[0]).replace(/\{agent\}/g, c.assigned_to || 'ASAP Credit Repair');
+      const res = await fetch(SEND_EMAIL_URL, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: c.email, subject: emailTpl.subject, body })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'email_resent', template_key: emailTpl.key, details: 'Resent: ' + emailTpl.subject });
+        toast('Email resent ✓');
+      } else { toast('Email error: ' + (data.error || 'unknown')); }
+    } catch (e) { toast('Email failed: ' + e.message); }
+  }
+  
+  // Resend SMS
+  if (smsTpl && c.phone) {
+    try {
+      const smsBody = (smsTpl.body || '').replace(/\{name\}/g, c.name.split(' ')[0]).replace(/\{agent\}/g, c.assigned_to || 'ASAP Credit Repair');
+      const smsParams = new URLSearchParams(); smsParams.append('SMS', smsBody); smsParams.append('Texting Cell', c.phone); smsParams.append('Person First Name', c.name.split(' ')[0]);
+      await fetch(SEND_SMS_URL, { method: 'POST', body: smsParams });
+      await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'sms_resent', template_key: smsTpl.key, details: 'Resent SMS: ' + smsTpl.name });
+      toast('Text resent ✓');
+    } catch (e) { toast('SMS failed: ' + e.message); }
+  }
+  
+  if (!c.email && !c.phone) toast('No email or phone on file');
+  await loadData();
+}
+
 function openSendModal(clientId, type) {
   const c = clients.find(x => x.id === clientId);
   if (!c) return;
