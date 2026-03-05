@@ -1347,13 +1347,6 @@ async function sendMcCarthy(id) {
     });
     const data = await res.json();
     if (data.ok) {
-      // Send copy to accounts
-      try {
-        await fetch(SEND_EMAIL_URL, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to: 'accounts@asapcreditrepairusa.com', subject: '[Copy] ' + subject, body: fullBody })
-        });
-      } catch (e2) { console.error('Accounts copy error:', e2); }
       await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'email_sent', details: 'McCarthy email: ' + subject });
       // Log to comm log with content
       const log = c.comm_log || [];
