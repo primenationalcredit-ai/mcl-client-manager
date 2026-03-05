@@ -1236,6 +1236,22 @@ async function moveStage(id) {
     c.pipedrive_id = dealId;
   }
   
+  // Require email and phone before moving (except to lost)
+  if (newStage !== 'lost') {
+    if (!c.email) {
+      const email = prompt('Email is required before moving ' + c.name + '.\n\nEnter their email:');
+      if (!email) { toast('Move cancelled — email required'); return; }
+      await sb.from('mcl_clients').update({ email }).eq('id', id);
+      c.email = email;
+    }
+    if (!c.phone) {
+      const phone = prompt('Phone number is required before moving ' + c.name + '.\n\nEnter their phone:');
+      if (!phone) { toast('Move cancelled — phone required'); return; }
+      await sb.from('mcl_clients').update({ phone }).eq('id', id);
+      c.phone = phone;
+    }
+  }
+  
   // Reset follow-up tracking when moving to new stage
   const updateData = {
     stage: newStage,
@@ -1653,6 +1669,23 @@ let pendingAnswerClientId = null;
 
 async function callOutcome(id, result) {
   const c = clients.find(x => x.id === id);
+  
+  // Require email and phone before moving out of need_to_call (except no_answer which stays)
+  if (result !== 'no_answer' && c) {
+    if (!c.email) {
+      const email = prompt('Email is required before moving ' + c.name + '.\n\nEnter their email:');
+      if (!email) { toast('Move cancelled — email required'); return; }
+      await sb.from('mcl_clients').update({ email }).eq('id', id);
+      c.email = email;
+    }
+    if (!c.phone) {
+      const phone = prompt('Phone number is required before moving ' + c.name + '.\n\nEnter their phone:');
+      if (!phone) { toast('Move cancelled — phone required'); return; }
+      await sb.from('mcl_clients').update({ phone }).eq('id', id);
+      c.phone = phone;
+    }
+  }
+  
   if (result === 'spoke') {
     await sb.from('mcl_clients').update({ stage: 'contacted', intro_type: 'spoke' }).eq('id', id);
     await sb.from('mcl_activity_log').insert({ client_id: id, action: 'stage_change', details: 'Spoke with client → Contacted' });
@@ -1678,6 +1711,22 @@ async function handleAnswer(result) {
   const id = pendingAnswerClientId;
   const c = clients.find(x => x.id === id);
   pendingAnswerClientId = null;
+
+  // Require email and phone before moving (except no_answer)
+  if (result !== 'no_answer' && c) {
+    if (!c.email) {
+      const email = prompt('Email is required before moving ' + c.name + '.\n\nEnter their email:');
+      if (!email) { toast('Move cancelled — email required'); return; }
+      await sb.from('mcl_clients').update({ email }).eq('id', id);
+      c.email = email;
+    }
+    if (!c.phone) {
+      const phone = prompt('Phone number is required before moving ' + c.name + '.\n\nEnter their phone:');
+      if (!phone) { toast('Move cancelled — phone required'); return; }
+      await sb.from('mcl_clients').update({ phone }).eq('id', id);
+      c.phone = phone;
+    }
+  }
 
   if (result === 'spoke') {
     await sb.from('mcl_clients').update({ stage: 'contacted', intro_type: 'spoke' }).eq('id', id);
