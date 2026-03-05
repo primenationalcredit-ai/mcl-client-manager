@@ -1045,7 +1045,8 @@ async function sendManual(id, mode) {
   if ((mode === 'sms' || mode === 'both') && c.phone) {
     if (SEND_SMS_URL) {
       try {
-        await fetch(SEND_SMS_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ 'Texting Cell': c.phone, 'Person First Name': c.name.split(' ')[0], 'SMS': body }) });
+        const smsParams = new URLSearchParams(); smsParams.append('SMS', body); smsParams.append('Texting Cell', c.phone); smsParams.append('Person First Name', c.name.split(' ')[0]);
+        await fetch(SEND_SMS_URL, { method: 'POST', body: smsParams });
         await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'sms_sent', details: 'Manual SMS via webhook' });
         toast('Text sent ✓');
       } catch (e) { toast('SMS failed: ' + e.message); }
@@ -1149,7 +1150,8 @@ async function confirmSend() {
   if (sendSms && smsTpl && c.phone) {
     try {
       const smsBody = (smsTpl.body || '').replace(/\{name\}/g, c.name.split(' ')[0]).replace(/\{agent\}/g, c.assigned_to || 'ASAP Credit Repair');
-      await fetch(SEND_SMS_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ 'Texting Cell': c.phone, 'Person First Name': c.name.split(' ')[0], 'SMS': smsBody }) });
+      const smsParams = new URLSearchParams(); smsParams.append('SMS', smsBody); smsParams.append('Texting Cell', c.phone); smsParams.append('Person First Name', c.name.split(' ')[0]);
+      await fetch(SEND_SMS_URL, { method: 'POST', body: smsParams });
       await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'sms_sent', template_key: smsTpl.key, details: 'SMS sent via Zapier: ' + smsTpl.name });
     } catch (e) { toast('SMS failed: ' + e.message); }
   }
