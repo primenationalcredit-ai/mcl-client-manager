@@ -1001,11 +1001,22 @@ async function mclResponded(id) {
     const data = await res.json();
     if (data.ok) {
       // Also send copy to accounts
-      await fetch(SEND_EMAIL_URL, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: 'accounts@asapcreditrepairusa.com', subject: '[Copy] ' + subject, body })
-      });
-      toast('Email sent to McCarthy Law + accounts ✓');
+      try {
+        const res2 = await fetch(SEND_EMAIL_URL, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: 'accounts@asapcreditrepairusa.com', subject: '[Copy] ' + subject, body })
+        });
+        const data2 = await res2.json();
+        if (data2.ok) {
+          toast('Email sent to McCarthy Law + accounts ✓');
+        } else {
+          toast('MCL email sent ✓ but accounts copy failed: ' + (data2.error || 'unknown'));
+          console.error('Accounts copy error:', data2);
+        }
+      } catch (e2) {
+        toast('MCL email sent ✓ but accounts copy failed: ' + e2.message);
+        console.error('Accounts copy error:', e2);
+      }
     } else {
       toast('Email error: ' + (data.error || 'unknown'));
     }
