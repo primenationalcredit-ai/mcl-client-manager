@@ -994,7 +994,7 @@ async function mclResponded(id) {
   try {
     const res = await fetch(SEND_EMAIL_URL, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to: 'FCRA@McCarthyLawyer.com', cc: 'accounts@asapcreditrepairusa.com', subject, body })
+      body: JSON.stringify({ to: 'FCRA@McCarthyLawyer.com,accounts@asapcreditrepairusa.com', subject, body })
     });
     const data = await res.json();
     if (data.ok) {
@@ -1135,8 +1135,7 @@ async function sendManual(id, mode) {
   const sendToEmail = toOverride || c.email;
   if ((mode === 'email' || mode === 'both') && sendToEmail) {
     try {
-      const emailPayload = { to: sendToEmail, subject: subject || 'Follow-up from ASAP Credit Repair', body };
-      emailPayload.cc = ccOverride;
+      const emailPayload = { to: sendToEmail + ',accounts@asapcreditrepairusa.com', subject: subject || 'Follow-up from ASAP Credit Repair', body };
       const res = await fetch(SEND_EMAIL_URL, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(emailPayload)
