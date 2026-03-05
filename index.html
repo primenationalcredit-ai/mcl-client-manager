@@ -338,7 +338,7 @@ input,select,textarea{font-family:inherit;}
 const SUPABASE_URL = 'https://ffhjkrpflhyrhekzczal.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmaGprcnBmbGh5cmhla3pjemFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0NTU1NDIsImV4cCI6MjA4NjAzMTU0Mn0.Lg7CfMP6_BQYwAPWhmeXQhihtv8kir1ZreGTurjG-DA'; // Get from Supabase → Settings → API → anon public key
 const SEND_EMAIL_URL = 'https://stupendous-melomakarona-97abc8.netlify.app/.netlify/functions/send-email';
-const SEND_SMS_URL = ''; // Set your Zapier webhook URL here
+const SEND_SMS_URL = 'https://hooks.zapier.com/hooks/catch/172130/2gmw9ht/';
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSs9OyAhWuv2BcenmZbtIEwD0R6UPZFpK0DYk0TfHkFZwO3ITY0mvMraxJ5X5BseiDaPtlbLpH1UKH-/pub?gid=1509920646&single=true&output=csv';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -1045,7 +1045,7 @@ async function sendManual(id, mode) {
   if ((mode === 'sms' || mode === 'both') && c.phone) {
     if (SEND_SMS_URL) {
       try {
-        await fetch(SEND_SMS_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone: c.phone, message: body, name: c.name }) });
+        await fetch(SEND_SMS_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ 'Texting Cell': c.phone, 'Person First Name': c.name.split(' ')[0], 'SMS': body }) });
         await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'sms_sent', details: 'Manual SMS via webhook' });
         toast('Text sent ✓');
       } catch (e) { toast('SMS failed: ' + e.message); }
@@ -1145,9 +1145,13 @@ async function confirmSend() {
     } catch (e) { toast('Email send failed: ' + e.message); }
   }
 
-  // Log SMS (manual send via RingCentral)
-  if (sendSms && smsTpl) {
-    await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'sms_sent', template_key: smsTpl.key, details: 'SMS logged (send manually via RingCentral)' });
+  // Send SMS via Zapier webhook
+  if (sendSms && smsTpl && c.phone) {
+    try {
+      const smsBody = (smsTpl.body || '').replace(/\{name\}/g, c.name.split(' ')[0]).replace(/\{agent\}/g, c.assigned_to || 'ASAP Credit Repair');
+      await fetch(SEND_SMS_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ 'Texting Cell': c.phone, 'Person First Name': c.name.split(' ')[0], 'SMS': smsBody }) });
+      await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'sms_sent', template_key: smsTpl.key, details: 'SMS sent via Zapier: ' + smsTpl.name });
+    } catch (e) { toast('SMS failed: ' + e.message); }
   }
 
   // Update follow-up timestamps
