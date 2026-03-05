@@ -1006,7 +1006,7 @@ function renderTimeline(c) {
     if (fuKeys.email) {
       const tpl = templates.find(t => t.key === fuKeys.email);
       const nextNum = lastFu === 'none' ? 'Intro' : `FU #${parseInt(lastFu.replace('fu','')) + 1}`;
-      const dueText = c.follow_up_status === 'overdue' ? `🔴 OVERDUE — ${c.days_since_contact} days since last contact` : c.follow_up_status === 'due_today' ? '🟡 Due today' : `🟢 Due in ${3 - (c.days_since_contact || 0)} days`;
+      const dueText = c.follow_up_status === 'overdue' ? `🔴 OVERDUE — ${c.days_since_contact} days since last contact` : c.follow_up_status === 'due_today' ? '🟡 Due today' : `🟢 Due in ${Math.max(0, 5 - (c.days_since_contact || 0))} days (4 biz days)`;
       html += `<div class="next-action">
         <div class="na-left"><span class="na-icon">${c.follow_up_status === 'overdue' ? '🔴' : '📨'}</span>
           <div><div class="na-text">Next: Send ${nextNum}${tpl ? ` — "${tpl.subject}"` : ''}</div><div class="na-sub">${dueText}</div></div>
