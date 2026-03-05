@@ -1132,15 +1132,38 @@ async function updatePipedriveLabel(dealId, stage) {
   if (!labelId) labelId = await ensurePipedriveLabel(labelName);
   if (!labelId) { console.error('Could not find/create label:', labelName); return; }
   
+  // Build set of all McCarthy label IDs so we can identify them
+  const mclLabelIds = new Set();
+  for (const name of Object.values(MCL_LABELS)) {
+    if (pipedriveLabels[name]) mclLabelIds.add(String(pipedriveLabels[name]));
+  }
+  
   try {
+    // GET existing deal to read current labels
+    const getRes = await fetch(PIPEDRIVE_BASE + '/deals/' + dealId + '?api_token=' + PIPEDRIVE_API_TOKEN);
+    const getData = await getRes.json();
+    
+    let existingLabels = [];
+    if (getData.success && getData.data && getData.data.label) {
+      // Labels can be comma-separated IDs
+      existingLabels = String(getData.data.label).split(',').map(l => l.trim()).filter(Boolean);
+    }
+    
+    // Keep all non-McCarthy labels, remove any existing McCarthy labels
+    const keepLabels = existingLabels.filter(id => !mclLabelIds.has(id));
+    
+    // Add the new McCarthy label
+    keepLabels.push(String(labelId));
+    
+    // PUT combined labels back
     const res = await fetch(PIPEDRIVE_BASE + '/deals/' + dealId + '?api_token=' + PIPEDRIVE_API_TOKEN, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ label: labelId })
+      body: JSON.stringify({ label: keepLabels.join(',') })
     });
     const data = await res.json();
     if (data.success) {
-      console.log('Pipedrive label updated:', labelName, 'on deal', dealId);
+      console.log('Pipedrive label updated:', labelName, 'on deal', dealId, '(kept', keepLabels.length - 1, 'existing labels)');
     } else {
       console.error('Pipedrive label update failed:', data);
       toast('Pipedrive update failed — check deal ID');
