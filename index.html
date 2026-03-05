@@ -6,6 +6,7 @@
 <title>MCL Client Manager</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
 :root {
   --navy:#003f87; --navy-dark:#002d63; --navy-light:#e8f0fa;
@@ -338,6 +339,7 @@ const SUPABASE_URL = 'https://ffhjkrpflhyrhekzczal.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmaGprcnBmbGh5cmhla3pjemFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0NTU1NDIsImV4cCI6MjA4NjAzMTU0Mn0.Lg7CfMP6_BQYwAPWhmeXQhihtv8kir1ZreGTurjG-DA'; // Get from Supabase → Settings → API → anon public key
 const SEND_EMAIL_URL = 'https://stupendous-melomakarona-97abc8.netlify.app/.netlify/functions/send-email';
 const SEND_SMS_URL = ''; // Set your Zapier webhook URL here
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSs9OyAhWuv2BcenmZbtIEwD0R6UPZFpK0DYk0TfHkFZwO3ITY0mvMraxJ5X5BseiDaPtlbLpH1UKH-/pub?gid=1509920646&single=true&output=csv';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -396,12 +398,20 @@ function getTemplateKeys(stage, lastFu) {
 // DATA LOADING
 // ═══════════════════════════════════════════════════
 async function loadData() {
-  const [cRes, tRes] = await Promise.all([
-    sb.from('mcl_client_status').select('*').order('days_since_contact', { ascending: false, nullsFirst: true }),
-    sb.from('templates').select('key, name, type, subject, body, trigger_stage')
-  ]);
-  if (cRes.data) clients = cRes.data;
-  if (tRes.data) templates = tRes.data;
+  try {
+    const [cRes, tRes] = await Promise.all([
+      sb.from('mcl_client_status').select('*').order('days_since_contact', { ascending: false, nullsFirst: true }),
+      sb.from('templates').select('key, name, type, subject, body, trigger_stage')
+    ]);
+    if (cRes.error) { console.error('CLIENT LOAD ERROR:', cRes.error); toast('Load error: ' + cRes.error.message); }
+    if (tRes.error) { console.error('TEMPLATE LOAD ERROR:', tRes.error); }
+    if (cRes.data) clients = cRes.data;
+    if (tRes.data) templates = tRes.data;
+    console.log('Loaded:', clients.length, 'clients,', templates.length, 'templates');
+  } catch(e) {
+    console.error('LOAD FAILED:', e);
+    toast('Load failed: ' + e.message);
+  }
   renderStages();
   renderClientList();
   updateOverdueBadge();
@@ -411,10 +421,146 @@ async function loadData() {
 async function syncData() {
   const btn = document.getElementById('syncBtn');
   if (btn) { btn.textContent = '⟳ Syncing...'; btn.disabled = true; }
+  
   try {
+    // 1. Load current DB data
     await loadData();
-    toast('Synced ✓ — ' + clients.length + ' clients loaded');
+    
+    // 2. Fetch Google Sheet CSV
+    const csvResp = await fetch(SHEET_CSV_URL);
+    if (!csvResp.ok) throw new Error('Sheet fetch failed: ' + csvResp.status);
+    const csvText = await csvResp.text();
+    const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+    
+    const sheetRows = parsed.data.filter(r => r.Name && r.Name.trim());
+    console.log('Sheet rows with names:', sheetRows.length);
+    
+    let inserted = 0, updated = 0, errors = 0;
+    
+    for (const row of sheetRows) {
+      const name = row.Name.trim();
+      if (!name) continue;
+      
+      // Determine correct stage from sheet columns
+      const introMade = (row['Intro Made'] || '').trim().toUpperCase() === 'TRUE';
+      const mclContact = (row['MCL Initial Contact'] || '').trim().toUpperCase() === 'TRUE';
+      const notEligible = (row['Not Eligible'] || '').trim().toUpperCase() === 'TRUE';
+      const disputeMailedToClient = (row['Dispute Mailed to Client'] || '').trim();
+      const clientConfirmedMailed = (row['Client Confirmed Dispute Mailed'] || '').trim();
+      const dueDate = (row['Due Date'] || '').trim();
+      
+      let stage = 'need_to_call';
+      let outcome = null;
+      
+      if (notEligible) {
+        stage = 'lost';
+        outcome = 'lost';
+      } else if (clientConfirmedMailed) {
+        stage = 'disputes_mailed';
+      } else if (disputeMailedToClient) {
+        stage = 'packet_sent';
+      } else if (mclContact) {
+        stage = 'waiting_mcl';
+      } else if (introMade) {
+        stage = 'contacted';
+      } else {
+        stage = 'need_to_call';
+      }
+      
+      // Parse dates (MM/DD/YYYY → YYYY-MM-DD)
+      function parseDate(d) {
+        if (!d) return null;
+        const p = d.split('/');
+        if (p.length !== 3) return null;
+        const yr = p[2].length === 2 ? '20' + p[2] : p[2];
+        return yr + '-' + p[0].padStart(2,'0') + '-' + p[1].padStart(2,'0');
+      }
+      
+      const email = (row['Client Email'] || '').trim();
+      const phone = (row['Phone Number'] || '').trim();
+      const mclNotes = (row['McL Notes'] || '').trim();
+      const joesNotes = (row['Joes Notes'] || '').trim();
+      const additionalNotes = (row['Additional Notes'] || row['Additional Notes '] || '').trim();
+      const combinedNotes = [joesNotes, additionalNotes].filter(Boolean).join(' | ');
+      
+      // Build update object
+      const updateData = { stage };
+      if (outcome) { updateData.outcome = outcome; updateData.outcome_at = new Date().toISOString(); }
+      if (email) updateData.email = email;
+      if (phone) updateData.phone = phone;
+      if (mclNotes) updateData.error_details = mclNotes;
+      if (combinedNotes) updateData.notes = combinedNotes;
+      if (disputeMailedToClient) updateData.disputes_mailed_to_client = parseDate(disputeMailedToClient);
+      if (clientConfirmedMailed) updateData.disputes_mailed_to_cra = parseDate(clientConfirmedMailed);
+      if (dueDate) updateData.round_over_date = parseDate(dueDate);
+      
+      // Find existing client by name (case-insensitive)
+      const nameLower = name.toLowerCase();
+      const existing = clients.find(c => c.name.toLowerCase() === nameLower);
+      
+      if (existing) {
+        // Only update stage if sheet has a "higher" stage (don't move backwards due to stale sheet)
+        // But DO update contact info and dates always
+        const stageOrder = ['need_to_call','do_not_call','lvm','contacted','waiting_mcl','packet_sent','disputes_mailed','waiting_reports','litigation'];
+        const existingIdx = stageOrder.indexOf(existing.stage);
+        const sheetIdx = stageOrder.indexOf(stage);
+        
+        // Update stage if sheet says further along OR if current stage isn't in our list
+        if (sheetIdx >= existingIdx || existingIdx === -1) {
+          // Keep the stage from sheet
+        } else {
+          // Don't regress — keep existing stage
+          delete updateData.stage;
+        }
+        
+        // Don't overwrite outcome if already set
+        if (existing.outcome && !outcome) {
+          delete updateData.outcome;
+          delete updateData.outcome_at;
+        }
+        
+        // Don't blank out fields
+        if (!email) delete updateData.email;
+        if (!phone) delete updateData.phone;
+        
+        const { error } = await sb.from('mcl_clients').update(updateData).eq('id', existing.id);
+        if (error) { console.error('Update error for', name, error); errors++; }
+        else updated++;
+      } else {
+        // INSERT new client
+        const insertData = {
+          name,
+          email: email || '',
+          phone: phone || '',
+          stage,
+          error_details: mclNotes || '',
+          notes: combinedNotes || '',
+          intro_type: introMade ? 'spoke' : 'no_answer',
+          disputes_mailed_to_client: parseDate(disputeMailedToClient),
+          disputes_mailed_to_cra: parseDate(clientConfirmedMailed),
+          round_over_date: parseDate(dueDate),
+        };
+        if (outcome) { insertData.outcome = outcome; insertData.outcome_at = new Date().toISOString(); }
+        
+        const { error } = await sb.from('mcl_clients').insert(insertData);
+        if (error) { console.error('Insert error for', name, error); errors++; }
+        else inserted++;
+      }
+    }
+    
+    // Reload to show changes
+    await loadData();
+    
+    let msg = `Synced ✓ — ${sheetRows.length} sheet rows`;
+    if (inserted) msg += `, ${inserted} new`;
+    if (updated) msg += `, ${updated} updated`;
+    if (errors) msg += `, ${errors} errors`;
+    msg += ` — ${clients.length} total in DB`;
+    toast(msg);
+    console.log(msg);
+    
   } catch(e) {
+    console.error('SYNC FAILED:', e);
     toast('Sync failed: ' + e.message);
   }
   if (btn) { btn.textContent = '↻ Sync'; btn.disabled = false; }
