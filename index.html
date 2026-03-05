@@ -664,20 +664,13 @@ function renderFilteredClients(list) {
 }
 
 function filterClients() {
-  const raw = document.getElementById('searchInput').value.trim();
-  const searchLost = raw.toLowerCase().startsWith('lost:');
-  const q = searchLost ? raw.slice(5).trim().toLowerCase() : raw.toLowerCase();
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
   if (q) {
-    // Global search across ALL pipelines
-    let all = clients.filter(c => c.name.toLowerCase().includes(q) || (c.email||'').toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q));
-    // Exclude lost unless searching from Lost tab or using "lost:" prefix
-    if (!searchLost && currentStage !== 'lost') {
-      all = all.filter(c => c.outcome !== 'lost');
-    }
-    document.getElementById('stageClientsTitle').textContent = `🔍 Search: "${q}"${searchLost ? ' (incl. lost)' : ''} — ${all.length} results`;
+    // Global search: ALL clients except lost/deleted, regardless of current pipeline
+    const all = clients.filter(c => c.outcome !== 'lost' && (c.name.toLowerCase().includes(q) || (c.email||'').toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q)));
+    document.getElementById('stageClientsTitle').textContent = `🔍 "${q}" — ${all.length} results`;
     renderFilteredClients(all);
   } else {
-    // No search — show current stage
     const stageClients = getStageClients();
     document.getElementById('stageClientsTitle').textContent = `${STAGE_ICONS[currentStage]||'🏁'} ${STAGES.find(s=>s.key===currentStage)?.label||'Clients'}${overdueOnly ? ' (Overdue Only)' : ''} — ${stageClients.length}`;
     renderFilteredClients(stageClients);
