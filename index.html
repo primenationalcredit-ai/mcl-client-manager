@@ -829,7 +829,6 @@ function renderProfile(clientId) {
         </div>
       </div>
       <div class="prof-actions">
-        ${!c.responded && !c.outcome ? `<button class="btn btn-gold btn-sm" onclick="markResponded('${c.id}')">✓ Responded</button>` : ''}
         ${!c.outcome ? `<button class="btn btn-red btn-sm" onclick="markOutcome('${c.id}','lost')">❌ Lost</button>` : ''}
         ${c.pause_reason ? `<button class="btn btn-sm" onclick="unpauseClient('${c.id}')" style="background:#e8f5e9;color:#2e7d32;border:1px solid #4caf50;font-size:11px;">▶ Unpause</button>` : `<button class="btn btn-sm" onclick="pauseClient('${c.id}')" style="background:#fff3e0;color:#e65100;border:1px solid #ffb74d;font-size:11px;">⏸ Pause</button>`}
         ${!c.outcome ? `<button class="btn btn-sm" onclick="scheduleFollowup('${c.id}')" style="background:#e3f2fd;color:#1565c0;border:1px solid #64b5f6;font-size:11px;">📅 Schedule</button>` : ''}
@@ -1023,7 +1022,6 @@ function renderTimeline(c) {
           <div><div class="na-text">All follow-ups sent</div><div class="na-sub">Consider calling again or marking as Won/Lost</div></div>
         </div>
         <div class="na-btns">
-          <button class="btn btn-outline btn-sm" onclick="markResponded('${c.id}')">✓ Responded</button>
           <button class="btn btn-red btn-sm" onclick="markOutcome('${c.id}','lost')">✗ Lost</button>
         </div>
       </div>`;
