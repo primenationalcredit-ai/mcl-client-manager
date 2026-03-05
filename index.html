@@ -815,11 +815,11 @@ function renderProfile(clientId) {
     <!-- PROFILE HEADER -->
     <div class="prof-header">
       <div>
-        <div class="prof-name"><input style="font-size:22px;font-weight:700;width:100%;border:1px solid transparent;padding:2px 4px;background:transparent;border-radius:6px;font-family:inherit;" value="${c.name}" onblur="saveField('${c.id}','name',this.value)" onfocus="this.style.borderColor='var(--navy)';this.style.background='#fff'" /></div>
+        <div class="prof-name"><input style="font-size:22px;font-weight:700;width:100%;border:1px solid transparent;padding:2px 4px;background:transparent;border-radius:6px;font-family:inherit;" value="${c.name}" onblur="saveField('${c.id}','name',this.value);this.style.borderColor='transparent';this.style.background='transparent'" onfocus="this.style.borderColor='var(--navy)';this.style.background='#fff'" onkeydown="if(event.key==='Enter'){this.blur()}" /></div>
         <div class="prof-meta">
-          <span>📧 <input style="border:1px solid transparent;padding:1px 4px;font-size:13px;color:var(--navy);background:transparent;border-radius:4px;width:220px;font-family:inherit;" value="${c.email || ''}" placeholder="Add email..." onblur="saveField('${c.id}','email',this.value)" onfocus="this.style.borderColor='var(--navy)';this.style.background='#fff'" /></span>
-          <span>📱 <input style="border:1px solid transparent;padding:1px 4px;font-size:13px;color:var(--g500);background:transparent;border-radius:4px;width:140px;font-family:inherit;" value="${c.phone || ''}" placeholder="Add phone..." onblur="saveField('${c.id}','phone',this.value)" onfocus="this.style.borderColor='var(--navy)';this.style.background='#fff'" /></span>
-          <span>📋 <input style="border:1px solid transparent;padding:1px 4px;font-size:13px;color:var(--navy);background:transparent;border-radius:4px;width:100px;font-family:inherit;" value="${c.pipedrive_id || ''}" placeholder="Deal ID..." onblur="saveField('${c.id}','pipedrive_id',this.value)" onfocus="this.style.borderColor='var(--navy)';this.style.background='#fff'" /></span>
+          <span>📧 <input style="border:1px solid transparent;padding:1px 4px;font-size:13px;color:var(--navy);background:transparent;border-radius:4px;width:220px;font-family:inherit;" value="${c.email || ''}" placeholder="Add email..." onblur="saveField('${c.id}','email',this.value);this.style.borderColor='transparent';this.style.background='transparent'" onfocus="this.style.borderColor='var(--navy)';this.style.background='#fff'" onkeydown="if(event.key==='Enter'){this.blur()}" /></span>
+          <span>📱 <input style="border:1px solid transparent;padding:1px 4px;font-size:13px;color:var(--g500);background:transparent;border-radius:4px;width:140px;font-family:inherit;" value="${c.phone || ''}" placeholder="Add phone..." onblur="saveField('${c.id}','phone',this.value);this.style.borderColor='transparent';this.style.background='transparent'" onfocus="this.style.borderColor='var(--navy)';this.style.background='#fff'" onkeydown="if(event.key==='Enter'){this.blur()}" /></span>
+          <span>📋 <input style="border:1px solid transparent;padding:1px 4px;font-size:13px;color:var(--navy);background:transparent;border-radius:4px;width:100px;font-family:inherit;" value="${c.pipedrive_id || ''}" placeholder="Deal ID..." onblur="saveField('${c.id}','pipedrive_id',this.value);this.style.borderColor='transparent';this.style.background='transparent'" onfocus="this.style.borderColor='var(--navy)';this.style.background='#fff'" onkeydown="if(event.key==='Enter'){this.blur()}" /></span>
         </div>
       </div>
       <div class="prof-actions">
@@ -1398,6 +1398,7 @@ async function addCommEntry(id) {
 
 async function saveField(id, field, value) {
   const c = clients.find(x => x.id === id);
+  if (c) c[field] = value; // Update local data immediately
   await sb.from('mcl_clients').update({ [field]: value }).eq('id', id);
   toast(field.replace(/_/g,' ') + ' saved ✓');
   
@@ -1405,7 +1406,7 @@ async function saveField(id, field, value) {
   if (c && (field === 'name' || field === 'email' || field === 'phone')) {
     try {
       const params = new URLSearchParams();
-      params.append('Name', field === 'name' ? c.name : c.name); // lookup by current name
+      params.append('Name', c.name);
       if (field === 'name') params.append('New Name', value);
       params.append('Client Email', field === 'email' ? value : (c.email || ''));
       params.append('Phone Number', field === 'phone' ? value : (c.phone || ''));
