@@ -371,6 +371,7 @@ const MCL_LABELS = {
 };
 let pipedriveLabels = {}; // Will be populated on init: { labelName: labelId }
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSs9OyAhWuv2BcenmZbtIEwD0R6UPZFpK0DYk0TfHkFZwO3ITY0mvMraxJ5X5BseiDaPtlbLpH1UKH-/pub?gid=1509920646&single=true&output=csv';
+const NOTES_WEBHOOK_URL = 'https://hooks.zapier.com/hooks/catch/172130/ux2gwi0/';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -544,7 +545,9 @@ async function syncData() {
     
     let inserted = 0, updated = 0, errors = 0;
     
-    for (const row of sheetRows) {
+    for (let rowIdx = 0; rowIdx < sheetRows.length; rowIdx++) {
+      const row = sheetRows[rowIdx];
+      const sheetRowNum = rowIdx + 2; // +2 because row 1 is header
       const name = row.Name.trim();
       if (!name) continue;
       
@@ -599,7 +602,7 @@ async function syncData() {
       const combinedNotes = [joesNotes, additionalNotes].filter(Boolean).join(' | ');
       
       // Build update object
-      const updateData = { stage };
+      const updateData = { stage, sheet_row: sheetRowNum };
       if (outcome) { updateData.outcome = outcome; updateData.outcome_at = new Date().toISOString(); }
       if (email) updateData.email = email;
       if (phone) updateData.phone = phone;
@@ -644,8 +647,9 @@ async function syncData() {
         if (error) { console.error('Update error for', name, error); errors++; }
         else updated++;
       } else {
-        // Check if this client was previously deleted — don't re-create
-        const { data: delLog } = await sb.from('mcl_activity_log').select('id').eq('action', 'deleted').ilike('details', '%' + name + '%').limit(1);
+        // Check if this exact row+name combo was previously deleted — don't re-create
+        const deletedKey = 'Deleted row ' + sheetRowNum + ': ' + name;
+        const { data: delLog } = await sb.from('mcl_activity_log').select('id').eq('action', 'deleted').ilike('details', deletedKey).limit(1);
         if (delLog && delLog.length > 0) { continue; }
         
         // INSERT new client
@@ -654,6 +658,7 @@ async function syncData() {
           email: email || '',
           phone: phone || '',
           stage,
+          sheet_row: sheetRowNum,
           error_details: mclNotes || '',
           notes: combinedNotes || '',
           intro_type: introMade ? 'spoke' : 'no_answer',
@@ -1206,7 +1211,7 @@ async function deleteClient(id) {
   if (!c) return;
   if (!(await customConfirm('Permanently delete ' + c.name + '? This cannot be undone.'))) return;
   // Log deletion so sync won't re-create
-  await sb.from('mcl_activity_log').insert({ client_id: id, action: 'deleted', details: 'Deleted: ' + c.name });
+  await sb.from('mcl_activity_log').insert({ client_id: id, action: 'deleted', details: 'Deleted row ' + (c.sheet_row || 'unknown') + ': ' + c.name });
   const { error } = await sb.from('mcl_clients').delete().eq('id', id);
   if (error) { toast('Delete failed: ' + error.message); return; }
   toast(c.name + ' deleted');
@@ -1404,7 +1409,22 @@ async function addCommEntry(id) {
   c.comm_log = log;
   toast('Note added \u2713');
   document.getElementById('commNote').value = '';
+  pushNotesToSheet(c);
   await loadData();
+}
+
+async function pushNotesToSheet(c) {
+  try {
+    const log = c.comm_log || [];
+    if (!log.length) return;
+    const combined = log.map(e => e.date + ' ' + e.agent + ': ' + e.text).join(' -- ');
+    const params = new URLSearchParams();
+    params.append('Name', c.name);
+    params.append('Client Email', c.email || '');
+    params.append('Phone Number', c.phone || '');
+    params.append('Notes', combined);
+    await fetch(NOTES_WEBHOOK_URL, { method: 'POST', body: params });
+  } catch(e) { console.error('Notes webhook failed:', e); }
 }
 
 async function saveField(id, field, value) {
@@ -1776,7 +1796,7 @@ let pendingAnswerClientId = null;
 async function callOutcome(id, result) {
   const c = clients.find(x => x.id === id);
   
-  // Require email and phone before moving out of need_to_call (except no_answer which stays)
+  // Require email, phone, and Deal ID before moving out of need_to_call (except no_answer which stays)
   if (result !== 'no_answer' && c) {
     if (!c.email) {
       let email = null;
@@ -1800,6 +1820,17 @@ async function callOutcome(id, result) {
       }
       await sb.from('mcl_clients').update({ phone }).eq('id', id);
       c.phone = phone;
+    }
+    if (!c.pipedrive_id) {
+      let dealId = null;
+      while (true) {
+        dealId = await customPrompt('Pipedrive Deal ID is required before moving ' + c.name + '.\n\nEnter their 6-digit Deal ID:');
+        if (!dealId) { toast('Move cancelled — Deal ID required'); return; }
+        if (/^\d{6}$/.test(dealId.trim())) break;
+        toast('Invalid Deal ID — must be exactly 6 digits');
+      }
+      await sb.from('mcl_clients').update({ pipedrive_id: dealId.trim() }).eq('id', id);
+      c.pipedrive_id = dealId.trim();
     }
   }
   
