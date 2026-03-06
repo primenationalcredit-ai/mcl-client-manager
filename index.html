@@ -138,7 +138,10 @@ input,select,textarea{font-family:inherit;}
 .na-icon{font-size:18px;}
 .na-text{font-size:12px;font-weight:600;color:var(--navy-dark);}
 .na-sub{font-size:11px;color:var(--g500);margin-top:1px;}
-.na-btns{display:flex;gap:5px;flex-shrink:0;}
+.na-btns{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;}
+.na-checks{display:flex;gap:10px;}
+.na-check{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--g600);cursor:pointer;user-select:none;}
+.na-check input{cursor:pointer;accent-color:var(--navy);width:13px;height:13px;}
 
 /* MOVE STAGE */
 .move-bar{display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid var(--g200);}
@@ -1028,8 +1031,11 @@ function renderTimeline(c) {
           <div><div class="na-text">Next: Send ${nextNum}${tpl ? ` — "${tpl.subject}"` : ''}</div><div class="na-sub">${dueText}</div></div>
         </div>
         <div class="na-btns">
-          <button class="btn btn-navy btn-sm" onclick="openSendModal('${c.id}','email')">📧 Send Email</button>
-          <button class="btn btn-green btn-sm" onclick="openSendModal('${c.id}','sms')">💬 Send Text</button>
+          <button class="btn btn-navy btn-sm" onclick="sendBothChecked('${c.id}')">📨 Send Message</button>
+          <div class="na-checks">
+            <label class="na-check"><input type="checkbox" id="chk-email-${c.id}" checked> Email</label>
+            <label class="na-check"><input type="checkbox" id="chk-sms-${c.id}" checked> SMS</label>
+          </div>
         </div>
       </div>`;
     } else {
@@ -1650,7 +1656,7 @@ async function resendFollowup(clientId, fuType) {
   if (!(await customConfirm(`Resend ${label} to ${c.name}?\n\nEmail: ${emailTpl ? '✓ ' + emailTpl.subject : '✗ no template'}\nSMS: ${smsTpl ? '✓ will send' : '✗ no template'}`))) return;
   
   // Resend email
-  if (emailTpl && c.email) {
+  if (sendEmail && emailTpl && c.email) {
     try {
       const body = emailTpl.body.replace(/\{name\}/g, c.name.split(' ')[0]).replace(/\{agent\}/g, c.assigned_to || 'ASAP Credit Repair');
       const res = await fetch(SEND_EMAIL_URL, {
@@ -1688,6 +1694,19 @@ async function resendFollowup(clientId, fuType) {
   await loadData();
 }
 
+async function sendBothChecked(clientId) {
+  const emailChecked = document.getElementById('chk-email-' + clientId)?.checked !== false;
+  const smsChecked = document.getElementById('chk-sms-' + clientId)?.checked !== false;
+  if (!emailChecked && !smsChecked) { toast('Select at least Email or SMS'); return; }
+  if (emailChecked && smsChecked) {
+    await openSendModal(clientId, 'both');
+  } else if (emailChecked) {
+    await openSendModal(clientId, 'email');
+  } else {
+    await openSendModal(clientId, 'sms');
+  }
+}
+
 function openSendModal(clientId, type) {
   const c = clients.find(x => x.id === clientId);
   if (!c) return;
@@ -1708,6 +1727,12 @@ function openSendModal(clientId, type) {
   document.getElementById('sendPreview').innerHTML = tpl.type === 'email' ? preview : preview.replace(/\n/g, '<br>');
 
   pendingSend = { clientId, emailKey: fuKeys.email, smsKey: fuKeys.sms, lastFu, type };
+  // Set the SMS checkbox based on type
+  const smsChk = document.getElementById('sendAlsoSms');
+  if (smsChk) smsChk.checked = (type === 'both' || type === 'sms');
+  // Hide the SMS checkbox row since we control it from the next-action buttons now
+  const smsRow = smsChk?.closest('div');
+  if (smsRow) smsRow.style.display = 'none';
   document.getElementById('sendModal').classList.add('visible');
 }
 
@@ -1716,12 +1741,13 @@ async function confirmSend() {
   const c = clients.find(x => x.id === pendingSend.clientId);
   if (!c) return;
 
-  const sendSms = document.getElementById('sendAlsoSms').checked;
+  const sendSms = pendingSend.type === 'both' || pendingSend.type === 'sms';
+  const sendEmail = pendingSend.type === 'both' || pendingSend.type === 'email';
   const emailTpl = templates.find(t => t.key === pendingSend.emailKey);
   const smsTpl = templates.find(t => t.key === pendingSend.smsKey);
 
   // Send email via SendGrid function
-  if (emailTpl && c.email) {
+  if (sendEmail && emailTpl && c.email) {
     try {
       const body = emailTpl.body.replace(/\{name\}/g, c.name.split(' ')[0]).replace(/\{agent\}/g, c.assigned_to || '');
       const res = await fetch(SEND_EMAIL_URL, {
