@@ -2028,10 +2028,20 @@ if (localStorage.getItem('mcl_synced_date') !== _today) {
 setInterval(loadData, 60000);
 
 // Auto-sync from Google Sheet every 5 minutes with persistent countdown
-const SYNC_INTERVAL_MS = 300000;
+// Only runs during business hours: Mon-Fri 7am-7pm CST (UTC-6)
+
+function isBusinessHours() {
+  const now = new Date();
+  // Convert to CST (UTC-6)
+  const cst = new Date(now.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+  const day = cst.getDay(); // 0=Sun, 6=Sat
+  const hour = cst.getHours();
+  return day >= 1 && day <= 5 && hour >= 7 && hour < 19;
+}
 
 function getSecsUntilNextSync() {
   const last = parseInt(localStorage.getItem('mcl_last_sync_ts') || '0');
+  if (!last) return 0; // never synced — sync immediately
   const elapsed = Math.floor((Date.now() - last) / 1000);
   return Math.max(0, 300 - elapsed);
 }
@@ -2043,6 +2053,11 @@ function recordSyncTime() {
 function updateSyncCountdown() {
   const el = document.getElementById('syncCountdown');
   if (!el) return;
+  if (!isBusinessHours()) {
+    el.textContent = 'auto-sync off hours';
+    el.style.color = '#94a3b8';
+    return;
+  }
   const secs = getSecsUntilNextSync();
   if (secs <= 0) { el.textContent = 'syncing...'; return; }
   const m = Math.floor(secs / 60);
@@ -2050,25 +2065,26 @@ function updateSyncCountdown() {
   el.textContent = `next sync ${m}:${s}`;
 }
 
-// Tick every second — syncs when countdown hits 0
+// Tick every second — syncs when countdown hits 0 during business hours
 setInterval(() => {
-  const secs = getSecsUntilNextSync();
-  if (secs <= 0) {
-    recordSyncTime();
-    syncData();
+  if (isBusinessHours()) {
+    const secs = getSecsUntilNextSync();
+    if (secs <= 0) {
+      recordSyncTime();
+      syncData();
+    }
   }
   updateSyncCountdown();
 }, 1000);
 
-// manualSync resets the timestamp then syncs
+// manualSync resets the timestamp then syncs (always works regardless of hours)
 async function manualSync() {
   recordSyncTime();
   updateSyncCountdown();
   await syncData();
 }
 
-// Initialise on load
-recordSyncTime();
+// Initialise countdown display on load — do NOT reset the timestamp
 updateSyncCountdown();
 </script>
 </body>
