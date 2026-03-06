@@ -1019,7 +1019,8 @@ function renderTimeline(c) {
 
   // Next action
   const hasFutureSchedule = c.next_followup_date && new Date(c.next_followup_date) > new Date();
-  if (!c.responded && !c.outcome && c.stage !== 'do_not_call' && !c.pause_reason && !hasFutureSchedule) {
+  const noFollowupStages = ['do_not_call', 'waiting_mcl', 'disputes_mailed', 'litigation', 'won', 'lost'];
+  if (!c.responded && !c.outcome && !noFollowupStages.includes(c.stage) && !c.pause_reason && !hasFutureSchedule) {
     const lastFu = c.last_followup || 'none';
     const fuKeys = getTemplateKeys(c.stage, lastFu);
     if (fuKeys.email) {
