@@ -468,11 +468,10 @@ const STAGES = [
   { key: 'disputes_mailed', icon: '📮', label: 'Disputes Mailed' },
   { key: 'waiting_reports', icon: '📊', label: 'Waiting on Reports' },
   { key: 'litigation', icon: '⚖️', label: 'Litigation' },
-  { key: 'won', icon: '✅', label: 'Won' },
   { key: 'lost', icon: '❌', label: 'Lost' },
 ];
 
-const STAGE_ICONS = { need_to_call:'📞', do_not_call:'🚫', lvm:'📞', contacted:'💬', waiting_mcl:'⏳', packet_sent:'📬', disputes_mailed:'📮', waiting_reports:'📊', litigation:'⚖️', won:'✅', lost:'❌' };
+const STAGE_ICONS = { need_to_call:'📞', do_not_call:'🚫', lvm:'📞', contacted:'💬', waiting_mcl:'⏳', packet_sent:'📬', disputes_mailed:'📮', waiting_reports:'📊', litigation:'⚖️', lost:'❌' };
 
 // Template key mapping per stage
 function getTemplateKeys(stage, lastFu) {
@@ -704,7 +703,6 @@ function renderStages() {
   STAGES.forEach(s => {
     const stageClients = clients.filter(c => {
       if (s.key === 'do_not_call') return c.stage === 'do_not_call' && !c.outcome;
-      if (s.key === 'won') return c.outcome === 'won' || (c.stage === 'won' && !c.outcome);
       if (s.key === 'litigation') return c.outcome === 'litigation';
       if (s.key === 'lost') return c.outcome === 'lost';
       return c.stage === s.key && !c.outcome;
@@ -765,7 +763,6 @@ function renderClientList() {
 function getStageClients() {
   let list;
   if (currentStage === 'do_not_call') list = clients.filter(c => c.stage === 'do_not_call' && !c.outcome);
-  else if (currentStage === 'won') list = clients.filter(c => c.outcome === 'won' || (c.stage === 'won' && !c.outcome));
   else if (currentStage === 'litigation') list = clients.filter(c => c.outcome === 'litigation');
   else if (currentStage === 'lost') list = clients.filter(c => c.outcome === 'lost');
   else list = clients.filter(c => c.stage === currentStage && !c.outcome);
@@ -1019,7 +1016,7 @@ function renderTimeline(c) {
 
   // Next action
   const hasFutureSchedule = c.next_followup_date && new Date(c.next_followup_date) > new Date();
-  const noFollowupStages = ['do_not_call', 'waiting_mcl', 'disputes_mailed', 'litigation', 'won', 'lost'];
+  const noFollowupStages = ['do_not_call', 'waiting_mcl', 'disputes_mailed', 'litigation', 'lost'];
   if (!c.responded && !c.outcome && !noFollowupStages.includes(c.stage) && !c.pause_reason && !hasFutureSchedule) {
     const lastFu = c.last_followup || 'none';
     const fuKeys = getTemplateKeys(c.stage, lastFu);
@@ -1042,7 +1039,7 @@ function renderTimeline(c) {
     } else {
       html += `<div class="next-action">
         <div class="na-left"><span class="na-icon">✅</span>
-          <div><div class="na-text">All follow-ups sent</div><div class="na-sub">Consider calling again or marking as Won/Lost</div></div>
+          <div><div class="na-text">All follow-ups sent</div><div class="na-sub">Consider calling again or marking as Lost</div></div>
         </div>
         <div class="na-btns">
           <button class="btn btn-red btn-sm" onclick="markOutcome('${c.id}','lost')">✗ Lost</button>
@@ -1077,7 +1074,7 @@ function renderTimeline(c) {
       <div class="flow-pending-desc">${descs[allStages[i]] || ''}</div></div>`;
   }
   html += `<div class="flow-stage"><div class="flow-dot"></div>
-    <div class="flow-head"><span class="flow-label pending">🏁 Won or Lost</span></div>
+    <div class="flow-head"><span class="flow-label pending">🏁 Lost</span></div>
     <div class="flow-pending-desc">Final outcome</div></div>`;
 
   return html;
