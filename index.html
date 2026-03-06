@@ -219,7 +219,8 @@ input,select,textarea{font-family:inherit;}
   <span class="topnav-brand">⚖️ MCL Client Manager</span>
   <div class="topnav-right">
     <span class="badge-alert" id="overdueGlobal">0 overdue</span>
-    <button class="btn btn-outline btn-sm" onclick="syncData()" id="syncBtn" style="font-size:13px;">↻ Sync</button>
+    <span id="syncCountdown" style="font-size:11px;color:#94a3b8;font-family:'JetBrains Mono',monospace;">next sync 5:00</span>
+    <button class="btn btn-outline btn-sm" onclick="manualSync()" id="syncBtn" style="font-size:13px;">↻ Sync</button>
   </div>
 </div>
 
@@ -1962,8 +1963,41 @@ if (localStorage.getItem('mcl_synced_date') !== _today) {
 }
 // Auto-refresh from DB every 60 seconds
 setInterval(loadData, 60000);
-// Auto-sync from Google Sheet every 5 minutes
-setInterval(() => { console.log('Auto-sync from sheet...'); syncData(); }, 300000);
+
+// Auto-sync from Google Sheet every 5 minutes with countdown timer
+const SYNC_INTERVAL_SECS = 300;
+let syncCountdownSecs = SYNC_INTERVAL_SECS;
+
+function updateSyncCountdown() {
+  const el = document.getElementById('syncCountdown');
+  if (!el) return;
+  if (syncCountdownSecs <= 0) {
+    el.textContent = 'syncing...';
+    return;
+  }
+  const m = Math.floor(syncCountdownSecs / 60);
+  const s = String(syncCountdownSecs % 60).padStart(2, '0');
+  el.textContent = `next sync ${m}:${s}`;
+}
+
+// Tick every second
+setInterval(() => {
+  syncCountdownSecs--;
+  if (syncCountdownSecs <= 0) {
+    syncCountdownSecs = SYNC_INTERVAL_SECS;
+    syncData();
+  }
+  updateSyncCountdown();
+}, 1000);
+
+// Reset countdown when manual sync is triggered
+
+// manualSync resets the countdown then syncs
+async function manualSync() {
+  syncCountdownSecs = SYNC_INTERVAL_SECS;
+  updateSyncCountdown();
+  await syncData();
+}
 </script>
 </body>
 </html>
