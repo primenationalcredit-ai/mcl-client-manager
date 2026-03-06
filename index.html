@@ -409,7 +409,7 @@ function customPrompt(message, defaultVal) {
   });
 }
 
-function customConfirm(message) {
+function customConfirm(message, okLabel, cancelLabel) {
   return new Promise((resolve) => {
     const overlay = document.getElementById('customPromptOverlay');
     const input = document.getElementById('customPromptInput');
@@ -422,12 +422,16 @@ function customConfirm(message) {
     titleEl.textContent = lines[0];
     msgEl.textContent = lines.slice(1).join('\n').trim();
     input.style.display = 'none';
+    okBtn.textContent = okLabel || 'OK';
+    cancelBtn.textContent = cancelLabel || 'Cancel';
     overlay.style.display = 'flex';
     okBtn.focus();
     
     function cleanup() {
       overlay.style.display = 'none';
       input.style.display = 'block';
+      okBtn.textContent = 'OK';
+      cancelBtn.textContent = 'Cancel';
       okBtn.removeEventListener('click', onOk);
       cancelBtn.removeEventListener('click', onCancel);
     }
@@ -1947,14 +1951,13 @@ document.querySelectorAll('.modal-bg').forEach(m => {
 loadData();
 loadPipedriveLabels();
 
-// Show sync reminder once per session
-if (!sessionStorage.getItem('mcl_synced')) {
+// Show sync reminder once per calendar day
+const _today = new Date().toDateString();
+if (localStorage.getItem('mcl_synced_date') !== _today) {
   setTimeout(async () => {
-    const doSync = await customConfirm('Good morning! 👋\n\nPlease click OK to sync the app with the latest data before you start working.\n\nThis makes sure you have the most up-to-date client information.');
-    if (doSync) {
-      syncData();
-    }
-    sessionStorage.setItem('mcl_synced', 'true');
+    await customConfirm('Good morning! \ud83d\udc4b\n\nClick Sync to load the latest client data before you start working.', 'Sync', 'Skip');
+    syncData();
+    localStorage.setItem('mcl_synced_date', _today);
   }, 1500);
 }
 // Auto-refresh from DB every 60 seconds
