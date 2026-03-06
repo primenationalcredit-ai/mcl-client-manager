@@ -1383,13 +1383,15 @@ async function addCommEntry(id) {
   const agent = document.getElementById('commAgent').value.trim() || 'JOE';
   const text = document.getElementById('commNote').value.trim();
   if (!text) { toast('Type a note first'); return; }
-  const log = c.comm_log || [];
+  const log = Array.isArray(c.comm_log) ? [...c.comm_log] : [];
   const now = new Date();
   const dateStr = (now.getMonth()+1).toString().padStart(2,'0') + '/' + now.getDate().toString().padStart(2,'0');
   log.push({ date: dateStr, agent, text });
-  await sb.from('mcl_clients').update({ comm_log: log }).eq('id', id);
+  const { error } = await sb.from('mcl_clients').update({ comm_log: log }).eq('id', id);
+  if (error) { toast('\u274c Note failed to save: ' + error.message); console.error('comm_log save error:', error); return; }
   await sb.from('mcl_activity_log').insert({ client_id: id, action: 'call_note', details: agent + ': ' + text });
-  toast('Note added ✓');
+  c.comm_log = log;
+  toast('Note added \u2713');
   document.getElementById('commNote').value = '';
   await loadData();
 }
