@@ -1964,40 +1964,49 @@ if (localStorage.getItem('mcl_synced_date') !== _today) {
 // Auto-refresh from DB every 60 seconds
 setInterval(loadData, 60000);
 
-// Auto-sync from Google Sheet every 5 minutes with countdown timer
-const SYNC_INTERVAL_SECS = 300;
-let syncCountdownSecs = SYNC_INTERVAL_SECS;
+// Auto-sync from Google Sheet every 5 minutes with persistent countdown
+const SYNC_INTERVAL_MS = 300000;
+
+function getSecsUntilNextSync() {
+  const last = parseInt(localStorage.getItem('mcl_last_sync_ts') || '0');
+  const elapsed = Math.floor((Date.now() - last) / 1000);
+  return Math.max(0, 300 - elapsed);
+}
+
+function recordSyncTime() {
+  localStorage.setItem('mcl_last_sync_ts', Date.now().toString());
+}
 
 function updateSyncCountdown() {
   const el = document.getElementById('syncCountdown');
   if (!el) return;
-  if (syncCountdownSecs <= 0) {
-    el.textContent = 'syncing...';
-    return;
-  }
-  const m = Math.floor(syncCountdownSecs / 60);
-  const s = String(syncCountdownSecs % 60).padStart(2, '0');
+  const secs = getSecsUntilNextSync();
+  if (secs <= 0) { el.textContent = 'syncing...'; return; }
+  const m = Math.floor(secs / 60);
+  const s = String(secs % 60).padStart(2, '0');
   el.textContent = `next sync ${m}:${s}`;
 }
 
-// Tick every second
+// Tick every second — syncs when countdown hits 0
 setInterval(() => {
-  syncCountdownSecs--;
-  if (syncCountdownSecs <= 0) {
-    syncCountdownSecs = SYNC_INTERVAL_SECS;
+  const secs = getSecsUntilNextSync();
+  if (secs <= 0) {
+    recordSyncTime();
     syncData();
   }
   updateSyncCountdown();
 }, 1000);
 
-// Reset countdown when manual sync is triggered
-
-// manualSync resets the countdown then syncs
+// manualSync resets the timestamp then syncs
 async function manualSync() {
-  syncCountdownSecs = SYNC_INTERVAL_SECS;
+  recordSyncTime();
   updateSyncCountdown();
   await syncData();
 }
+
+// Initialise on load
+recordSyncTime();
+updateSyncCountdown();
 </script>
 </body>
 </html>
