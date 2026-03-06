@@ -516,7 +516,13 @@ async function loadData() {
   renderStages();
   renderClientList();
   updateOverdueBadge();
-  if (currentClientId) renderProfile(currentClientId);
+  // Only re-render profile if user is not actively typing a note
+  if (currentClientId) {
+    const noteEl = document.getElementById('commNote');
+    const activeEl = document.activeElement;
+    const isTypingNote = noteEl && (activeEl === noteEl || (noteEl.value && noteEl.value.trim().length > 0));
+    if (!isTypingNote) renderProfile(currentClientId);
+  }
 }
 
 async function syncData() {
