@@ -278,7 +278,8 @@ input,select,textarea{font-family:inherit;}
             <option value="packet_sent">📬 Packet Sent</option>
             <option value="disputes_mailed">📮 Disputes Mailed</option>
             <option value="waiting_reports">📊 Waiting on Reports</option>
-            <option value="litigation">⚖️ Litigation</option>
+            <option value="reports_received">📋 Reports Received</option>
+          <option value="litigation">⚖️ Litigation</option>
           </select>
         </div>
         <div class="form-row"><label class="form-label">Intro Type</label>
@@ -369,6 +370,7 @@ const MCL_LABELS = {
   packet_sent: 'McCarthy - Packet Sent',
   disputes_mailed: 'McCarthy - Disputes Mailed',
   waiting_reports: 'McCarthy - Waiting on Reports',
+  reports_received: 'McCarthy - Reports Received',
   litigation: 'McCarthy - Litigation',
   lost: 'McCarthy - Lost',
 };
@@ -467,11 +469,12 @@ const STAGES = [
   { key: 'packet_sent', icon: '📬', label: 'Packet Sent' },
   { key: 'disputes_mailed', icon: '📮', label: 'Disputes Mailed' },
   { key: 'waiting_reports', icon: '📊', label: 'Waiting on Reports' },
+  { key: 'reports_received', icon: '📋', label: 'Reports Received' },
   { key: 'litigation', icon: '⚖️', label: 'Litigation' },
   { key: 'lost', icon: '❌', label: 'Lost' },
 ];
 
-const STAGE_ICONS = { need_to_call:'📞', do_not_call:'🚫', lvm:'📞', contacted:'💬', waiting_mcl:'⏳', packet_sent:'📬', disputes_mailed:'📮', waiting_reports:'📊', litigation:'⚖️', lost:'❌' };
+const STAGE_ICONS = { need_to_call:'📞', do_not_call:'🚫', lvm:'📞', contacted:'💬', waiting_mcl:'⏳', packet_sent:'📬', disputes_mailed:'📮', waiting_reports:'📊', reports_received:'📋', litigation:'⚖️', lost:'❌' };
 
 // Template key mapping per stage
 function getTemplateKeys(stage, lastFu) {
@@ -623,7 +626,7 @@ async function syncData() {
         if (existing.outcome) { continue; }
         
         // Only update stage if sheet has a "higher" stage (don't move backwards due to stale sheet)
-        const stageOrder = ['need_to_call','do_not_call','lvm','contacted','waiting_mcl','packet_sent','disputes_mailed','waiting_reports','litigation'];
+        const stageOrder = ['need_to_call','do_not_call','lvm','contacted','waiting_mcl','packet_sent','disputes_mailed','waiting_reports','reports_received','litigation'];
         const existingIdx = stageOrder.indexOf(existing.stage);
         const sheetIdx = stageOrder.indexOf(stage);
         
@@ -960,6 +963,7 @@ function renderProfile(clientId) {
           <option value="packet_sent">📬 Packet Sent</option>
           <option value="disputes_mailed">📮 Disputes Mailed</option>
           <option value="waiting_reports">📊 Waiting on Reports</option>
+          <option value="reports_received">📋 Reports Received</option>
           <option value="litigation">⚖️ Litigation</option>
         </select>
         <button class="btn btn-navy btn-sm" onclick="moveStage('${c.id}')">Move →</button>
@@ -1016,7 +1020,7 @@ function renderTimeline(c) {
 
   // Next action
   const hasFutureSchedule = c.next_followup_date && new Date(c.next_followup_date) > new Date();
-  const noFollowupStages = ['do_not_call', 'waiting_mcl', 'disputes_mailed', 'litigation', 'lost'];
+  const noFollowupStages = ['do_not_call', 'waiting_mcl', 'disputes_mailed', 'reports_received', 'litigation', 'lost'];
   if (!c.responded && !c.outcome && !noFollowupStages.includes(c.stage) && !c.pause_reason && !hasFutureSchedule) {
     const lastFu = c.last_followup || 'none';
     const fuKeys = getTemplateKeys(c.stage, lastFu);
@@ -1056,7 +1060,7 @@ function renderTimeline(c) {
   html += `</div>`;
 
   // Pending stages
-  const allStages = ['need_to_call','do_not_call','lvm','contacted','waiting_mcl','packet_sent','disputes_mailed','waiting_reports'];
+  const allStages = ['need_to_call','do_not_call','lvm','contacted','waiting_mcl','packet_sent','disputes_mailed','waiting_reports','reports_received'];
   const currentIdx = allStages.indexOf(c.stage);
   for (let i = currentIdx + 1; i < allStages.length; i++) {
     const ps = STAGES.find(s => s.key === allStages[i]);
@@ -1068,6 +1072,7 @@ function renderTimeline(c) {
       packet_sent: 'Dispute packet sent to client',
       disputes_mailed: 'Client mailed disputes to bureaus',
       waiting_reports: '30 days done — need updated reports',
+      reports_received: 'Reports received — awaiting litigation',
     };
     html += `<div class="flow-stage"><div class="flow-dot"></div>
       <div class="flow-head"><span class="flow-label pending">${ps.icon} ${ps.label}</span></div>
