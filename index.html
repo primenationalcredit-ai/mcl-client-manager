@@ -1979,7 +1979,8 @@ function statusLabel(s) {
 }
 
 function updateOverdueBadge() {
-  const regularOverdue = clients.filter(c => c.follow_up_status === 'overdue' && c.stage !== 'do_not_call' && !c.pause_reason && !c.next_followup_date).length;
+  const noFollowupStages = ['do_not_call', 'waiting_mcl', 'disputes_mailed', 'reports_received', 'litigation', 'lost'];
+  const regularOverdue = clients.filter(c => c.follow_up_status === 'overdue' && !noFollowupStages.includes(c.stage) && !c.pause_reason && !c.next_followup_date && !c.outcome).length;
   const scheduledDue = clients.filter(c => c.next_followup_date && new Date(c.next_followup_date) <= new Date() && !c.outcome).length;
   const overdue = regularOverdue + scheduledDue;
   document.getElementById('overdueGlobal').textContent = overdue > 0 ? `${overdue} overdue` : '✓ All clear';
