@@ -770,8 +770,9 @@ function getStageClients() {
   else if (currentStage === 'lost') list = clients.filter(c => c.outcome === 'lost');
   else list = clients.filter(c => c.stage === currentStage && !c.outcome);
   if (overdueOnly) list = list.filter(c => {
-    if (c.pause_reason) return false;
+    // Do Not Call: always has pause_reason, so only check scheduled date
     if (currentStage === 'do_not_call') return c.next_followup_date && new Date(c.next_followup_date) <= new Date();
+    if (c.pause_reason) return false;
     if (c.next_followup_date) return new Date(c.next_followup_date) <= new Date();
     return c.follow_up_status === 'overdue';
   });
