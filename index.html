@@ -1657,10 +1657,15 @@ async function resendFollowup(clientId, fuType) {
   const smsTpl = templates.find(t => t.key === fuKeys.sms);
   const label = fuType === 'intro' ? 'Intro' : 'FU #' + fuType.replace('fu','');
   
-  if (!(await customConfirm(`Resend ${label} to ${c.name}?\n\nEmail: ${emailTpl ? '✓ ' + emailTpl.subject : '✗ no template'}\nSMS: ${smsTpl ? '✓ will send' : '✗ no template'}`))) return;
+  if (!(await customConfirm(`Resend ${label} to ${c.name}?\n\nEmail: ${emailTpl ? '✓ ' + emailTpl.subject : '✗ no template'}\nSMS: ${smsTpl ? '✓ will send' : '✗ no template'}\n\nThis will update the send date to today.`))) return;
   
+  const now = new Date();
+  const dateStr = (now.getMonth()+1).toString().padStart(2,'0') + '/' + now.getDate().toString().padStart(2,'0');
+  const log = Array.isArray(c.comm_log) ? [...c.comm_log] : [];
+  let emailOk = false, smsOk = false;
+
   // Resend email
-  if (sendEmail && emailTpl && c.email) {
+  if (emailTpl && c.email) {
     try {
       const body = emailTpl.body.replace(/\{name\}/g, c.name.split(' ')[0]).replace(/\{agent\}/g, c.assigned_to || 'ASAP Credit Repair');
       const res = await fetch(SEND_EMAIL_URL, {
@@ -1669,12 +1674,9 @@ async function resendFollowup(clientId, fuType) {
       });
       const data = await res.json();
       if (data.ok) {
+        log.push({ date: dateStr, agent: 'SYS', text: '↻ Resent email: ' + emailTpl.subject });
         await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'email_resent', template_key: emailTpl.key, details: 'Resent: ' + emailTpl.subject });
-        const elog = c.comm_log || [];
-        const now = new Date();
-        elog.push({ date: (now.getMonth()+1).toString().padStart(2,'0') + '/' + now.getDate().toString().padStart(2,'0'), agent: 'SYS', text: '↻ Resent email: ' + emailTpl.subject });
-        await sb.from('mcl_clients').update({ comm_log: elog }).eq('id', c.id);
-        toast('Email resent ✓');
+        emailOk = true;
       } else { toast('Email error: ' + (data.error || 'unknown')); }
     } catch (e) { toast('Email failed: ' + e.message); }
   }
@@ -1683,19 +1685,25 @@ async function resendFollowup(clientId, fuType) {
   if (smsTpl && c.phone) {
     try {
       const smsBody = (smsTpl.body || '').replace(/\{name\}/g, c.name.split(' ')[0]).replace(/\{agent\}/g, c.assigned_to || 'ASAP Credit Repair');
-      const smsParams = new URLSearchParams(); smsParams.append('SMS', smsBody); smsParams.append('Texting Cell', c.phone); smsParams.append('Person First Name', c.name.split(' ')[0]);
+      const smsParams = new URLSearchParams();
+      smsParams.append('SMS', smsBody); smsParams.append('Texting Cell', c.phone); smsParams.append('Person First Name', c.name.split(' ')[0]);
       await fetch(SEND_SMS_URL, { method: 'POST', body: smsParams });
+      log.push({ date: dateStr, agent: 'SYS', text: '↻ Resent text: ' + smsTpl.name });
       await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'sms_resent', template_key: smsTpl.key, details: 'Resent SMS: ' + smsTpl.name });
-      const slog = c.comm_log || [];
-      const snoww = new Date();
-      slog.push({ date: (snoww.getMonth()+1).toString().padStart(2,'0') + '/' + snoww.getDate().toString().padStart(2,'0'), agent: 'SYS', text: '↻ Resent text: ' + smsTpl.name });
-      await sb.from('mcl_clients').update({ comm_log: slog }).eq('id', c.id);
-      toast('Text resent ✓');
+      smsOk = true;
     } catch (e) { toast('SMS failed: ' + e.message); }
   }
-  
-  if (!c.email && !c.phone) toast('No email or phone on file');
+
+  // Update fu timestamp to today + save comm_log in ONE update
+  const fuField = fuType === 'intro' ? 'intro_sent_at' : fuType === 'fu1' ? 'fu1_sent_at' : fuType === 'fu2' ? 'fu2_sent_at' : fuType === 'fu3' ? 'fu3_sent_at' : fuType === 'fu4' ? 'fu4_sent_at' : null;
+  const dbUpdate = { comm_log: log };
+  if (fuField) dbUpdate[fuField] = now.toISOString();
+  await sb.from('mcl_clients').update(dbUpdate).eq('id', c.id);
+
+  if (emailOk || smsOk) toast(`↻ ${label} resent${emailOk ? ' + email' : ''}${smsOk ? ' + text' : ''} — logged ✓`);
+  else if (!c.email && !c.phone) toast('No email or phone on file');
   await loadData();
+  renderProfile(clientId);
 }
 
 async function sendBothChecked(clientId) {
