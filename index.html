@@ -1697,7 +1697,11 @@ async function resendFollowup(clientId, fuType) {
   const log = Array.isArray(c.comm_log) ? [...c.comm_log] : [];
   log.push({ date: dateStr, agent: 'SYS', text: logText });
 
-  const { error: saveErr } = await sb.from('mcl_clients').update({ comm_log: log }).eq('id', c.id);
+  // Update fu timestamp to today so timeline shows today's date
+  const fuField = { intro: 'intro_sent_at', fu1: 'fu1_sent_at', fu2: 'fu2_sent_at', fu3: 'fu3_sent_at', fu4: 'fu4_sent_at' }[fuType];
+  const dbUpdate = { comm_log: log };
+  if (fuField) dbUpdate[fuField] = now.toISOString();
+  const { error: saveErr } = await sb.from('mcl_clients').update(dbUpdate).eq('id', c.id);
   if (saveErr) { toast('❌ Log save failed: ' + saveErr.message); return; }
 
   if (emailOk || smsOk) {
