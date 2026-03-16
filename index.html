@@ -1647,26 +1647,21 @@ async function saveNotes(id) {
 async function resendFollowup(clientId, fuType) {
   const c = clients.find(x => x.id === clientId);
   if (!c) return;
-  
-  // Map fuType back to lastFu for template lookup
+
   const prevMap = { intro: 'none', fu1: 'intro', fu2: 'fu1', fu3: 'fu2', fu4: 'fu3' };
   const lastFu = prevMap[fuType] || 'none';
   const fuKeys = getTemplateKeys(c.stage, lastFu);
-  
   const emailTpl = templates.find(t => t.key === fuKeys.email);
   const smsTpl = templates.find(t => t.key === fuKeys.sms);
   const label = fuType === 'intro' ? 'Intro' : 'FU #' + fuType.replace('fu','');
-  
-  // Always log the resend attempt regardless of whether email/sms succeeds
-  if (!(await customConfirm(`Resend ${label} to ${c.name}?\n\nEmail: ${emailTpl ? '✓ ' + emailTpl.subject : '✗ no template'}\nSMS: ${smsTpl ? '✓ will send' : '✗ no template'}\n\nThis will update the send date to today.`))) return;
-  console.log('RESEND DEBUG:', { fuType, lastFu, fuKeys, emailTpl: emailTpl?.key, smsTpl: smsTpl?.key, hasEmail: !!c.email, hasPhone: !!c.phone });
-  
+
+  if (!(await customConfirm(`Resend ${label} to ${c.name}?\n\nEmail: ${emailTpl ? '✓ ' + emailTpl.subject : '✗ no template'}\nSMS: ${smsTpl ? '✓ will send' : '✗ no template'}`))) return;
+
   const now = new Date();
   const dateStr = (now.getMonth()+1).toString().padStart(2,'0') + '/' + now.getDate().toString().padStart(2,'0');
-  const log = Array.isArray(c.comm_log) ? [...c.comm_log] : [];
   let emailOk = false, smsOk = false;
 
-  // Resend email
+  // Send email
   if (emailTpl && c.email) {
     try {
       const body = emailTpl.body.replace(/\{name\}/g, c.name.split(' ')[0]).replace(/\{agent\}/g, c.assigned_to || 'ASAP Credit Repair');
@@ -1675,40 +1670,45 @@ async function resendFollowup(clientId, fuType) {
         body: JSON.stringify({ to: c.email, subject: emailTpl.subject, body })
       });
       const data = await res.json();
-      if (data.ok) {
-        log.push({ date: dateStr, agent: 'SYS', text: '↻ Resent email: ' + emailTpl.subject });
-        await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'email_resent', template_key: emailTpl.key, details: 'Resent: ' + emailTpl.subject });
-        emailOk = true;
-      } else { toast('Email error: ' + (data.error || 'unknown')); }
+      if (data.ok) emailOk = true;
+      else toast('Email error: ' + (data.error || 'unknown'));
     } catch (e) { toast('Email failed: ' + e.message); }
   }
-  
-  // Resend SMS
+
+  // Send SMS
   if (smsTpl && c.phone) {
     try {
       const smsBody = (smsTpl.body || '').replace(/\{name\}/g, c.name.split(' ')[0]).replace(/\{agent\}/g, c.assigned_to || 'ASAP Credit Repair');
       const smsParams = new URLSearchParams();
       smsParams.append('SMS', smsBody); smsParams.append('Texting Cell', c.phone); smsParams.append('Person First Name', c.name.split(' ')[0]);
       await fetch(SEND_SMS_URL, { method: 'POST', body: smsParams });
-      log.push({ date: dateStr, agent: 'SYS', text: '↻ Resent text: ' + smsTpl.name });
-      await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'sms_resent', template_key: smsTpl.key, details: 'Resent SMS: ' + smsTpl.name });
       smsOk = true;
     } catch (e) { toast('SMS failed: ' + e.message); }
   }
 
-  // Always log the resend attempt even if sends failed
-  const resendNote = `↻ Resend attempted: ${label}${emailOk ? ' ✉ email sent' : emailTpl && c.email ? ' ✉ email failed' : ''}${smsOk ? ' 💬 text sent' : smsTpl && c.phone ? ' 💬 text failed' : ''}`;
-  log.push({ date: dateStr, agent: 'SYS', text: resendNote });
+  // ONE single log entry summarising what was sent
+  const sentParts = [];
+  if (emailOk) sentParts.push('email');
+  if (smsOk) sentParts.push('text');
+  const logText = sentParts.length
+    ? `↻ Resent ${label} — ${sentParts.join(' + ')} sent`
+    : `↻ Resend attempted: ${label} — nothing sent (check email/phone)`;
 
-  // Save comm_log only — do NOT overwrite fu timestamps so original send dates are preserved in timeline
+  const log = Array.isArray(c.comm_log) ? [...c.comm_log] : [];
+  log.push({ date: dateStr, agent: 'SYS', text: logText });
+
   const { error: saveErr } = await sb.from('mcl_clients').update({ comm_log: log }).eq('id', c.id);
-  if (saveErr) { toast('❌ Log save failed: ' + saveErr.message); console.error('resend log save error:', saveErr); }
+  if (saveErr) { toast('❌ Log save failed: ' + saveErr.message); return; }
 
-  if (emailOk || smsOk) toast(`↻ ${label} resent${emailOk ? ' + email' : ''}${smsOk ? ' + text' : ''} — logged ✓`);
-  else if (!c.email && !c.phone) { toast('No email or phone on file'); return; }
+  if (emailOk || smsOk) {
+    await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'resent', details: logText });
+    toast(`${logText} ✓`);
+  } else {
+    toast('Nothing sent — check email/phone on file');
+  }
+
   await loadData();
-  const updated = clients.find(x => x.id === clientId);
-  if (updated) renderProfile(clientId);
+  renderProfile(clientId);
 }
 
 async function sendBothChecked(clientId) {
