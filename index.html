@@ -1698,7 +1698,8 @@ async function resendFollowup(clientId, fuType) {
   const fuField = fuType === 'intro' ? 'intro_sent_at' : fuType === 'fu1' ? 'fu1_sent_at' : fuType === 'fu2' ? 'fu2_sent_at' : fuType === 'fu3' ? 'fu3_sent_at' : fuType === 'fu4' ? 'fu4_sent_at' : null;
   const dbUpdate = { comm_log: log };
   if (fuField) dbUpdate[fuField] = now.toISOString();
-  await sb.from('mcl_clients').update(dbUpdate).eq('id', c.id);
+  const { error: saveErr } = await sb.from('mcl_clients').update(dbUpdate).eq('id', c.id);
+  if (saveErr) { toast('❌ Log save failed: ' + saveErr.message); console.error('resend log save error:', saveErr); }
 
   if (emailOk || smsOk) toast(`↻ ${label} resent${emailOk ? ' + email' : ''}${smsOk ? ' + text' : ''} — logged ✓`);
   else if (!c.email && !c.phone) toast('No email or phone on file');
