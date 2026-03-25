@@ -3,3 +3,10 @@ dist
 .env
 .env.local
 .netlify
+
+*.exe
+*.pdf
+*.png
+*.jpg
+*.zip
+Screenshot*
