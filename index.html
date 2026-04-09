@@ -652,10 +652,9 @@ async function syncData() {
         if (error) { console.error('Update error for', name, error); errors++; }
         else updated++;
       } else {
-        // Check if this client was previously deleted - match by name
-        const deletedKey = '%' + name + '%';
+        // Check if this client was previously deleted — match by name (case-insensitive)
         const { data: delLog } = await sb.from('mcl_activity_log').select('id').eq('action', 'deleted').ilike('details', '%' + name + '%').limit(1);
-        if (delLog && delLog.length > 0) { continue; }
+        if (delLog && delLog.length > 0) { console.log('Skipping re-import of deleted client:', name); continue; }
         
         // INSERT new client
         const insertData = {
@@ -808,8 +807,8 @@ function renderFilteredClients(list) {
 function filterClients() {
   const q = document.getElementById('searchInput').value.trim().toLowerCase();
   if (q) {
-    // Global search: ALL clients except lost/deleted, regardless of current pipeline
-    const all = clients.filter(c => c.outcome !== 'lost' && (c.name.toLowerCase().includes(q) || (c.email||'').toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q)));
+    // Global search: ALL clients including lost, regardless of current pipeline
+    const all = clients.filter(c => c.name.toLowerCase().includes(q) || (c.email||'').toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q));
     document.getElementById('stageClientsTitle').textContent = `🔍 "${q}" — ${all.length} results`;
     renderFilteredClients(all);
   } else {
@@ -850,6 +849,7 @@ function renderProfile(clientId) {
       </div>
       <div class="prof-actions">
         ${!c.outcome ? `<button class="btn btn-red btn-sm" onclick="markOutcome('${c.id}','lost')">❌ Lost</button>` : ''}
+        ${c.outcome === 'lost' ? `<button class="btn btn-sm" style="background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;" onclick="reviveClient('${c.id}')">♻️ Revive</button>` : ''}
         ${c.pause_reason ? `<button class="btn btn-sm" onclick="unpauseClient('${c.id}')" style="background:#e8f5e9;color:#2e7d32;border:1px solid #4caf50;font-size:11px;">▶ Unpause</button>` : `<button class="btn btn-sm" onclick="pauseClient('${c.id}')" style="background:#fff3e0;color:#e65100;border:1px solid #ffb74d;font-size:11px;">⏸ Pause</button>`}
         ${!c.outcome ? `<button class="btn btn-sm" onclick="scheduleFollowup('${c.id}')" style="background:#e3f2fd;color:#1565c0;border:1px solid #64b5f6;font-size:11px;">📅 Schedule</button>` : ''}
         <button class="btn btn-sm" onclick="deleteClient('${c.id}')" style="background:#fee;color:#c00;border:1px solid #fcc;font-size:11px;" title="Permanently delete this client">🗑 Delete</button>
@@ -1219,15 +1219,41 @@ async function unpauseClient(id) {
 async function deleteClient(id) {
   const c = clients.find(x => x.id === id);
   if (!c) return;
-  if (!(await customConfirm('Permanently delete ' + c.name + '? This cannot be undone.'))) return;
-  // Log deletion so sync won't re-create
-  await sb.from('mcl_activity_log').insert({ client_id: id, action: 'deleted', details: 'Deleted row ' + (c.sheet_row || '0') + ': ' + c.name });
+
+  // Check if there are other clients with the same name (duplicate scenario)
+  const dupes = clients.filter(x => x.name.trim().toLowerCase() === c.name.trim().toLowerCase() && x.id !== id);
+  const isDupeDelete = dupes.length > 0;
+
+  if (!(await customConfirm('Permanently delete ' + c.name + '?' + (isDupeDelete ? '\n\nThis looks like a duplicate — the original record will be kept.' : '\n\nThis cannot be undone.')))) return;
+
+  // Only log deletion (to block re-import) if this is NOT a duplicate removal
+  // If it IS a duplicate, we just delete the record silently so the original stays protected
+  if (!isDupeDelete) {
+    await sb.from('mcl_activity_log').insert({ client_id: id, action: 'deleted', details: 'Deleted row 0: ' + c.name });
+  }
+
   const { error } = await sb.from('mcl_clients').delete().eq('id', id);
   if (error) { toast('Delete failed: ' + error.message); return; }
-  toast(c.name + ' deleted');
+  toast(c.name + (isDupeDelete ? ' duplicate removed ✓' : ' deleted ✓'));
   currentClientId = null;
   renderEmptyMain();
   await loadData();
+}
+
+async function reviveClient(id) {
+  const c = clients.find(x => x.id === id);
+  if (!c) return;
+  const newStage = await customPrompt('Revive ' + c.name + ' — which stage should they go to?\n\nneed_to_call / lvm / contacted / waiting_mcl / packet_sent');
+  if (!newStage) return;
+  const validStages = ['need_to_call','lvm','contacted','waiting_mcl','packet_sent','disputes_mailed','waiting_reports','reports_received'];
+  if (!validStages.includes(newStage.trim().toLowerCase())) { toast('Invalid stage — try again'); return; }
+  await sb.from('mcl_clients').update({ outcome: null, outcome_at: null, stage: newStage.trim().toLowerCase() }).eq('id', id);
+  // Remove deletion log so sync doesn't skip them
+  await sb.from('mcl_activity_log').delete().eq('action','deleted').ilike('details', '%' + c.name + '%');
+  await sb.from('mcl_activity_log').insert({ client_id: id, action: 'stage_changed', details: 'Revived from Lost → ' + newStage });
+  toast(c.name + ' revived ✓');
+  await loadData();
+  renderProfile(id);
 }
 
 async function markOutcome(id, outcome) {
@@ -1457,6 +1483,22 @@ async function saveField(id, field, value) {
   if (c) c[field] = value;
   await sb.from('mcl_clients').update({ [field]: value }).eq('id', id);
   toast(field.replace(/_/g,' ') + ' saved ✓');
+
+  // When Deal ID is added on a client with a credit error — push note + activity to Pipedrive
+  if (field === 'pipedrive_id' && value && c && c.credit_error) {
+    const violationNote = `@@@ CLIENT HAS AN FCRA VIOLATION — ${c.error_details || c.credit_error || 'SEE CREDIT REPORT'}\n\nLET CLIENT KNOW ABOUT THIS VIOLATION`;
+    try {
+      await fetch(PIPEDRIVE_PROXY_URL, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'add_note', dealId: value, content: violationNote })
+      });
+      await fetch(PIPEDRIVE_PROXY_URL, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'add_activity', dealId: value, subject: '⚠️ FCRA Violation — Contact Client Today', note: violationNote })
+      });
+      toast('⚠️ FCRA violation note + task added to Pipedrive ✓');
+    } catch (e) { console.error('Pipedrive violation push failed:', e); }
+  }
   
   // Sync name, email, phone changes to Google Sheet
   if (c && (field === 'name' || field === 'email' || field === 'phone')) {

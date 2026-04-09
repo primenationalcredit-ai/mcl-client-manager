@@ -104,5 +104,44 @@ exports.handler = async function(event) {
     }
   }
 
+  // ── Add a note to a deal ─────────────────────────────────────
+  if (action === 'add_note') {
+    const { dealId, content } = body;
+    try {
+      const res = await fetch(`${PIPEDRIVE_BASE}/notes?api_token=${PIPEDRIVE_API_TOKEN}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deal_id: parseInt(dealId), content })
+      });
+      const data = await res.json();
+      return { statusCode: 200, headers, body: JSON.stringify({ success: data.success, data: data.data }) };
+    } catch (e) {
+      return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: e.message }) };
+    }
+  }
+
+  // ── Add an activity (task) to a deal due today ────────────────
+  if (action === 'add_activity') {
+    const { dealId, subject, note } = body;
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const res = await fetch(`${PIPEDRIVE_BASE}/activities?api_token=${PIPEDRIVE_API_TOKEN}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          deal_id: parseInt(dealId),
+          subject: subject || 'FCRA Violation — Contact Client',
+          type: 'task',
+          due_date: today,
+          note: note || ''
+        })
+      });
+      const data = await res.json();
+      return { statusCode: 200, headers, body: JSON.stringify({ success: data.success, data: data.data }) };
+    } catch (e) {
+      return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: e.message }) };
+    }
+  }
+
   return { statusCode: 400, headers, body: JSON.stringify({ error: 'Unknown action' }) };
 };
