@@ -1492,11 +1492,7 @@ async function saveField(id, field, value) {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'add_note', dealId: value, content: violationNote })
       });
-      await fetch(PIPEDRIVE_PROXY_URL, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'add_activity', dealId: value, subject: '⚠️ FCRA Violation — Contact Client Today', note: violationNote })
-      });
-      toast('⚠️ FCRA violation note + task added to Pipedrive ✓');
+      toast('⚠️ FCRA violation note added to Pipedrive ✓');
     } catch (e) { console.error('Pipedrive violation push failed:', e); }
   }
   
