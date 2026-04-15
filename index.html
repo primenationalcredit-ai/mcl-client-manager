@@ -560,6 +560,7 @@ async function syncData() {
       const introMade = (row['Intro Made'] || '').trim().toUpperCase() === 'TRUE';
       const mclContact = (row['MCL Initial Contact'] || '').trim().toUpperCase() === 'TRUE';
       const notEligible = (row['Not Eligible'] || '').trim().toUpperCase() === 'TRUE';
+      const inLitigation = (row['In_litigation'] || row['In Litigation'] || row['Litigation'] || '').trim().toUpperCase() === 'TRUE';
       const disputeMailedToClient = (row['Dispute Mailed to Client'] || '').trim();
       const clientConfirmedMailed = (row['Client Confirmed Dispute Mailed'] || '').trim();
       const dueDate = (row['Due Date'] || '').trim();
@@ -570,6 +571,9 @@ async function syncData() {
       if (notEligible) {
         stage = 'lost';
         outcome = 'lost';
+      } else if (inLitigation) {
+        stage = 'litigation';
+        outcome = 'litigation';
       } else if (clientConfirmedMailed && dueDate) {
         // Client mailed disputes AND we have a due date
         const dueParsed = parseDate(dueDate);
@@ -622,8 +626,10 @@ async function syncData() {
       const existing = clients.find(c => c.name.toLowerCase() === nameLower);
       
       if (existing) {
-        // SKIP clients with any outcome — once resolved, stays resolved
-        if (existing.outcome) { continue; }
+        // SKIP clients with any outcome — except litigation which can be set by sheet
+        if (existing.outcome && existing.outcome !== 'litigation') { continue; }
+        // Also allow updating to litigation
+        if (inLitigation && !existing.outcome) { /* allow litigation update */ }
         
         // Only update stage if sheet has a "higher" stage (don't move backwards due to stale sheet)
         const stageOrder = ['need_to_call','do_not_call','lvm','contacted','waiting_mcl','packet_sent','disputes_mailed','waiting_reports','reports_received','litigation'];
