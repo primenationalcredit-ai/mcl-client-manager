@@ -626,34 +626,30 @@ async function syncData() {
       const existing = clients.find(c => c.name.toLowerCase() === nameLower);
       
       if (existing) {
-        // SKIP clients with any outcome — except litigation which can be set by sheet
-        if (existing.outcome && existing.outcome !== 'litigation') { continue; }
-        // Also allow updating to litigation
-        if (inLitigation && !existing.outcome) { /* allow litigation update */ }
-        
-        // Only update stage if sheet has a "higher" stage (don't move backwards due to stale sheet)
+        // SKIP clients marked lost or not eligible — they are done
+        if (existing.outcome === 'lost') { continue; }
+
         const stageOrder = ['need_to_call','do_not_call','lvm','contacted','waiting_mcl','packet_sent','disputes_mailed','waiting_reports','reports_received','litigation'];
         const existingIdx = stageOrder.indexOf(existing.stage);
         const sheetIdx = stageOrder.indexOf(stage);
-        
-        // Update stage if sheet says further along OR if current stage isn't in our list
-        if (sheetIdx >= existingIdx || existingIdx === -1) {
-          // Keep the stage from sheet
+
+        // Always allow sheet to move client FORWARD in pipeline
+        // Also always allow litigation to be set from sheet
+        if (sheetIdx > existingIdx || inLitigation) {
+          // Sheet is ahead — update stage and outcome
         } else {
-          // Don't regress — keep existing stage
+          // Sheet is same or behind — keep existing stage, don't regress
           delete updateData.stage;
+          if (!outcome) {
+            delete updateData.outcome;
+            delete updateData.outcome_at;
+          }
         }
-        
-        // Don't overwrite outcome if already set
-        if (existing.outcome && !outcome) {
-          delete updateData.outcome;
-          delete updateData.outcome_at;
-        }
-        
-        // Don't blank out fields
+
+        // Don't blank out existing email/phone if sheet has nothing
         if (!email) delete updateData.email;
         if (!phone) delete updateData.phone;
-        
+
         const { error } = await sb.from('mcl_clients').update(updateData).eq('id', existing.id);
         if (error) { console.error('Update error for', name, error); errors++; }
         else updated++;
