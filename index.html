@@ -697,6 +697,16 @@ async function syncData() {
     
     // Reload to show changes
     await loadData();
+
+    // Push Pipedrive labels for ALL clients with a deal ID after sync
+    const clientsWithDeals = clients.filter(c => c.pipedrive_id && c.stage !== 'lost' && c.outcome !== 'lost');
+    console.log('Pushing Pipedrive labels for', clientsWithDeals.length, 'clients with deal IDs...');
+    for (const c of clientsWithDeals) {
+      const labelStage = c.outcome || c.stage;
+      if (MCL_LABELS[labelStage]) {
+        await updatePipedriveLabel(c.pipedrive_id, labelStage);
+      }
+    }
     
     let msg = `Synced ✓ — ${sheetRows.length} sheet rows`;
     if (inserted) msg += `, ${inserted} new`;
