@@ -563,7 +563,8 @@ async function syncData() {
       const introMade = (row['Intro Made'] || '').trim().toUpperCase() === 'TRUE';
       const mclContact = (row['MCL Initial Contact'] || '').trim().toUpperCase() === 'TRUE';
       const notEligible = (row['Not Eligible'] || '').trim().toUpperCase() === 'TRUE';
-      const status = (row['Status'] || '').trim();
+      const statusKey = Object.keys(row).find(k => k.trim() === 'Status') || 'Status';
+      const status = (row[statusKey] || '').trim();
       const inLitigation = status.toLowerCase().replace(/[_\s-]/g,'').includes('litigation');
       console.log('ROW STATUS:', name, '|', JSON.stringify(status), '| inLitigation:', inLitigation);
       const disputeMailedToClient = (row['Dispute Mailed to Client'] || '').trim();
