@@ -653,7 +653,13 @@ async function syncData() {
 
         const { error } = await sb.from('mcl_clients').update(updateData).eq('id', existing.id);
         if (error) { console.error('Update error for', name, error); errors++; }
-        else updated++;
+        else {
+          updated++;
+          // Push Pipedrive label if client moved to litigation and has a deal ID
+          if (inLitigation && existing.pipedrive_id) {
+            await updatePipedriveLabel(existing.pipedrive_id, 'litigation');
+          }
+        }
       } else {
         // Check if this client was previously deleted — match by name (case-insensitive)
         const { data: delLog } = await sb.from('mcl_activity_log').select('id').eq('action', 'deleted').ilike('details', '%' + name + '%').limit(1);
