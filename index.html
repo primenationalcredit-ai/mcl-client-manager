@@ -1493,7 +1493,12 @@ async function saveField(id, field, value) {
   await sb.from('mcl_clients').update({ [field]: value }).eq('id', id);
   toast(field.replace(/_/g,' ') + ' saved ✓');
 
-  // When Deal ID is added on a client with a credit error — push note + activity to Pipedrive
+  // When Deal ID is added — push correct Pipedrive label immediately
+  if (field === 'pipedrive_id' && value && c) {
+    await updatePipedriveLabel(value, c.outcome || c.stage);
+  }
+
+  // When Deal ID is added on a client with a credit error — push pinned note to Pipedrive
   if (field === 'pipedrive_id' && value && c && !c.pipedrive_id && c.error_details && c.error_details.trim()) {
     const violationNote = `@@@ CLIENT HAS AN FCRA VIOLATION — ${c.error_details.trim()}\n\nLET CLIENT KNOW ABOUT THIS VIOLATION`;
     try {
