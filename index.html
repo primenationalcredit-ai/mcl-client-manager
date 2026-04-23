@@ -536,8 +536,11 @@ async function syncData() {
   if (btn) { btn.textContent = '⟳ Syncing...'; btn.disabled = true; }
   
   try {
-    // 1. Load current DB data
+    // 1. Load current DB data + ensure Pipedrive labels are loaded
     await loadData();
+    if (Object.keys(pipedriveLabels).length === 0) {
+      await loadPipedriveLabels();
+    }
     
     // 2. Fetch Google Sheet CSV
     const csvResp = await fetch(SHEET_CSV_URL);
@@ -658,7 +661,9 @@ async function syncData() {
           // Always sync Pipedrive label for any client with a deal ID
           if (existing.pipedrive_id) {
             const labelStage = outcome || stage;
-            await updatePipedriveLabel(existing.pipedrive_id, labelStage);
+            console.log('PIPEDRIVE LABEL SYNC:', existing.name, '| dealId:', existing.pipedrive_id, '| stage:', labelStage);
+            const labelResult = await updatePipedriveLabel(existing.pipedrive_id, labelStage);
+            console.log('LABEL RESULT:', existing.name, labelResult);
           }
         }
       } else {
