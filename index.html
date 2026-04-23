@@ -564,7 +564,8 @@ async function syncData() {
       const mclContact = (row['MCL Initial Contact'] || '').trim().toUpperCase() === 'TRUE';
       const notEligible = (row['Not Eligible'] || '').trim().toUpperCase() === 'TRUE';
       const status = (row['Status'] || '').trim();
-      const inLitigation = status.toLowerCase().replace(/[_\s]/g,'') === 'inlitigation';
+      const inLitigation = status.toLowerCase().replace(/[_\s-]/g,'').includes('litigation');
+      console.log('ROW STATUS:', name, '|', JSON.stringify(status), '| inLitigation:', inLitigation);
       const disputeMailedToClient = (row['Dispute Mailed to Client'] || '').trim();
       const clientConfirmedMailed = (row['Client Confirmed Dispute Mailed'] || '').trim();
       const dueDate = (row['Due Date'] || '').trim();
