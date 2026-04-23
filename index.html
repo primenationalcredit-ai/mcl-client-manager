@@ -655,9 +655,10 @@ async function syncData() {
         if (error) { console.error('Update error for', name, error); errors++; }
         else {
           updated++;
-          // Push Pipedrive label if client moved to litigation and has a deal ID
-          if (inLitigation && existing.pipedrive_id) {
-            await updatePipedriveLabel(existing.pipedrive_id, 'litigation');
+          // Always sync Pipedrive label for any client with a deal ID
+          if (existing.pipedrive_id) {
+            const labelStage = outcome || stage;
+            await updatePipedriveLabel(existing.pipedrive_id, labelStage);
           }
         }
       } else {
