@@ -377,6 +377,7 @@ const MCL_LABELS = {
 let pipedriveLabels = {}; // Will be populated on init: { labelName: labelId }
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSs9OyAhWuv2BcenmZbtIEwD0R6UPZFpK0DYk0TfHkFZwO3ITY0mvMraxJ5X5BseiDaPtlbLpH1UKH-/pub?gid=1509920646&single=true&output=csv';
 const NOTES_WEBHOOK_URL = 'https://hooks.zapier.com/hooks/catch/172130/ux2gwi0/';
+const DISQUALIFIED_WEBHOOK_URL = 'https://hooks.zapier.com/hooks/catch/172130/uvmpbch/';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -566,7 +567,9 @@ async function syncData() {
       const statusKey = Object.keys(row).find(k => k.trim() === 'Status') || 'Status';
       const status = (row[statusKey] || '').trim();
       const inLitigation = status.toLowerCase().replace(/[_\s-]/g,'').includes('litigation');
-      console.log('ROW STATUS:', name, '|', JSON.stringify(status), '| inLitigation:', inLitigation);
+      const isDisqualified = status.toLowerCase().replace(/[_\s-]/g,'') === 'disqualified';
+      const isResolvedNonLit = status.toLowerCase().replace(/[_\s-]/g,'') === 'resolvednonlit';
+      console.log('ROW STATUS:', name, '|', JSON.stringify(status), '| inLitigation:', inLitigation, '| disqualified:', isDisqualified, '| resolvedNonLit:', isResolvedNonLit);
       const disputeMailedToClient = (row['Dispute Mailed to Client'] || '').trim();
       const clientConfirmedMailed = (row['Client Confirmed Dispute Mailed'] || '').trim();
       const dueDate = (row['Due Date'] || '').trim();
@@ -655,6 +658,27 @@ async function syncData() {
         // Don't blank out existing email/phone if sheet has nothing
         if (!email) delete updateData.email;
         if (!phone) delete updateData.phone;
+
+        // Fire webhook if client just became disqualified or resolved non-lit
+        if ((isDisqualified || isResolvedNonLit) && existing.stage !== 'lost' && existing.outcome !== 'lost') {
+          const reason = isDisqualified ? 'Disqualified' : 'Resolved_NON_Lit';
+          const webhookParams = new URLSearchParams();
+          webhookParams.append('Name', name);
+          webhookParams.append('Email', existing.email || '');
+          webhookParams.append('Phone', existing.phone || '');
+          webhookParams.append('Reason', reason);
+          webhookParams.append('Status', status);
+          webhookParams.append('Deal ID', existing.pipedrive_id || '');
+          webhookParams.append('Stage', existing.stage || '');
+          try {
+            await fetch(DISQUALIFIED_WEBHOOK_URL, { method: 'POST', body: webhookParams });
+            console.log('Disqualified webhook fired for:', name, '|', reason);
+          } catch(e) { console.error('Disqualified webhook failed:', e); }
+          // Move client to lost
+          updateData.stage = 'lost';
+          updateData.outcome = 'lost';
+          updateData.outcome_at = new Date().toISOString();
+        }
 
         const { error } = await sb.from('mcl_clients').update(updateData).eq('id', existing.id);
         if (error) { console.error('Update error for', name, error); errors++; }
