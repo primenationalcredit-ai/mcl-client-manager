@@ -738,6 +738,26 @@ async function syncData() {
     // Reload to show changes
     await loadData();
 
+    // Re-fetch round dates for clients with deal ID but missing them
+    const clientsMissingRounds = clients.filter(c => c.pipedrive_id && !c.rd1_dates && !c.rd2_dates && c.stage !== 'lost' && c.outcome !== 'lost');
+    for (const c of clientsMissingRounds) {
+      try {
+        const rdRes = await fetch(PIPEDRIVE_PROXY_URL, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'get_round_dates', dealId: c.pipedrive_id })
+        });
+        const rdData = await rdRes.json();
+        if (rdData.success && (rdData.rd1 || rdData.rd2 || rdData.rd3 || rdData.rd4)) {
+          await sb.from('mcl_clients').update({
+            rd1_dates: rdData.rd1 || null,
+            rd2_dates: rdData.rd2 || null,
+            rd3_dates: rdData.rd3 || null,
+            rd4_dates: rdData.rd4 || null
+          }).eq('id', c.id);
+        }
+      } catch(e) { console.error('Round dates sync failed for:', c.name, e); }
+    }
+
     // Push Pipedrive labels for ALL clients with a deal ID after sync
     const clientsWithDeals = clients.filter(c => c.pipedrive_id && c.stage !== 'lost' && c.outcome !== 'lost');
     console.log('Pushing Pipedrive labels for', clientsWithDeals.length, 'clients with deal IDs...');
@@ -960,6 +980,7 @@ function renderProfile(clientId) {
         <div class="info-row"><span class="info-lbl">Packet Mailed to Client</span><span class="info-val ${!c.disputes_mailed_to_client?'muted':''}">${c.disputes_mailed_to_client ? fmtDate(c.disputes_mailed_to_client) : '— not yet'}</span></div>
         <div class="info-row"><span class="info-lbl">Client Confirmed Mailed</span><span class="info-val ${!c.disputes_mailed_to_cra?'muted':''}">${c.disputes_mailed_to_cra ? fmtDate(c.disputes_mailed_to_cra) : '— not yet'}</span></div>
         <div class="info-row"><span class="info-lbl">Due Date (Round Over)</span><span class="info-val ${!c.round_over_date?'muted':''}">${c.round_over_date ? fmtDate(c.round_over_date) + (c.days_until_round_over != null ? ' (' + c.days_until_round_over + ' days)' : '') : '— not yet'}</span></div>
+        ${renderRoundDates(c)}
         <div class="info-row"><span class="info-lbl">Outcome</span><span class="info-val ${!c.outcome?'muted':''}">${c.outcome ? c.outcome.toUpperCase() : '— pending'}</span></div>
       </div>
     </div>
@@ -1484,6 +1505,60 @@ async function moveStage(id) {
   renderProfile(id);
 }
 
+function getCurrentAsapRound(c) {
+  const today = new Date();
+  const rounds = [
+    { num: 1, dates: c.rd1_dates },
+    { num: 2, dates: c.rd2_dates },
+    { num: 3, dates: c.rd3_dates },
+    { num: 4, dates: c.rd4_dates }
+  ].filter(r => r.dates);
+
+  if (!rounds.length) return null;
+
+  for (const r of rounds) {
+    // Date range format: "January 1, 2020 - May 8, 2020"
+    const parts = r.dates.split(' - ');
+    if (parts.length === 2) {
+      const start = new Date(parts[0].trim());
+      const end = new Date(parts[1].trim());
+      if (today >= start && today <= end) {
+        return { round: r.num, start: parts[0].trim(), end: parts[1].trim(), status: 'active' };
+      }
+      if (today < start) {
+        return { round: r.num, start: parts[0].trim(), end: parts[1].trim(), status: 'upcoming' };
+      }
+    }
+  }
+  // All rounds passed
+  const last = rounds[rounds.length - 1];
+  const parts = last.dates.split(' - ');
+  return { round: last.num, start: parts[0]?.trim(), end: parts[1]?.trim(), status: 'complete' };
+}
+
+function renderRoundDates(c) {
+  const round = getCurrentAsapRound(c);
+  if (!round) return '';
+
+  let badge = '';
+  if (round.status === 'active') badge = `<span style="background:#fff3cd;color:#856404;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;">🔄 Active Round ${round.round}</span>`;
+  else if (round.status === 'upcoming') badge = `<span style="background:#e8f4fd;color:#0c5460;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;">⏳ Upcoming Round ${round.round}</span>`;
+  else badge = `<span style="background:#d4edda;color:#155724;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;">✅ Rounds Complete</span>`;
+
+  const rows = [c.rd1_dates, c.rd2_dates, c.rd3_dates, c.rd4_dates]
+    .map((d, i) => d ? `<div class="info-row"><span class="info-lbl">RD ${i+1}</span><span class="info-val">${d}</span></div>` : '')
+    .join('');
+
+  return `<div style="margin-top:12px;padding:12px;background:#f8f9fa;border-radius:10px;border:1px solid #e9ecef;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <span style="font-size:12px;font-weight:700;color:var(--g600);text-transform:uppercase;letter-spacing:.5px;">ASAP Credit Repair Rounds</span>
+      ${badge}
+    </div>
+    ${rows}
+    ${round.status === 'active' ? `<div style="margin-top:8px;padding:8px;background:#fff3cd;border-radius:6px;font-size:12px;color:#856404;">⚠️ Client is mid-round — offer to wait until <strong>${round.end}</strong> to pull one report for both MCL and ASAP</div>` : ''}
+  </div>`;
+}
+
 function renderCommLog(c) {
   const log = c.comm_log || [];
   if (!log.length) return '<div style="text-align:center;padding:12px;color:var(--g400);font-size:12px;">No call notes yet</div>';
@@ -1551,9 +1626,28 @@ async function saveField(id, field, value) {
   await sb.from('mcl_clients').update({ [field]: value }).eq('id', id);
   toast(field.replace(/_/g,' ') + ' saved ✓');
 
-  // When Deal ID is added — push correct Pipedrive label immediately
+  // When Deal ID is added — push correct label + fetch round dates
   if (field === 'pipedrive_id' && value && c) {
     await updatePipedriveLabel(value, c.outcome || c.stage);
+    // Fetch round dates from Pipedrive
+    try {
+      const rdRes = await fetch(PIPEDRIVE_PROXY_URL, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get_round_dates', dealId: value })
+      });
+      const rdData = await rdRes.json();
+      if (rdData.success) {
+        await sb.from('mcl_clients').update({
+          rd1_dates: rdData.rd1 || null,
+          rd2_dates: rdData.rd2 || null,
+          rd3_dates: rdData.rd3 || null,
+          rd4_dates: rdData.rd4 || null
+        }).eq('id', id);
+        if (rdData.rd1 || rdData.rd2 || rdData.rd3 || rdData.rd4) {
+          toast('📅 ASAP round dates loaded ✓');
+        }
+      }
+    } catch(e) { console.error('Round dates fetch failed:', e); }
   }
 
   // When Deal ID is added on a client with a credit error — push pinned note to Pipedrive
