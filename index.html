@@ -727,6 +727,7 @@ async function syncData() {
             np.append('Stage', stage || '');
             np.append('Notes', mclNotes || joesNotes || additionalNotes || '');
             np.append('Credit Error', insertData.error_details || '');
+            np.append('Deal ID', insertData.pipedrive_id || '');
             await fetch(NEW_CLIENT_WEBHOOK_URL, { method: 'POST', body: np });
             console.log('New client webhook fired for:', name);
           } catch(e) { console.error('New client webhook failed:', e); }
