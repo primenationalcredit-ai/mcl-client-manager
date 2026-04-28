@@ -378,6 +378,7 @@ let pipedriveLabels = {}; // Will be populated on init: { labelName: labelId }
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSs9OyAhWuv2BcenmZbtIEwD0R6UPZFpK0DYk0TfHkFZwO3ITY0mvMraxJ5X5BseiDaPtlbLpH1UKH-/pub?gid=1509920646&single=true&output=csv';
 const NOTES_WEBHOOK_URL = 'https://hooks.zapier.com/hooks/catch/172130/ux2gwi0/';
 const DISQUALIFIED_WEBHOOK_URL = 'https://hooks.zapier.com/hooks/catch/172130/uvmpbch/';
+const NEW_CLIENT_WEBHOOK_URL = 'https://hooks.zapier.com/hooks/catch/172130/uv1l5p8/';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -715,7 +716,21 @@ async function syncData() {
         
         const { error } = await sb.from('mcl_clients').insert(insertData);
         if (error) { console.error('Insert error for', name, error); errors++; }
-        else inserted++;
+        else {
+          inserted++;
+          // Fire new client webhook
+          try {
+            const np = new URLSearchParams();
+            np.append('Name', name);
+            np.append('Email', email || '');
+            np.append('Phone', phone || '');
+            np.append('Stage', stage || '');
+            np.append('Notes', mclNotes || joesNotes || additionalNotes || '');
+            np.append('Credit Error', insertData.error_details || '');
+            await fetch(NEW_CLIENT_WEBHOOK_URL, { method: 'POST', body: np });
+            console.log('New client webhook fired for:', name);
+          } catch(e) { console.error('New client webhook failed:', e); }
+        }
       }
     }
     
@@ -1395,10 +1410,10 @@ async function moveStage(id) {
   if (!c.pipedrive_id) {
     let dealId = null;
     while (true) {
-      dealId = await customPrompt('Pipedrive Deal ID is required (6 digits).\n\nEnter the Deal ID for ' + c.name + ':');
+      dealId = await customPrompt('Pipedrive Deal ID is required (5-6 digits).\n\nEnter the Deal ID for ' + c.name + ':');
       if (!dealId) { toast('Move cancelled — Deal ID required'); return; }
       if (/^\d{6}$/.test(dealId.replace(/\D/g, ''))) break;
-      toast('Deal ID must be exactly 6 digits');
+      toast('Deal ID must be 5 or 6 digits');
     }
     dealId = dealId.replace(/\D/g, '');
     await sb.from('mcl_clients').update({ pipedrive_id: dealId }).eq('id', id);
@@ -1527,7 +1542,7 @@ async function saveField(id, field, value) {
   }
   if (field === 'pipedrive_id' && value) {
     const digits = value.replace(/\D/g, '');
-    if (digits.length !== 6) { toast('Invalid Deal ID — must be 6 digits'); return; }
+    if (digits.length < 5 || digits.length > 6) { toast('Invalid Deal ID — must be 5 or 6 digits'); return; }
     value = digits;
   }
   
@@ -1965,10 +1980,10 @@ async function callOutcome(id, result) {
     if (!c.pipedrive_id) {
       let dealId = null;
       while (true) {
-        dealId = await customPrompt('Pipedrive Deal ID is required before moving ' + c.name + '.\n\nEnter their 6-digit Deal ID:');
+        dealId = await customPrompt('Pipedrive Deal ID is required before moving ' + c.name + '.\n\nEnter their 5 or 6-digit Deal ID:');
         if (!dealId) { toast('Move cancelled — Deal ID required'); return; }
         if (/^\d{6}$/.test(dealId.trim())) break;
-        toast('Invalid Deal ID — must be exactly 6 digits');
+        toast('Invalid Deal ID — must be 5 or 6 digits');
       }
       await sb.from('mcl_clients').update({ pipedrive_id: dealId.trim() }).eq('id', id);
       c.pipedrive_id = dealId.trim();
