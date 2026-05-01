@@ -1665,7 +1665,7 @@ async function saveField(id, field, value) {
   }
 
   // When Deal ID is added on a client with a credit error — push pinned note to Pipedrive
-  if (field === 'pipedrive_id' && value && c && !c.pipedrive_id && c.error_details && c.error_details.trim()) {
+  if (field === 'pipedrive_id' && value && c && c.error_details && c.error_details.trim()) {
     const violationNote = `@@@ CLIENT HAS AN FCRA VIOLATION — ${c.error_details.trim()}\n\nLET CLIENT KNOW ABOUT THIS VIOLATION`;
     try {
       await fetch(PIPEDRIVE_PROXY_URL, {
