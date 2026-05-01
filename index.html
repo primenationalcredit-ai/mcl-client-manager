@@ -479,7 +479,7 @@ const STAGES = [
 const STAGE_ICONS = { need_to_call:'📞', do_not_call:'🚫', lvm:'📞', contacted:'💬', waiting_mcl:'⏳', packet_sent:'📬', disputes_mailed:'📮', waiting_reports:'📊', reports_received:'📋', litigation:'⚖️', lost:'❌' };
 
 // Template key mapping per stage
-function getTemplateKeys(stage, lastFu) {
+function getTemplateKeys(stage, lastFu, client) {
   const map = {
     need_to_call: { none:'intro_email_no_answer', intro:'fu1_email_no_answer', fu1:'fu2_email_no_answer', fu2:'fu3_email_no_answer' },
     lvm: { none:'intro_email_no_answer', intro:'fu1_email_no_answer', fu1:'fu2_email_no_answer', fu2:'fu3_email_no_answer' },
@@ -496,11 +496,25 @@ function getTemplateKeys(stage, lastFu) {
     waiting_mcl: { none:'intro_text_mailing', intro:'fu1_text_mailing', fu1:'fu2_text_mailing', fu2:'fu3_text_mailing' },
     packet_sent: { none:'intro_text_mailing', intro:'fu1_text_mailing', fu1:'fu2_text_mailing', fu2:'fu3_text_mailing' },
     disputes_mailed: { none:'intro_text_mailing', intro:'fu1_text_mailing', fu1:'fu2_text_mailing', fu2:'fu3_text_mailing' },
-    waiting_reports: { none:'followup_31day_text', intro:'fu2_text_reports', fu1:'fu2_text_reports', fu2:'fu3_text_reports', fu3:'fu4_text_reports' },
+    waiting_reports: { none:'followup_31day_email', intro:'fu2_email_reports', fu1:'fu2_email_reports', fu2:'fu3_email_reports', fu3:'fu4_email_reports' },
   };
   const stageMap = map[stage] || {};
   const smsStageMap = smsMap[stage] || {};
-  return { email: stageMap[lastFu] || null, sms: smsStageMap[lastFu] || null };
+  let emailKey = stageMap[lastFu] || null;
+  let smsKey = smsStageMap[lastFu] || null;
+
+  // If client is mid ASAP round and in waiting_reports — use midround templates
+  if (stage === 'waiting_reports' && client) {
+    const round = getCurrentAsapRound(client);
+    if (round && round.status === 'active') {
+      const midMap = { fu2_email_reports:'fu2_email_reports_midround', fu3_email_reports:'fu3_email_reports_midround', fu4_email_reports:'fu4_email_reports_midround' };
+      const midSmsMap = { fu2_text_reports:'fu2_text_reports_midround', fu3_text_reports:'fu3_text_reports_midround', fu4_text_reports:'fu4_text_reports_midround' };
+      if (midMap[emailKey]) emailKey = midMap[emailKey];
+      if (midSmsMap[smsKey]) smsKey = midSmsMap[smsKey];
+    }
+  }
+
+  return { email: emailKey, sms: smsKey };
 }
 
 // ═══════════════════════════════════════════════════
@@ -919,7 +933,7 @@ function renderProfile(clientId) {
 
   // Determine next action
   const lastFu = c.last_followup || 'none';
-  const fuKeys = getTemplateKeys(c.stage, lastFu);
+  const fuKeys = getTemplateKeys(c.stage, lastFu, c);
   const hasNextTemplate = fuKeys.email != null;
   const allSent = !hasNextTemplate;
 
@@ -1112,7 +1126,7 @@ function renderTimeline(c) {
   const noFollowupStages = ['do_not_call', 'waiting_mcl', 'disputes_mailed', 'reports_received', 'litigation', 'lost'];
   if (!c.responded && !c.outcome && !noFollowupStages.includes(c.stage) && !c.pause_reason && !hasFutureSchedule) {
     const lastFu = c.last_followup || 'none';
-    const fuKeys = getTemplateKeys(c.stage, lastFu);
+    const fuKeys = getTemplateKeys(c.stage, lastFu, c);
     if (fuKeys.email) {
       const tpl = templates.find(t => t.key === fuKeys.email);
       const nextNum = lastFu === 'none' ? 'Intro' : `FU #${parseInt(lastFu.replace('fu','')) + 1}`;
@@ -1658,7 +1672,11 @@ async function saveField(id, field, value) {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'add_note', dealId: value, content: violationNote })
       });
-      toast('⚠️ FCRA violation note added to Pipedrive ✓');
+      await fetch(PIPEDRIVE_PROXY_URL, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'add_activity', dealId: value, subject: '⚠️ FCRA Violation — Contact Client Today', note: violationNote })
+      });
+      toast('⚠️ FCRA violation note + activity added to Pipedrive ✓');
     } catch (e) { console.error('Pipedrive violation push failed:', e); }
   }
   
@@ -1854,7 +1872,7 @@ async function resendFollowup(clientId, fuType) {
 
   const prevMap = { intro: 'none', fu1: 'intro', fu2: 'fu1', fu3: 'fu2', fu4: 'fu3' };
   const lastFu = prevMap[fuType] || 'none';
-  const fuKeys = getTemplateKeys(c.stage, lastFu);
+  const fuKeys = getTemplateKeys(c.stage, lastFu, c);
   const emailTpl = templates.find(t => t.key === fuKeys.email);
   const smsTpl = templates.find(t => t.key === fuKeys.sms);
   const label = fuType === 'intro' ? 'Intro' : 'FU #' + fuType.replace('fu','');
@@ -1868,7 +1886,9 @@ async function resendFollowup(clientId, fuType) {
   // Send email
   if (emailTpl && c.email) {
     try {
-      const body = emailTpl.body.replace(/\{name\}/g, c.name.split(' ')[0]).replace(/\{agent\}/g, c.assigned_to || 'ASAP Credit Repair');
+      const round = getCurrentAsapRound(c);
+      const roundEndDate = round && round.status === 'active' ? round.end : '';
+      const body = emailTpl.body.replace(/\{name\}/g, c.name.split(' ')[0]).replace(/\{agent\}/g, c.assigned_to || 'ASAP Credit Repair').replace(/\{round_end_date\}/g, roundEndDate);
       const res = await fetch(SEND_EMAIL_URL, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to: c.email, subject: emailTpl.subject, body })
@@ -1882,7 +1902,9 @@ async function resendFollowup(clientId, fuType) {
   // Send SMS
   if (smsTpl && c.phone) {
     try {
-      const smsBody = (smsTpl.body || '').replace(/\{name\}/g, c.name.split(' ')[0]).replace(/\{agent\}/g, c.assigned_to || 'ASAP Credit Repair');
+      const smsRound = getCurrentAsapRound(c);
+      const smsRoundEnd = smsRound && smsRound.status === 'active' ? smsRound.end : '';
+      const smsBody = (smsTpl.body || '').replace(/\{name\}/g, c.name.split(' ')[0]).replace(/\{agent\}/g, c.assigned_to || 'ASAP Credit Repair').replace(/\{round_end_date\}/g, smsRoundEnd);
       const smsParams = new URLSearchParams();
       smsParams.append('SMS', smsBody); smsParams.append('Texting Cell', c.phone); smsParams.append('Person First Name', c.name.split(' ')[0]);
       await fetch(SEND_SMS_URL, { method: 'POST', body: smsParams });
@@ -1936,7 +1958,7 @@ function openSendModal(clientId, type) {
   const c = clients.find(x => x.id === clientId);
   if (!c) return;
   const lastFu = c.last_followup || 'none';
-  const fuKeys = getTemplateKeys(c.stage, lastFu);
+  const fuKeys = getTemplateKeys(c.stage, lastFu, c);
   const tplKey = type === 'sms' ? fuKeys.sms : fuKeys.email;
   const tpl = templates.find(t => t.key === tplKey);
 
@@ -1992,7 +2014,9 @@ async function confirmSend() {
   // Send SMS via Zapier webhook
   if (sendSms && smsTpl && c.phone) {
     try {
-      const smsBody = (smsTpl.body || '').replace(/\{name\}/g, c.name.split(' ')[0]).replace(/\{agent\}/g, c.assigned_to || 'ASAP Credit Repair');
+      const smsRound = getCurrentAsapRound(c);
+      const smsRoundEnd = smsRound && smsRound.status === 'active' ? smsRound.end : '';
+      const smsBody = (smsTpl.body || '').replace(/\{name\}/g, c.name.split(' ')[0]).replace(/\{agent\}/g, c.assigned_to || 'ASAP Credit Repair').replace(/\{round_end_date\}/g, smsRoundEnd);
       const smsParams = new URLSearchParams(); smsParams.append('SMS', smsBody); smsParams.append('Texting Cell', c.phone); smsParams.append('Person First Name', c.name.split(' ')[0]);
       await fetch(SEND_SMS_URL, { method: 'POST', body: smsParams });
       await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'sms_sent', template_key: smsTpl.key, details: 'SMS sent via Zapier: ' + smsTpl.name });
