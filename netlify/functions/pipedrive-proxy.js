@@ -111,7 +111,7 @@ exports.handler = async function(event) {
       const res = await fetch(`${PIPEDRIVE_BASE}/notes?api_token=${PIPEDRIVE_API_TOKEN}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deal_id: parseInt(dealId), content })
+        body: JSON.stringify({ deal_id: parseInt(dealId), content, pinned_to_deal_flag: 1 })
       });
       const data = await res.json();
       return { statusCode: 200, headers, body: JSON.stringify({ success: data.success, data: data.data }) };
@@ -138,6 +138,32 @@ exports.handler = async function(event) {
       });
       const data = await res.json();
       return { statusCode: 200, headers, body: JSON.stringify({ success: data.success, data: data.data }) };
+    } catch (e) {
+      return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: e.message }) };
+    }
+  }
+
+  // ── Get deal round dates ─────────────────────────────────────
+  if (action === 'get_round_dates') {
+    const { dealId } = body;
+    const RD_FIELDS = {
+      rd1: '6979c70df67f42c28dfcff39284ae17d564d600f',
+      rd2: 'ff3697496664744d64d9f290766f919f40c23aa0',
+      rd3: '8d681007c089ee4c7390c02ee2f027ca60374708',
+      rd4: '1d1bc8fbf1b8982640ef70131f010908788a7bd0'
+    };
+    try {
+      const res = await fetch(`${PIPEDRIVE_BASE}/deals/${dealId}?api_token=${PIPEDRIVE_API_TOKEN}`);
+      const data = await res.json();
+      if (!data.success) return { statusCode: 200, headers, body: JSON.stringify({ success: false, error: 'Deal not found' }) };
+      const d = data.data;
+      return { statusCode: 200, headers, body: JSON.stringify({
+        success: true,
+        rd1: d[RD_FIELDS.rd1] || null,
+        rd2: d[RD_FIELDS.rd2] || null,
+        rd3: d[RD_FIELDS.rd3] || null,
+        rd4: d[RD_FIELDS.rd4] || null
+      })};
     } catch (e) {
       return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: e.message }) };
     }
