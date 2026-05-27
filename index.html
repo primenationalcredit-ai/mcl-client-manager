@@ -1741,7 +1741,8 @@ async function sendManual(id, mode) {
   if ((mode === 'sms' || mode === 'both') && c.phone) {
     if (SEND_SMS_URL) {
       try {
-        const smsParams = new URLSearchParams(); smsParams.append('SMS', body); smsParams.append('Texting Cell', c.phone); smsParams.append('Person First Name', c.name.split(' ')[0]);
+        const smsText = body.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+        const smsParams = new URLSearchParams(); smsParams.append('SMS', smsText); smsParams.append('Texting Cell', c.phone); smsParams.append('Person First Name', c.name.split(' ')[0]);
         await fetch(SEND_SMS_URL, { method: 'POST', body: smsParams });
         await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'sms_sent', details: 'Manual SMS via webhook' });
         toast('Text sent ✓');
