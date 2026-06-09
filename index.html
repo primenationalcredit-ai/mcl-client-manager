@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ï»¿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -113,7 +113,7 @@ input,select,textarea{font-family:inherit;}
 .flow-stage:last-child::before{display:none;}
 .flow-dot{position:absolute;left:5px;top:5px;width:18px;height:18px;border-radius:50%;border:3px solid var(--g300);background:#fff;z-index:2;}
 .flow-dot.done{background:var(--green);border-color:var(--green);}
-.flow-dot.done::after{content:'G£ô';color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;height:100%;}
+.flow-dot.done::after{content:'Î“Â£Ã´';color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;height:100%;}
 .flow-dot.current{background:var(--navy);border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,63,135,.2);}
 .flow-dot.current::after{content:'';width:5px;height:5px;background:#fff;border-radius:50%;display:block;margin:3.5px auto;}
 .flow-head{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
@@ -219,11 +219,11 @@ input,select,textarea{font-family:inherit;}
 <body>
 
 <div class="topnav">
-  <span class="topnav-brand">GÜûn+Å MCL Client Manager</span>
+  <span class="topnav-brand">Î“ÃœÃ»âˆ©â••Ã… MCL Client Manager</span>
   <div class="topnav-right">
     <span class="badge-alert" id="overdueGlobal">0 overdue</span>
     <span id="syncCountdown" style="font-size:11px;color:#94a3b8;font-family:'JetBrains Mono',monospace;">next sync 5:00</span>
-    <button class="btn btn-outline btn-sm" onclick="manualSync()" id="syncBtn" style="font-size:13px;">Gå+ Sync</button>
+    <button class="btn btn-outline btn-sm" onclick="manualSync()" id="syncBtn" style="font-size:13px;">Î“Ã¥â•— Sync</button>
   </div>
 </div>
 
@@ -239,7 +239,7 @@ input,select,textarea{font-family:inherit;}
   </div>
   <div class="main" id="mainPanel">
     <div class="empty">
-      <div class="empty-icon">=ƒæê</div>
+      <div class="empty-icon">â‰¡Æ’Ã¦Ãª</div>
       <p>Select a client from the sidebar to view their profile</p>
     </div>
   </div>
@@ -248,7 +248,7 @@ input,select,textarea{font-family:inherit;}
 <!-- ADD CLIENT MODAL -->
 <div class="modal-bg" id="addModal">
   <div class="modal">
-    <div class="modal-head"><h3>Add New Client</h3><button class="modal-close" onclick="closeModal('addModal')">G£ò</button></div>
+    <div class="modal-head"><h3>Add New Client</h3><button class="modal-close" onclick="closeModal('addModal')">Î“Â£Ã²</button></div>
     <div class="modal-body">
       <div class="form-row"><label class="form-label">Full Name *</label><input class="form-input" id="addName"></div>
       <div class="form-row-2">
@@ -270,16 +270,16 @@ input,select,textarea{font-family:inherit;}
       <div class="form-row-2">
         <div class="form-row"><label class="form-label">Starting Stage</label>
           <select class="form-input" id="addStage">
-            <option value="need_to_call">=ƒôP Need to Call</option>
-          <option value="do_not_call">=ƒÜ½ Do Not Call</option>
-            <option value="lvm">=ƒôP LVM</option>
-            <option value="contacted">=ƒÆ¼ Contacted</option>
-            <option value="waiting_mcl">GÅ¦ Waiting on MCL</option>
-            <option value="packet_sent">=ƒô¼ Packet Sent</option>
-            <option value="disputes_mailed">=ƒô« Disputes Mailed</option>
-            <option value="waiting_reports">=ƒôè Waiting on Reports</option>
-            <option value="reports_received">=ƒôï Reports Received</option>
-          <option value="litigation">GÜûn+Å Litigation</option>
+            <option value="need_to_call">â‰¡Æ’Ã´â‚§ Need to Call</option>
+          <option value="do_not_call">â‰¡Æ’ÃœÂ½ Do Not Call</option>
+            <option value="lvm">â‰¡Æ’Ã´â‚§ LVM</option>
+            <option value="contacted">â‰¡Æ’Ã†Â¼ Contacted</option>
+            <option value="waiting_mcl">Î“Ã…â”‚ Waiting on MCL</option>
+            <option value="packet_sent">â‰¡Æ’Ã´Â¼ Packet Sent</option>
+            <option value="disputes_mailed">â‰¡Æ’Ã´Â« Disputes Mailed</option>
+            <option value="waiting_reports">â‰¡Æ’Ã´Ã¨ Waiting on Reports</option>
+            <option value="reports_received">â‰¡Æ’Ã´Ã¯ Reports Received</option>
+          <option value="litigation">Î“ÃœÃ»âˆ©â••Ã… Litigation</option>
           </select>
         </div>
         <div class="form-row"><label class="form-label">Intro Type</label>
@@ -294,7 +294,7 @@ input,select,textarea{font-family:inherit;}
     </div>
     <div class="modal-foot">
       <button class="btn btn-outline" onclick="closeModal('addModal')">Cancel</button>
-      <button class="btn btn-navy" onclick="addClient()">Add Client GåÆ</button>
+      <button class="btn btn-navy" onclick="addClient()">Add Client Î“Ã¥Ã†</button>
     </div>
   </div>
 </div>
@@ -302,7 +302,7 @@ input,select,textarea{font-family:inherit;}
 <!-- SEND EMAIL MODAL -->
 <div class="modal-bg" id="sendModal">
   <div class="modal">
-    <div class="modal-head"><h3 id="sendModalTitle">Send Follow-up</h3><button class="modal-close" onclick="closeModal('sendModal')">G£ò</button></div>
+    <div class="modal-head"><h3 id="sendModalTitle">Send Follow-up</h3><button class="modal-close" onclick="closeModal('sendModal')">Î“Â£Ã²</button></div>
     <div class="modal-body">
       <div class="form-row"><label class="form-label">Template</label><div id="sendTemplateInfo" style="font-size:13px;color:var(--g700);padding:8px 10px;background:var(--g50);border-radius:8px;"></div></div>
       <div class="form-row"><label class="form-label">Subject</label><div id="sendSubject" style="font-size:13px;color:var(--g700);padding:8px 10px;background:var(--g50);border-radius:8px;"></div></div>
@@ -314,7 +314,7 @@ input,select,textarea{font-family:inherit;}
     </div>
     <div class="modal-foot">
       <button class="btn btn-outline" onclick="closeModal('sendModal')">Cancel</button>
-      <button class="btn btn-navy" id="sendConfirmBtn" onclick="confirmSend()">Send GåÆ</button>
+      <button class="btn btn-navy" id="sendConfirmBtn" onclick="confirmSend()">Send Î“Ã¥Ã†</button>
     </div>
   </div>
 </div>
@@ -337,12 +337,12 @@ input,select,textarea{font-family:inherit;}
 <!-- DID THEY ANSWER MODAL -->
 <div class="modal-bg" id="answerModal">
   <div class="modal" style="max-width:420px;">
-    <div class="modal-head"><h3>=ƒôP Did They Answer?</h3><button class="modal-close" onclick="closeModal('answerModal')">G£ò</button></div>
+    <div class="modal-head"><h3>â‰¡Æ’Ã´â‚§ Did They Answer?</h3><button class="modal-close" onclick="closeModal('answerModal')">Î“Â£Ã²</button></div>
     <div class="modal-body" style="text-align:center;padding:24px 18px;">
       <p style="font-size:15px;color:var(--g700);margin-bottom:20px;">Did the client pick up or did you leave a voicemail?</p>
       <div style="display:flex;gap:12px;justify-content:center;">
-        <button class="btn btn-green" onclick="handleAnswer('spoke')" style="padding:12px 24px;font-size:14px;">G£à Yes GÇö Spoke with them</button>
-        <button class="btn btn-outline" onclick="handleAnswer('lvm')" style="padding:12px 24px;font-size:14px;">=ƒôP No GÇö Left Voicemail</button>
+        <button class="btn btn-green" onclick="handleAnswer('spoke')" style="padding:12px 24px;font-size:14px;">Î“Â£Ã  Yes Î“Ã‡Ã¶ Spoke with them</button>
+        <button class="btn btn-outline" onclick="handleAnswer('lvm')" style="padding:12px 24px;font-size:14px;">â‰¡Æ’Ã´â‚§ No Î“Ã‡Ã¶ Left Voicemail</button>
       </div>
       <button class="btn btn-outline btn-sm" onclick="handleAnswer('no_answer')" style="margin-top:12px;font-size:12px;color:var(--g400);">No answer, no voicemail</button>
     </div>
@@ -350,11 +350,11 @@ input,select,textarea{font-family:inherit;}
 </div>
 
 <script>
-// GòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉ
+// Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰
 // CONFIG - UPDATE THESE WITH YOUR SUPABASE CREDENTIALS
-// GòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉ
+// Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰
 const SUPABASE_URL = 'https://ffhjkrpflhyrhekzczal.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmaGprcnBmbGh5cmhla3pjemFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0NTU1NDIsImV4cCI6MjA4NjAzMTU0Mn0.Lg7CfMP6_BQYwAPWhmeXQhihtv8kir1ZreGTurjG-DA'; // Get from Supabase GåÆ Settings GåÆ API GåÆ anon public key
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmaGprcnBmbGh5cmhla3pjemFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0NTU1NDIsImV4cCI6MjA4NjAzMTU0Mn0.Lg7CfMP6_BQYwAPWhmeXQhihtv8kir1ZreGTurjG-DA'; // Get from Supabase Î“Ã¥Ã† Settings Î“Ã¥Ã† API Î“Ã¥Ã† anon public key
 const SEND_EMAIL_URL = 'https://stupendous-melomakarona-97abc8.netlify.app/.netlify/functions/send-email';
 const SEND_SMS_URL = 'https://hooks.zapier.com/hooks/catch/172130/u0vmgde/';
 const SHEET_UPDATE_URL = 'https://hooks.zapier.com/hooks/catch/172130/u0vj0pw/';
@@ -382,7 +382,7 @@ const NEW_CLIENT_WEBHOOK_URL = 'https://hooks.zapier.com/hooks/catch/172130/uv1l
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Custom prompt that stays on screen GÇö won't dismiss on click-off
+// Custom prompt that stays on screen Î“Ã‡Ã¶ won't dismiss on click-off
 function customPrompt(message, defaultVal) {
   return new Promise((resolve) => {
     const overlay = document.getElementById('customPromptOverlay');
@@ -452,9 +452,9 @@ function customConfirm(message, okLabel, cancelLabel) {
   });
 }
 
-// GòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉ
+// Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰
 // STATE
-// GòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉ
+// Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰
 let clients = [];
 let templates = [];
 let currentStage = 'need_to_call';
@@ -463,20 +463,20 @@ let pendingSend = null;
 let overdueOnly = false;
 
 const STAGES = [
-  { key: 'need_to_call', icon: '=ƒôP', label: 'Need to Call' },
-  { key: 'do_not_call', icon: '=ƒÜ½', label: 'Do Not Call' },
-  { key: 'lvm', icon: '=ƒôP', label: 'LVM' },
-  { key: 'contacted', icon: '=ƒÆ¼', label: 'Contacted' },
-  { key: 'waiting_mcl', icon: 'GÅ¦', label: 'Waiting on MCL' },
-  { key: 'packet_sent', icon: '=ƒô¼', label: 'Packet Sent' },
-  { key: 'disputes_mailed', icon: '=ƒô«', label: 'Disputes Mailed' },
-  { key: 'waiting_reports', icon: '=ƒôè', label: 'Waiting on Reports' },
-  { key: 'reports_received', icon: '=ƒôï', label: 'Reports Received' },
-  { key: 'litigation', icon: 'GÜûn+Å', label: 'Litigation' },
-  { key: 'lost', icon: 'G¥î', label: 'Lost' },
+  { key: 'need_to_call', icon: 'â‰¡Æ’Ã´â‚§', label: 'Need to Call' },
+  { key: 'do_not_call', icon: 'â‰¡Æ’ÃœÂ½', label: 'Do Not Call' },
+  { key: 'lvm', icon: 'â‰¡Æ’Ã´â‚§', label: 'LVM' },
+  { key: 'contacted', icon: 'â‰¡Æ’Ã†Â¼', label: 'Contacted' },
+  { key: 'waiting_mcl', icon: 'Î“Ã…â”‚', label: 'Waiting on MCL' },
+  { key: 'packet_sent', icon: 'â‰¡Æ’Ã´Â¼', label: 'Packet Sent' },
+  { key: 'disputes_mailed', icon: 'â‰¡Æ’Ã´Â«', label: 'Disputes Mailed' },
+  { key: 'waiting_reports', icon: 'â‰¡Æ’Ã´Ã¨', label: 'Waiting on Reports' },
+  { key: 'reports_received', icon: 'â‰¡Æ’Ã´Ã¯', label: 'Reports Received' },
+  { key: 'litigation', icon: 'Î“ÃœÃ»âˆ©â••Ã…', label: 'Litigation' },
+  { key: 'lost', icon: 'Î“Â¥Ã®', label: 'Lost' },
 ];
 
-const STAGE_ICONS = { need_to_call:'=ƒôP', do_not_call:'=ƒÜ½', lvm:'=ƒôP', contacted:'=ƒÆ¼', waiting_mcl:'GÅ¦', packet_sent:'=ƒô¼', disputes_mailed:'=ƒô«', waiting_reports:'=ƒôè', reports_received:'=ƒôï', litigation:'GÜûn+Å', lost:'G¥î' };
+const STAGE_ICONS = { need_to_call:'â‰¡Æ’Ã´â‚§', do_not_call:'â‰¡Æ’ÃœÂ½', lvm:'â‰¡Æ’Ã´â‚§', contacted:'â‰¡Æ’Ã†Â¼', waiting_mcl:'Î“Ã…â”‚', packet_sent:'â‰¡Æ’Ã´Â¼', disputes_mailed:'â‰¡Æ’Ã´Â«', waiting_reports:'â‰¡Æ’Ã´Ã¨', reports_received:'â‰¡Æ’Ã´Ã¯', litigation:'Î“ÃœÃ»âˆ©â••Ã…', lost:'Î“Â¥Ã®' };
 
 // Template key mapping per stage
 function getTemplateKeys(stage, lastFu, client) {
@@ -503,7 +503,7 @@ function getTemplateKeys(stage, lastFu, client) {
   let emailKey = stageMap[lastFu] || null;
   let smsKey = smsStageMap[lastFu] || null;
 
-  // If client is mid ASAP round and in waiting_reports GÇö use midround templates
+  // If client is mid ASAP round and in waiting_reports Î“Ã‡Ã¶ use midround templates
   if (stage === 'waiting_reports' && client) {
     const round = getCurrentAsapRound(client);
     if (round && round.status === 'active') {
@@ -517,9 +517,9 @@ function getTemplateKeys(stage, lastFu, client) {
   return { email: emailKey, sms: smsKey };
 }
 
-// GòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉ
+// Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰
 // DATA LOADING
-// GòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉ
+// Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰
 async function loadData() {
   try {
     const [cRes, tRes] = await Promise.all([
@@ -549,7 +549,7 @@ async function loadData() {
 
 async function syncData() {
   const btn = document.getElementById('syncBtn');
-  if (btn) { btn.textContent = 'Gƒ¦ Syncing...'; btn.disabled = true; }
+  if (btn) { btn.textContent = 'Î“Æ’â”‚ Syncing...'; btn.disabled = true; }
   
   try {
     // 1. Load current DB data + ensure Pipedrive labels are loaded
@@ -602,7 +602,7 @@ async function syncData() {
         // Client mailed disputes AND we have a due date
         const dueParsed = parseDate(dueDate);
         if (dueParsed && new Date(dueParsed) <= new Date()) {
-          stage = 'waiting_reports'; // Due date passed GÇö time to request reports
+          stage = 'waiting_reports'; // Due date passed Î“Ã‡Ã¶ time to request reports
         } else {
           stage = 'disputes_mailed'; // Still waiting for due date
         }
@@ -618,7 +618,7 @@ async function syncData() {
         stage = 'need_to_call';
       }
       
-      // Parse dates (MM/DD/YYYY GåÆ YYYY-MM-DD)
+      // Parse dates (MM/DD/YYYY Î“Ã¥Ã† YYYY-MM-DD)
       function parseDate(d) {
         if (!d) return null;
         const p = d.split('/');
@@ -650,7 +650,7 @@ async function syncData() {
       const existing = clients.find(c => c.name.toLowerCase() === nameLower);
       
       if (existing) {
-        // SKIP clients marked lost or not eligible GÇö they are done
+        // SKIP clients marked lost or not eligible Î“Ã‡Ã¶ they are done
         if (existing.outcome === 'lost') { continue; }
 
         const stageOrder = ['need_to_call','do_not_call','lvm','contacted','waiting_mcl','packet_sent','disputes_mailed','waiting_reports','reports_received','litigation'];
@@ -660,9 +660,9 @@ async function syncData() {
         // Always allow sheet to move client FORWARD in pipeline
         // Also always allow litigation to be set from sheet
         if (sheetIdx > existingIdx || inLitigation) {
-          // Sheet is ahead GÇö update stage and outcome
+          // Sheet is ahead Î“Ã‡Ã¶ update stage and outcome
         } else {
-          // Sheet is same or behind GÇö keep existing stage, don't regress
+          // Sheet is same or behind Î“Ã‡Ã¶ keep existing stage, don't regress
           delete updateData.stage;
           if (!outcome) {
             delete updateData.outcome;
@@ -708,7 +708,7 @@ async function syncData() {
           }
         }
       } else {
-        // Check if this client was previously deleted GÇö match by name (case-insensitive)
+        // Check if this client was previously deleted Î“Ã‡Ã¶ match by name (case-insensitive)
         const { data: delLog } = await sb.from('mcl_activity_log').select('id').eq('action', 'deleted').ilike('details', '%' + name + '%').limit(1);
         if (delLog && delLog.length > 0) { console.log('Skipping re-import of deleted client:', name); continue; }
         
@@ -782,11 +782,11 @@ async function syncData() {
       }
     }
     
-    let msg = `Synced G£ô GÇö ${sheetRows.length} sheet rows`;
+    let msg = `Synced Î“Â£Ã´ Î“Ã‡Ã¶ ${sheetRows.length} sheet rows`;
     if (inserted) msg += `, ${inserted} new`;
     if (updated) msg += `, ${updated} updated`;
     if (errors) msg += `, ${errors} errors`;
-    msg += ` GÇö ${clients.length} total in DB`;
+    msg += ` Î“Ã‡Ã¶ ${clients.length} total in DB`;
     toast(msg);
     console.log(msg);
     
@@ -794,12 +794,12 @@ async function syncData() {
     console.error('SYNC FAILED:', e);
     toast('Sync failed: ' + e.message);
   }
-  if (btn) { btn.textContent = 'Gå+ Sync'; btn.disabled = false; }
+  if (btn) { btn.textContent = 'Î“Ã¥â•— Sync'; btn.disabled = false; }
 }
 
-// GòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉ
+// Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰
 // RENDER STAGES
-// GòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉ
+// Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰
 function renderStages() {
   const container = document.getElementById('stagesContainer');
   container.innerHTML = '<div class="sb-title">Pipeline</div>';
@@ -856,9 +856,9 @@ function renderStages() {
   });
 }
 
-// GòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉ
+// Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰
 // RENDER CLIENT LIST
-// GòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉ
+// Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰
 function renderClientList() {
   filterClients();
 }
@@ -898,7 +898,7 @@ function renderFilteredClients(list) {
     li.innerHTML = `
       <div class="ci-left">
         <div class="ci-name">${c.name}${isOverdue ? '<span class="ci-overdue-tag">OVERDUE</span>' : ''}</div>
-        <div class="ci-sub">${scheduledDue ? '=ƒö¦ Follow-up due!' : c.next_followup_date ? '=ƒôà Follow-up: ' + new Date(c.next_followup_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : fuLabel + ' -+ ' + daysLabel}${isOverdue && !scheduledDue ? ' -+ GÜán+Å ' + (c.days_since_contact || '?') + 'd overdue' : ''}</div>
+        <div class="ci-sub">${scheduledDue ? 'â‰¡Æ’Ã¶â”¤ Follow-up due!' : c.next_followup_date ? 'â‰¡Æ’Ã´Ã  Follow-up: ' + new Date(c.next_followup_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : fuLabel + ' â”¬â•– ' + daysLabel}${isOverdue && !scheduledDue ? ' â”¬â•– Î“ÃœÃ¡âˆ©â••Ã… ' + (c.days_since_contact || '?') + 'd overdue' : ''}</div>
       </div>
       <div><span class="dot ${c.follow_up_status}"></span></div>`;
     ul.appendChild(li);
@@ -910,25 +910,25 @@ function filterClients() {
   if (q) {
     // Global search: ALL clients including lost, regardless of current pipeline
     const all = clients.filter(c => c.name.toLowerCase().includes(q) || (c.email||'').toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q));
-    document.getElementById('stageClientsTitle').textContent = `=ƒöì "${q}" GÇö ${all.length} results`;
+    document.getElementById('stageClientsTitle').textContent = `â‰¡Æ’Ã¶Ã¬ "${q}" Î“Ã‡Ã¶ ${all.length} results`;
     renderFilteredClients(all);
   } else {
     const stageClients = getStageClients();
-    document.getElementById('stageClientsTitle').textContent = `${STAGE_ICONS[currentStage]||'=ƒÅü'} ${STAGES.find(s=>s.key===currentStage)?.label||'Clients'}${overdueOnly ? ' (Overdue Only)' : ''} GÇö ${stageClients.length}`;
+    document.getElementById('stageClientsTitle').textContent = `${STAGE_ICONS[currentStage]||'â‰¡Æ’Ã…Ã¼'} ${STAGES.find(s=>s.key===currentStage)?.label||'Clients'}${overdueOnly ? ' (Overdue Only)' : ''} Î“Ã‡Ã¶ ${stageClients.length}`;
     renderFilteredClients(stageClients);
   }
 }
 
-// GòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉ
+// Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰
 // RENDER PROFILE
-// GòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉ
+// Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰
 function renderProfile(clientId) {
   const c = clients.find(x => x.id === clientId);
   if (!c) return;
   const main = document.getElementById('mainPanel');
 
   const stageLabel = STAGES.find(s=>s.key===c.stage)?.label || c.stage;
-  const stageIcon = STAGE_ICONS[c.stage] || '=ƒôï';
+  const stageIcon = STAGE_ICONS[c.stage] || 'â‰¡Æ’Ã´Ã¯';
   const daysInStage = c.days_in_stage || 0;
 
   // Determine next action
@@ -943,22 +943,22 @@ function renderProfile(clientId) {
       <div>
         <div class="prof-name"><input style="font-size:22px;font-weight:700;width:100%;border:1px solid transparent;padding:2px 4px;background:transparent;border-radius:6px;font-family:inherit;" value="${c.name}" onblur="saveField('${c.id}','name',this.value);this.style.borderColor='transparent';this.style.background='transparent'" onfocus="this.style.borderColor='var(--navy)';this.style.background='#fff'" onkeydown="if(event.key==='Enter'){this.blur()}" /></div>
         <div class="prof-meta">
-          <span>=ƒôº <input style="border:1px solid transparent;padding:1px 4px;font-size:13px;color:var(--navy);background:transparent;border-radius:4px;width:220px;font-family:inherit;" value="${c.email || ''}" placeholder="Add email..." onblur="saveField('${c.id}','email',this.value);this.style.borderColor='transparent';this.style.background='transparent'" onfocus="this.style.borderColor='var(--navy)';this.style.background='#fff'" onkeydown="if(event.key==='Enter'){this.blur()}" /></span>
-          <span>=ƒô¦ <input style="border:1px solid transparent;padding:1px 4px;font-size:13px;color:var(--g500);background:transparent;border-radius:4px;width:140px;font-family:inherit;" value="${c.phone || ''}" placeholder="Add phone..." onblur="saveField('${c.id}','phone',this.value);this.style.borderColor='transparent';this.style.background='transparent'" onfocus="this.style.borderColor='var(--navy)';this.style.background='#fff'" onkeydown="if(event.key==='Enter'){this.blur()}" /></span>
-          <span>=ƒôï <input style="border:1px solid transparent;padding:1px 4px;font-size:13px;color:var(--navy);background:transparent;border-radius:4px;width:100px;font-family:inherit;" value="${c.pipedrive_id || ''}" placeholder="Deal ID..." onblur="saveField('${c.id}','pipedrive_id',this.value);this.style.borderColor='transparent';this.style.background='transparent'" onfocus="this.style.borderColor='var(--navy)';this.style.background='#fff'" onkeydown="if(event.key==='Enter'){this.blur()}" /></span>
+          <span>â‰¡Æ’Ã´Âº <input style="border:1px solid transparent;padding:1px 4px;font-size:13px;color:var(--navy);background:transparent;border-radius:4px;width:220px;font-family:inherit;" value="${c.email || ''}" placeholder="Add email..." onblur="saveField('${c.id}','email',this.value);this.style.borderColor='transparent';this.style.background='transparent'" onfocus="this.style.borderColor='var(--navy)';this.style.background='#fff'" onkeydown="if(event.key==='Enter'){this.blur()}" /></span>
+          <span>â‰¡Æ’Ã´â–’ <input style="border:1px solid transparent;padding:1px 4px;font-size:13px;color:var(--g500);background:transparent;border-radius:4px;width:140px;font-family:inherit;" value="${c.phone || ''}" placeholder="Add phone..." onblur="saveField('${c.id}','phone',this.value);this.style.borderColor='transparent';this.style.background='transparent'" onfocus="this.style.borderColor='var(--navy)';this.style.background='#fff'" onkeydown="if(event.key==='Enter'){this.blur()}" /></span>
+          <span>â‰¡Æ’Ã´Ã¯ <input style="border:1px solid transparent;padding:1px 4px;font-size:13px;color:var(--navy);background:transparent;border-radius:4px;width:100px;font-family:inherit;" value="${c.pipedrive_id || ''}" placeholder="Deal ID..." onblur="saveField('${c.id}','pipedrive_id',this.value);this.style.borderColor='transparent';this.style.background='transparent'" onfocus="this.style.borderColor='var(--navy)';this.style.background='#fff'" onkeydown="if(event.key==='Enter'){this.blur()}" /></span>
         </div>
       </div>
       <div class="prof-actions">
-        ${!c.outcome ? `<button class="btn btn-red btn-sm" onclick="markOutcome('${c.id}','lost')">G¥î Lost</button>` : ''}
-        ${c.outcome === 'lost' ? `<button class="btn btn-sm" style="background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;" onclick="reviveClient('${c.id}')">GÖ+n+Å Revive</button>` : ''}
-        ${c.pause_reason ? `<button class="btn btn-sm" onclick="unpauseClient('${c.id}')" style="background:#e8f5e9;color:#2e7d32;border:1px solid #4caf50;font-size:11px;">Gû¦ Unpause</button>` : `<button class="btn btn-sm" onclick="pauseClient('${c.id}')" style="background:#fff3e0;color:#e65100;border:1px solid #ffb74d;font-size:11px;">GÅ+ Pause</button>`}
-        ${!c.outcome ? `<button class="btn btn-sm" onclick="scheduleFollowup('${c.id}')" style="background:#e3f2fd;color:#1565c0;border:1px solid #64b5f6;font-size:11px;">=ƒôà Schedule</button>` : ''}
-        <button class="btn btn-sm" onclick="deleteClient('${c.id}')" style="background:#fee;color:#c00;border:1px solid #fcc;font-size:11px;" title="Permanently delete this client">=ƒùæ Delete</button>
+        ${!c.outcome ? `<button class="btn btn-red btn-sm" onclick="markOutcome('${c.id}','lost')">Î“Â¥Ã® Lost</button>` : ''}
+        ${c.outcome === 'lost' ? `<button class="btn btn-sm" style="background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;" onclick="reviveClient('${c.id}')">Î“Ã–â•—âˆ©â••Ã… Revive</button>` : ''}
+        ${c.pause_reason ? `<button class="btn btn-sm" onclick="unpauseClient('${c.id}')" style="background:#e8f5e9;color:#2e7d32;border:1px solid #4caf50;font-size:11px;">Î“Ã»â•¢ Unpause</button>` : `<button class="btn btn-sm" onclick="pauseClient('${c.id}')" style="background:#fff3e0;color:#e65100;border:1px solid #ffb74d;font-size:11px;">Î“Ã…â•• Pause</button>`}
+        ${!c.outcome ? `<button class="btn btn-sm" onclick="scheduleFollowup('${c.id}')" style="background:#e3f2fd;color:#1565c0;border:1px solid #64b5f6;font-size:11px;">â‰¡Æ’Ã´Ã  Schedule</button>` : ''}
+        <button class="btn btn-sm" onclick="deleteClient('${c.id}')" style="background:#fee;color:#c00;border:1px solid #fcc;font-size:11px;" title="Permanently delete this client">â‰¡Æ’Ã¹Ã¦ Delete</button>
       </div>
     </div>
 
     ${c.pause_reason ? `<div style="background:#fff3e0;border:2px solid #ffb74d;border-radius:10px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
-      <span style="font-size:20px;">GÅ+</span>
+      <span style="font-size:20px;">Î“Ã…â••</span>
       <div>
         <div style="font-weight:600;color:#e65100;">Automations Paused</div>
         <div style="font-size:13px;color:#bf360c;">${c.pause_reason}</div>
@@ -967,7 +967,7 @@ function renderProfile(clientId) {
 
     ${c.next_followup_date ? `<div style="background:${new Date(c.next_followup_date) <= new Date() ? '#ffebee;border:2px solid #c62828' : '#e3f2fd;border:2px solid #1565c0'};border-radius:10px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;">
       <div style="display:flex;align-items:center;gap:12px;">
-        <span style="font-size:20px;">${new Date(c.next_followup_date) <= new Date() ? '=ƒö¦' : '=ƒôà'}</span>
+        <span style="font-size:20px;">${new Date(c.next_followup_date) <= new Date() ? 'â‰¡Æ’Ã¶â”¤' : 'â‰¡Æ’Ã´Ã '}</span>
         <div>
           <div style="font-weight:600;color:${new Date(c.next_followup_date) <= new Date() ? '#c62828' : '#1565c0'};">${new Date(c.next_followup_date) <= new Date() ? 'FOLLOW-UP DUE TODAY!' : 'Scheduled Follow-up'}</div>
           <div style="font-size:13px;color:#555;">${new Date(c.next_followup_date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}</div>
@@ -982,30 +982,30 @@ function renderProfile(clientId) {
         <div class="info-card-title">Client Details</div>
         <div class="info-row"><span class="info-lbl">Current Stage</span><span class="stage-badge">${stageIcon} ${stageLabel}</span></div>
         <div class="info-row"><span class="info-lbl">Time in Stage</span><span class="days-badge ${daysInStage > 10 ? 'overdue' : 'ok'}">${daysInStage} days</span></div>
-        <div class="info-row"><span class="info-lbl">Assigned To</span><span class="info-val">${c.assigned_to || 'GÇö'}</span></div>
+        <div class="info-row"><span class="info-lbl">Assigned To</span><span class="info-val">${c.assigned_to || 'Î“Ã‡Ã¶'}</span></div>
         <div class="info-row"><span class="info-lbl">Intro Type</span><span class="info-val">${c.intro_type === 'lvm' ? 'Left Voicemail' : c.intro_type === 'spoke' ? 'Spoke' : 'No Answer'}</span></div>
         <div class="info-row"><span class="info-lbl">Follow-up Status</span><span class="pill ${c.follow_up_status}">${statusLabel(c.follow_up_status)}</span></div>
       </div>
       <div class="info-card">
         <div class="info-card-title">Key Dates</div>
         <div class="info-row"><span class="info-lbl">Lead Created</span><span class="info-val">${fmtDate(c.created_at)}</span></div>
-        <div class="info-row"><span class="info-lbl">Intro Sent</span><span class="info-val ${!c.intro_sent_at?'muted':''}">${c.intro_sent_at ? fmtDate(c.intro_sent_at) : 'GÇö not yet'}</span></div>
-        <div class="info-row"><span class="info-lbl">Responded</span><span class="info-val ${!c.responded_at?'muted':''}">${c.responded_at ? fmtDate(c.responded_at) : 'GÇö not yet'}</span></div>
-        <div class="info-row"><span class="info-lbl">Packet Mailed to Client</span><span class="info-val ${!c.disputes_mailed_to_client?'muted':''}">${c.disputes_mailed_to_client ? fmtDate(c.disputes_mailed_to_client) : 'GÇö not yet'}</span></div>
-        <div class="info-row"><span class="info-lbl">Client Confirmed Mailed</span><span class="info-val ${!c.disputes_mailed_to_cra?'muted':''}">${c.disputes_mailed_to_cra ? fmtDate(c.disputes_mailed_to_cra) : 'GÇö not yet'}</span></div>
-        <div class="info-row"><span class="info-lbl">Due Date (Round Over)</span><span class="info-val ${!c.round_over_date?'muted':''}">${c.round_over_date ? fmtDate(c.round_over_date) + (c.days_until_round_over != null ? ' (' + c.days_until_round_over + ' days)' : '') : 'GÇö not yet'}</span></div>
+        <div class="info-row"><span class="info-lbl">Intro Sent</span><span class="info-val ${!c.intro_sent_at?'muted':''}">${c.intro_sent_at ? fmtDate(c.intro_sent_at) : 'Î“Ã‡Ã¶ not yet'}</span></div>
+        <div class="info-row"><span class="info-lbl">Responded</span><span class="info-val ${!c.responded_at?'muted':''}">${c.responded_at ? fmtDate(c.responded_at) : 'Î“Ã‡Ã¶ not yet'}</span></div>
+        <div class="info-row"><span class="info-lbl">Packet Mailed to Client</span><span class="info-val ${!c.disputes_mailed_to_client?'muted':''}">${c.disputes_mailed_to_client ? fmtDate(c.disputes_mailed_to_client) : 'Î“Ã‡Ã¶ not yet'}</span></div>
+        <div class="info-row"><span class="info-lbl">Client Confirmed Mailed</span><span class="info-val ${!c.disputes_mailed_to_cra?'muted':''}">${c.disputes_mailed_to_cra ? fmtDate(c.disputes_mailed_to_cra) : 'Î“Ã‡Ã¶ not yet'}</span></div>
+        <div class="info-row"><span class="info-lbl">Due Date (Round Over)</span><span class="info-val ${!c.round_over_date?'muted':''}">${c.round_over_date ? fmtDate(c.round_over_date) + (c.days_until_round_over != null ? ' (' + c.days_until_round_over + ' days)' : '') : 'Î“Ã‡Ã¶ not yet'}</span></div>
         ${renderRoundDates(c)}
-        <div class="info-row"><span class="info-lbl">Outcome</span><span class="info-val ${!c.outcome?'muted':''}">${c.outcome ? c.outcome.toUpperCase() : 'GÇö pending'}</span></div>
+        <div class="info-row"><span class="info-lbl">Outcome</span><span class="info-val ${!c.outcome?'muted':''}">${c.outcome ? c.outcome.toUpperCase() : 'Î“Ã‡Ã¶ pending'}</span></div>
       </div>
     </div>
 
     ${c.stage === 'need_to_call' && !c.outcome ? `
     <!-- CALL OUTCOME -->
     <div style="background:linear-gradient(135deg,#e8f5e9,#fff3e0);border:2px solid #4caf50;border-radius:10px;padding:16px 20px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;">
-      <span style="font-size:15px;font-weight:600;color:#2e7d32;">=ƒôP Called this client?</span>
+      <span style="font-size:15px;font-weight:600;color:#2e7d32;">â‰¡Æ’Ã´â‚§ Called this client?</span>
       <div style="display:flex;gap:10px;">
-        <button class="btn btn-green" onclick="callOutcome('${c.id}','spoke')" style="padding:10px 20px;font-size:14px;">G£à Spoke to Client</button>
-        <button class="btn btn-outline" onclick="callOutcome('${c.id}','lvm')" style="padding:10px 20px;font-size:14px;">=ƒôP Left Voicemail</button>
+        <button class="btn btn-green" onclick="callOutcome('${c.id}','spoke')" style="padding:10px 20px;font-size:14px;">Î“Â£Ã  Spoke to Client</button>
+        <button class="btn btn-outline" onclick="callOutcome('${c.id}','lvm')" style="padding:10px 20px;font-size:14px;">â‰¡Æ’Ã´â‚§ Left Voicemail</button>
         <button class="btn btn-outline btn-sm" onclick="callOutcome('${c.id}','no_answer')" style="font-size:12px;color:var(--g400);">No answer</button>
       </div>
     </div>` : ''}
@@ -1013,22 +1013,22 @@ function renderProfile(clientId) {
     ${(c.stage === 'lvm' || c.stage === 'contacted') && !c.outcome ? `
     <!-- MCL EMAIL RESPONSE -->
     <div style="background:linear-gradient(135deg,#e3f2fd,#fff3e0);border:2px solid #1565c0;border-radius:10px;padding:16px 20px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;">
-      <span style="font-size:15px;font-weight:600;color:#1565c0;">GÜûn+Å Did client respond to McCarthy Law email?</span>
+      <span style="font-size:15px;font-weight:600;color:#1565c0;">Î“ÃœÃ»âˆ©â••Ã… Did client respond to McCarthy Law email?</span>
       <div style="display:flex;gap:10px;">
-        <button class="btn btn-navy" onclick="mclResponded('${c.id}')" style="padding:10px 20px;font-size:14px;">G£à Yes GÇö Notify McCarthy Law</button>
+        <button class="btn btn-navy" onclick="mclResponded('${c.id}')" style="padding:10px 20px;font-size:14px;">Î“Â£Ã  Yes Î“Ã‡Ã¶ Notify McCarthy Law</button>
       </div>
     </div>` : ''}
 
     <!-- ERROR DETAILS -->
     <div class="error-box">
-      <div class="info-card-title">GÜán+Å Credit Report Error</div>
+      <div class="info-card-title">Î“ÃœÃ¡âˆ©â••Ã… Credit Report Error</div>
       <textarea id="errorDetails" onblur="saveField('${c.id}','error_details',this.value)" placeholder="Describe the credit report error (e.g. Balance on paid WFC EX pg. 5)...">${c.error_details || ''}</textarea>
     </div>
 
     <!-- COMMUNICATION LOG -->
     <div class="comm-log">
       <div class="comm-log-title">
-        <span>=ƒôP Communication Log</span>
+        <span>â‰¡Æ’Ã´â‚§ Communication Log</span>
       </div>
       <div id="commEntries">
         ${renderCommLog(c)}
@@ -1050,7 +1050,7 @@ function renderProfile(clientId) {
 
     <!-- TIMELINE -->
     <div class="timeline-card">
-      <div class="timeline-title">=ƒôï Follow-up Timeline</div>
+      <div class="timeline-title">â‰¡Æ’Ã´Ã¯ Follow-up Timeline</div>
       <div class="flow">
         ${renderTimeline(c)}
       </div>
@@ -1058,18 +1058,18 @@ function renderProfile(clientId) {
       <div class="move-bar">
         <label>Move to:</label>
         <select class="move-select" id="moveSelect">
-          <option value="need_to_call">=ƒôP Need to Call</option>
-          <option value="do_not_call">=ƒÜ½ Do Not Call</option>
-          <option value="lvm">=ƒôP LVM</option>
-          <option value="contacted">=ƒÆ¼ Contacted</option>
-          <option value="waiting_mcl">GÅ¦ Waiting on MCL</option>
-          <option value="packet_sent">=ƒô¼ Packet Sent</option>
-          <option value="disputes_mailed">=ƒô« Disputes Mailed</option>
-          <option value="waiting_reports">=ƒôè Waiting on Reports</option>
-          <option value="reports_received">=ƒôï Reports Received</option>
-          <option value="litigation">GÜûn+Å Litigation</option>
+          <option value="need_to_call">â‰¡Æ’Ã´â‚§ Need to Call</option>
+          <option value="do_not_call">â‰¡Æ’ÃœÂ½ Do Not Call</option>
+          <option value="lvm">â‰¡Æ’Ã´â‚§ LVM</option>
+          <option value="contacted">â‰¡Æ’Ã†Â¼ Contacted</option>
+          <option value="waiting_mcl">Î“Ã…â”‚ Waiting on MCL</option>
+          <option value="packet_sent">â‰¡Æ’Ã´Â¼ Packet Sent</option>
+          <option value="disputes_mailed">â‰¡Æ’Ã´Â« Disputes Mailed</option>
+          <option value="waiting_reports">â‰¡Æ’Ã´Ã¨ Waiting on Reports</option>
+          <option value="reports_received">â‰¡Æ’Ã´Ã¯ Reports Received</option>
+          <option value="litigation">Î“ÃœÃ»âˆ©â••Ã… Litigation</option>
         </select>
-        <button class="btn btn-navy btn-sm" onclick="moveStage('${c.id}')">Move GåÆ</button>
+        <button class="btn btn-navy btn-sm" onclick="moveStage('${c.id}')">Move Î“Ã¥Ã†</button>
       </div>` : ''}
     </div>
 
@@ -1079,10 +1079,10 @@ function renderProfile(clientId) {
       <input id="manualSubject" placeholder="Subject (for email)">
       <textarea id="manualBody" placeholder="Type your message..."></textarea>
       <div class="manual-btns" id="manualBtns">
-        <button class="btn btn-navy btn-sm" onclick="sendManual('${c.id}','email')">=ƒôº Send Email</button>
-        <button class="btn btn-green btn-sm" onclick="sendManual('${c.id}','sms')">=ƒÆ¼ Send Text</button>
+        <button class="btn btn-navy btn-sm" onclick="sendManual('${c.id}','email')">â‰¡Æ’Ã´Âº Send Email</button>
+        <button class="btn btn-green btn-sm" onclick="sendManual('${c.id}','sms')">â‰¡Æ’Ã†Â¼ Send Text</button>
         <button class="btn btn-outline btn-sm" onclick="sendManual('${c.id}','both')">+ Send Both</button>
-        <button class="btn btn-gold btn-sm" onclick="prefillMcCarthy('${c.id}')">GÜûn+Å Email McCarthy Law</button>
+        <button class="btn btn-gold btn-sm" onclick="prefillMcCarthy('${c.id}')">Î“ÃœÃ»âˆ©â••Ã… Email McCarthy Law</button>
       </div>
     </div>
   `;
@@ -1097,11 +1097,11 @@ function renderTimeline(c) {
   const events = [];
   
   // Intro
-  if (c.intro_sent_at) events.push({ type: 'intro', label: 'Intro email + SMS sent', date: c.intro_sent_at, icon: '=ƒôº' });
-  if (c.fu1_sent_at) events.push({ type: 'fu1', label: 'Follow-up #1 sent', date: c.fu1_sent_at, icon: '=ƒôº' });
-  if (c.fu2_sent_at) events.push({ type: 'fu2', label: 'Follow-up #2 sent', date: c.fu2_sent_at, icon: '=ƒôº' });
-  if (c.fu3_sent_at) events.push({ type: 'fu3', label: 'Follow-up #3 sent', date: c.fu3_sent_at, icon: '=ƒôº' });
-  if (c.fu4_sent_at) events.push({ type: 'fu4', label: 'Follow-up #4 sent', date: c.fu4_sent_at, icon: '=ƒôº' });
+  if (c.intro_sent_at) events.push({ type: 'intro', label: 'Intro email + SMS sent', date: c.intro_sent_at, icon: 'â‰¡Æ’Ã´Âº' });
+  if (c.fu1_sent_at) events.push({ type: 'fu1', label: 'Follow-up #1 sent', date: c.fu1_sent_at, icon: 'â‰¡Æ’Ã´Âº' });
+  if (c.fu2_sent_at) events.push({ type: 'fu2', label: 'Follow-up #2 sent', date: c.fu2_sent_at, icon: 'â‰¡Æ’Ã´Âº' });
+  if (c.fu3_sent_at) events.push({ type: 'fu3', label: 'Follow-up #3 sent', date: c.fu3_sent_at, icon: 'â‰¡Æ’Ã´Âº' });
+  if (c.fu4_sent_at) events.push({ type: 'fu4', label: 'Follow-up #4 sent', date: c.fu4_sent_at, icon: 'â‰¡Æ’Ã´Âº' });
 
   // Current stage
   const stageIcon = STAGE_ICONS[c.stage];
@@ -1113,12 +1113,12 @@ function renderTimeline(c) {
     <div class="flow-dot current"></div>
     <div class="flow-head">
       <span class="flow-label">${stageIcon} ${stageLabel}</span>
-      <span class="flow-date">${fmtDate(c.intro_sent_at || c.created_at)} GåÆ now</span>
+      <span class="flow-date">${fmtDate(c.intro_sent_at || c.created_at)} Î“Ã¥Ã† now</span>
       <span class="flow-dur ${durClass}">${daysInStage} days</span>
     </div>
     <ul class="flow-events">
-      ${events.length === 0 ? `<li class="flow-event"><span class="fe-icon">GÜ¬</span><span class="fe-text">No follow-ups sent yet</span></li>` : ''}
-      ${events.map(e => `<li class="flow-event"><span class="fe-icon">${e.icon}</span><span class="fe-text">${e.label}</span><span class="fe-date">${fmtDate(e.date)}</span><button class="btn btn-outline btn-sm" onclick="resendFollowup('${c.id}','${e.type}')" style="font-size:10px;padding:2px 8px;margin-left:6px;">Gå+ Resend</button></li>`).join('')}
+      ${events.length === 0 ? `<li class="flow-event"><span class="fe-icon">Î“ÃœÂ¬</span><span class="fe-text">No follow-ups sent yet</span></li>` : ''}
+      ${events.map(e => `<li class="flow-event"><span class="fe-icon">${e.icon}</span><span class="fe-text">${e.label}</span><span class="fe-date">${fmtDate(e.date)}</span><button class="btn btn-outline btn-sm" onclick="resendFollowup('${c.id}','${e.type}')" style="font-size:10px;padding:2px 8px;margin-left:6px;">Î“Ã¥â•— Resend</button></li>`).join('')}
     </ul>`;
 
   // Next action
@@ -1130,13 +1130,13 @@ function renderTimeline(c) {
     if (fuKeys.email) {
       const tpl = templates.find(t => t.key === fuKeys.email);
       const nextNum = lastFu === 'none' ? 'Intro' : `FU #${parseInt(lastFu.replace('fu','')) + 1}`;
-      const dueText = c.follow_up_status === 'overdue' ? `=ƒö¦ OVERDUE GÇö ${c.days_since_contact} days since last contact` : c.follow_up_status === 'due_today' ? '=ƒƒí Due today' : `=ƒƒó Due in ${Math.max(0, 4 - (c.days_since_contact || 0))} days`;
+      const dueText = c.follow_up_status === 'overdue' ? `â‰¡Æ’Ã¶â”¤ OVERDUE Î“Ã‡Ã¶ ${c.days_since_contact} days since last contact` : c.follow_up_status === 'due_today' ? 'â‰¡Æ’Æ’Ã­ Due today' : `â‰¡Æ’Æ’Ã³ Due in ${Math.max(0, 4 - (c.days_since_contact || 0))} days`;
       html += `<div class="next-action">
-        <div class="na-left"><span class="na-icon">${c.follow_up_status === 'overdue' ? '=ƒö¦' : '=ƒô¿'}</span>
-          <div><div class="na-text">Next: Send ${nextNum}${tpl ? ` GÇö "${tpl.subject}"` : ''}</div><div class="na-sub">${dueText}</div></div>
+        <div class="na-left"><span class="na-icon">${c.follow_up_status === 'overdue' ? 'â‰¡Æ’Ã¶â”¤' : 'â‰¡Æ’Ã´Â¿'}</span>
+          <div><div class="na-text">Next: Send ${nextNum}${tpl ? ` Î“Ã‡Ã¶ "${tpl.subject}"` : ''}</div><div class="na-sub">${dueText}</div></div>
         </div>
         <div class="na-btns">
-          <button class="btn btn-navy btn-sm" onclick="sendBothChecked('${c.id}')">=ƒô¿ Send Message</button>
+          <button class="btn btn-navy btn-sm" onclick="sendBothChecked('${c.id}')">â‰¡Æ’Ã´Â¿ Send Message</button>
           <div class="na-checks">
             <label class="na-check"><input type="checkbox" id="chk-email-${c.id}" checked> Email</label>
             <label class="na-check"><input type="checkbox" id="chk-sms-${c.id}" checked> SMS</label>
@@ -1145,17 +1145,17 @@ function renderTimeline(c) {
       </div>`;
     } else {
       html += `<div class="next-action">
-        <div class="na-left"><span class="na-icon">G£à</span>
+        <div class="na-left"><span class="na-icon">Î“Â£Ã </span>
           <div><div class="na-text">All follow-ups sent</div><div class="na-sub">Consider calling again or marking as Lost</div></div>
         </div>
         <div class="na-btns">
-          <button class="btn btn-red btn-sm" onclick="markOutcome('${c.id}','lost')">G£ù Lost</button>
+          <button class="btn btn-red btn-sm" onclick="markOutcome('${c.id}','lost')">Î“Â£Ã¹ Lost</button>
         </div>
       </div>`;
     }
   } else if (c.responded) {
     html += `<div class="next-action" style="border-color:var(--green);background:var(--green-light);">
-      <div class="na-left"><span class="na-icon">G£à</span>
+      <div class="na-left"><span class="na-icon">Î“Â£Ã </span>
         <div><div class="na-text" style="color:var(--green);">Client responded ${c.responded_at ? 'on ' + fmtDate(c.responded_at) : ''}</div></div>
       </div>
     </div>`;
@@ -1168,33 +1168,33 @@ function renderTimeline(c) {
   for (let i = currentIdx + 1; i < allStages.length; i++) {
     const ps = STAGES.find(s => s.key === allStages[i]);
     const descs = {
-      do_not_call: 'On hold GÇö do not contact yet',
-      lvm: 'Left voicemail GÇö awaiting callback',
-      contacted: 'Spoke with client GÇö awaiting MCL email reply',
-      waiting_mcl: 'Client agreed GÇö McCarthy Law reviewing',
+      do_not_call: 'On hold Î“Ã‡Ã¶ do not contact yet',
+      lvm: 'Left voicemail Î“Ã‡Ã¶ awaiting callback',
+      contacted: 'Spoke with client Î“Ã‡Ã¶ awaiting MCL email reply',
+      waiting_mcl: 'Client agreed Î“Ã‡Ã¶ McCarthy Law reviewing',
       packet_sent: 'Dispute packet sent to client',
       disputes_mailed: 'Client mailed disputes to bureaus',
-      waiting_reports: '30 days done GÇö need updated reports',
-      reports_received: 'Reports received GÇö awaiting litigation',
+      waiting_reports: '30 days done Î“Ã‡Ã¶ need updated reports',
+      reports_received: 'Reports received Î“Ã‡Ã¶ awaiting litigation',
     };
     html += `<div class="flow-stage"><div class="flow-dot"></div>
       <div class="flow-head"><span class="flow-label pending">${ps.icon} ${ps.label}</span></div>
       <div class="flow-pending-desc">${descs[allStages[i]] || ''}</div></div>`;
   }
   html += `<div class="flow-stage"><div class="flow-dot"></div>
-    <div class="flow-head"><span class="flow-label pending">=ƒÅü Lost</span></div>
+    <div class="flow-head"><span class="flow-label pending">â‰¡Æ’Ã…Ã¼ Lost</span></div>
     <div class="flow-pending-desc">Final outcome</div></div>`;
 
   return html;
 }
 
 function renderEmptyMain() {
-  document.getElementById('mainPanel').innerHTML = `<div class="empty"><div class="empty-icon">=ƒæê</div><p>Select a client from the sidebar</p></div>`;
+  document.getElementById('mainPanel').innerHTML = `<div class="empty"><div class="empty-icon">â‰¡Æ’Ã¦Ãª</div><p>Select a client from the sidebar</p></div>`;
 }
 
-// GòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉ
+// Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰
 // ACTIONS
-// GòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉ
+// Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰
 async function addClient() {
   const name = document.getElementById('addName').value.trim();
   if (!name) { toast('Name is required'); return; }
@@ -1210,7 +1210,7 @@ async function addClient() {
   }).select().single();
   if (error) { toast('Error: ' + error.message); return; }
   closeModal('addModal');
-  toast('Client added G£ô');
+  toast('Client added Î“Â£Ã´');
   currentStage = data.stage;
   currentClientId = data.id;
   await loadData();
@@ -1219,7 +1219,7 @@ async function addClient() {
 async function markResponded(id) {
   await sb.from('mcl_clients').update({ responded: true, responded_at: new Date().toISOString() }).eq('id', id);
   await sb.from('mcl_activity_log').insert({ client_id: id, action: 'responded', details: 'Manually marked as responded' });
-  toast('Marked as responded G£ô');
+  toast('Marked as responded Î“Â£Ã´');
   await loadData();
   renderProfile(id);
 }
@@ -1227,7 +1227,7 @@ async function markResponded(id) {
 async function mclResponded(id) {
   const c = clients.find(x => x.id === id);
   if (!c) return;
-  if (!(await customConfirm('Confirm: ' + c.name + ' responded to McCarthy Law email?\n\nThis will:\nGÇó Update the Google Sheet with client email & phone\nGÇó Move client to Waiting on MCL'))) return;
+  if (!(await customConfirm('Confirm: ' + c.name + ' responded to McCarthy Law email?\n\nThis will:\nÎ“Ã‡Ã³ Update the Google Sheet with client email & phone\nÎ“Ã‡Ã³ Move client to Waiting on MCL'))) return;
 
   // Update Google Sheet with client contact info via Zapier
   try {
@@ -1237,7 +1237,7 @@ async function mclResponded(id) {
     params.append('Phone Number', c.phone || '');
     params.append('Action', 'mcl_responded');
     await fetch(SHEET_UPDATE_URL, { method: 'POST', body: params });
-    toast('Sheet updated with client info G£ô');
+    toast('Sheet updated with client info Î“Â£Ã´');
   } catch (e) { toast('Sheet update failed: ' + e.message); }
 
   // Move to waiting_mcl
@@ -1248,7 +1248,7 @@ async function mclResponded(id) {
   const log = c.comm_log || [];
   const now = new Date();
   const dateStr = (now.getMonth()+1).toString().padStart(2,'0') + '/' + now.getDate().toString().padStart(2,'0');
-  log.push({ date: dateStr, agent: 'SYS', text: 'GÜûn+Å Client responded to MCL email GÇö updated sheet with contact info, moved to Waiting on MCL' });
+  log.push({ date: dateStr, agent: 'SYS', text: 'Î“ÃœÃ»âˆ©â••Ã… Client responded to MCL email Î“Ã‡Ã¶ updated sheet with contact info, moved to Waiting on MCL' });
   await sb.from('mcl_clients').update({ comm_log: log }).eq('id', id);
   await sb.from('mcl_activity_log').insert({ client_id: id, action: 'mcl_responded', details: 'Client responded to MCL email - sheet updated with contact info' });
 
@@ -1262,17 +1262,17 @@ async function scheduleFollowup(id) {
   const dateStr = await customPrompt('Schedule next follow-up for ' + c.name + '\n\nEnter a date (MM/DD/YYYY):');
   if (!dateStr) return;
   const parts = dateStr.split('/');
-  if (parts.length !== 3) { toast('Invalid date format GÇö use MM/DD/YYYY'); return; }
+  if (parts.length !== 3) { toast('Invalid date format Î“Ã‡Ã¶ use MM/DD/YYYY'); return; }
   const yr = parts[2].length === 2 ? '20' + parts[2] : parts[2];
   const isoDate = yr + '-' + parts[0].padStart(2,'0') + '-' + parts[1].padStart(2,'0');
   await sb.from('mcl_clients').update({ next_followup_date: isoDate }).eq('id', id);
   const log = c.comm_log || [];
   const now = new Date();
   const ds = (now.getMonth()+1).toString().padStart(2,'0') + '/' + now.getDate().toString().padStart(2,'0');
-  log.push({ date: ds, agent: 'SYS', text: '=ƒôà Follow-up scheduled for ' + dateStr });
+  log.push({ date: ds, agent: 'SYS', text: 'â‰¡Æ’Ã´Ã  Follow-up scheduled for ' + dateStr });
   await sb.from('mcl_clients').update({ comm_log: log }).eq('id', id);
   await sb.from('mcl_activity_log').insert({ client_id: id, action: 'followup_scheduled', details: 'Follow-up scheduled for ' + dateStr });
-  toast('Follow-up scheduled for ' + dateStr + ' G£ô');
+  toast('Follow-up scheduled for ' + dateStr + ' Î“Â£Ã´');
   await loadData();
   renderProfile(id);
 }
@@ -1280,7 +1280,7 @@ async function scheduleFollowup(id) {
 async function clearFollowupDate(id) {
   if (!(await customConfirm('Clear the scheduled follow-up date?'))) return;
   await sb.from('mcl_clients').update({ next_followup_date: null }).eq('id', id);
-  toast('Follow-up date cleared G£ô');
+  toast('Follow-up date cleared Î“Â£Ã´');
   await loadData();
   renderProfile(id);
 }
@@ -1294,7 +1294,7 @@ async function pauseClient(id) {
   const log = c.comm_log || [];
   const now = new Date();
   const dateStr = (now.getMonth()+1).toString().padStart(2,'0') + '/' + now.getDate().toString().padStart(2,'0');
-  log.push({ date: dateStr, agent: 'SYS', text: 'GÅ+ Paused: ' + reason });
+  log.push({ date: dateStr, agent: 'SYS', text: 'Î“Ã…â•• Paused: ' + reason });
   await sb.from('mcl_clients').update({ comm_log: log }).eq('id', id);
   await sb.from('mcl_activity_log').insert({ client_id: id, action: 'paused', details: 'Paused: ' + reason });
   toast('Automations paused for ' + c.name);
@@ -1310,7 +1310,7 @@ async function unpauseClient(id) {
   const log = c.comm_log || [];
   const now = new Date();
   const dateStr = (now.getMonth()+1).toString().padStart(2,'0') + '/' + now.getDate().toString().padStart(2,'0');
-  log.push({ date: dateStr, agent: 'SYS', text: 'Gû¦ Unpaused - automations resumed' });
+  log.push({ date: dateStr, agent: 'SYS', text: 'Î“Ã»â•¢ Unpaused - automations resumed' });
   await sb.from('mcl_clients').update({ comm_log: log }).eq('id', id);
   await sb.from('mcl_activity_log').insert({ client_id: id, action: 'unpaused', details: 'Automations resumed' });
   toast('Automations resumed for ' + c.name);
@@ -1326,7 +1326,7 @@ async function deleteClient(id) {
   const dupes = clients.filter(x => x.name.trim().toLowerCase() === c.name.trim().toLowerCase() && x.id !== id);
   const isDupeDelete = dupes.length > 0;
 
-  if (!(await customConfirm('Permanently delete ' + c.name + '?' + (isDupeDelete ? '\n\nThis looks like a duplicate GÇö the original record will be kept.' : '\n\nThis cannot be undone.')))) return;
+  if (!(await customConfirm('Permanently delete ' + c.name + '?' + (isDupeDelete ? '\n\nThis looks like a duplicate Î“Ã‡Ã¶ the original record will be kept.' : '\n\nThis cannot be undone.')))) return;
 
   // Only log deletion (to block re-import) if this is NOT a duplicate removal
   // If it IS a duplicate, we just delete the record silently so the original stays protected
@@ -1336,7 +1336,7 @@ async function deleteClient(id) {
 
   const { error } = await sb.from('mcl_clients').delete().eq('id', id);
   if (error) { toast('Delete failed: ' + error.message); return; }
-  toast(c.name + (isDupeDelete ? ' duplicate removed G£ô' : ' deleted G£ô'));
+  toast(c.name + (isDupeDelete ? ' duplicate removed Î“Â£Ã´' : ' deleted Î“Â£Ã´'));
   currentClientId = null;
   renderEmptyMain();
   await loadData();
@@ -1345,15 +1345,15 @@ async function deleteClient(id) {
 async function reviveClient(id) {
   const c = clients.find(x => x.id === id);
   if (!c) return;
-  const newStage = await customPrompt('Revive ' + c.name + ' GÇö which stage should they go to?\n\nneed_to_call / lvm / contacted / waiting_mcl / packet_sent');
+  const newStage = await customPrompt('Revive ' + c.name + ' Î“Ã‡Ã¶ which stage should they go to?\n\nneed_to_call / lvm / contacted / waiting_mcl / packet_sent');
   if (!newStage) return;
   const validStages = ['need_to_call','lvm','contacted','waiting_mcl','packet_sent','disputes_mailed','waiting_reports','reports_received'];
-  if (!validStages.includes(newStage.trim().toLowerCase())) { toast('Invalid stage GÇö try again'); return; }
+  if (!validStages.includes(newStage.trim().toLowerCase())) { toast('Invalid stage Î“Ã‡Ã¶ try again'); return; }
   await sb.from('mcl_clients').update({ outcome: null, outcome_at: null, stage: newStage.trim().toLowerCase() }).eq('id', id);
   // Remove deletion log so sync doesn't skip them
   await sb.from('mcl_activity_log').delete().eq('action','deleted').ilike('details', '%' + c.name + '%');
-  await sb.from('mcl_activity_log').insert({ client_id: id, action: 'stage_changed', details: 'Revived from Lost GåÆ ' + newStage });
-  toast(c.name + ' revived G£ô');
+  await sb.from('mcl_activity_log').insert({ client_id: id, action: 'stage_changed', details: 'Revived from Lost Î“Ã¥Ã† ' + newStage });
+  toast(c.name + ' revived Î“Â£Ã´');
   await loadData();
   renderProfile(id);
 }
@@ -1363,16 +1363,16 @@ async function markOutcome(id, outcome) {
   await sb.from('mcl_clients').update({ outcome, outcome_at: new Date().toISOString(), stage: outcome }).eq('id', id);
   await sb.from('mcl_activity_log').insert({ client_id: id, action: outcome, details: `Marked as ${outcome}` });
   if (c && c.pipedrive_id) await updatePipedriveLabel(c.pipedrive_id, outcome);
-  toast(`Marked as ${outcome} G£ô`);
+  toast(`Marked as ${outcome} Î“Â£Ã´`);
   await loadData();
   renderProfile(id);
 }
 
-// GòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉ
+// Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰
 // PIPEDRIVE LABEL SYNC
-// GòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉ
-// PIPEDRIVE GÇö all calls go through Netlify proxy to avoid CORS
-// GòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉ
+// Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰
+// PIPEDRIVE Î“Ã‡Ã¶ all calls go through Netlify proxy to avoid CORS
+// Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰
 async function loadPipedriveLabels() {
   try {
     const res = await fetch(PIPEDRIVE_PROXY_URL, {
@@ -1432,9 +1432,9 @@ async function updatePipedriveLabel(dealId, stage) {
       console.log('Pipedrive label updated via proxy:', labelName, 'on deal', dealId);
     } else {
       console.error('Pipedrive label update failed:', data);
-      toast('GÜán+Å Pipedrive label update failed GÇö check deal ID');
+      toast('Î“ÃœÃ¡âˆ©â••Ã… Pipedrive label update failed Î“Ã‡Ã¶ check deal ID');
     }
-  } catch (e) { console.error('Pipedrive proxy error:', e); toast('GÜán+Å Pipedrive sync failed'); }
+  } catch (e) { console.error('Pipedrive proxy error:', e); toast('Î“ÃœÃ¡âˆ©â••Ã… Pipedrive sync failed'); }
 }
 
 async function moveStage(id) {
@@ -1447,7 +1447,7 @@ async function moveStage(id) {
     let dealId = null;
     while (true) {
       dealId = await customPrompt('Pipedrive Deal ID is required (5-6 digits).\n\nEnter the Deal ID for ' + c.name + ':');
-      if (!dealId) { toast('Move cancelled GÇö Deal ID required'); return; }
+      if (!dealId) { toast('Move cancelled Î“Ã‡Ã¶ Deal ID required'); return; }
       if (/^\d{6}$/.test(dealId.replace(/\D/g, ''))) break;
       toast('Deal ID must be 5 or 6 digits');
     }
@@ -1462,9 +1462,9 @@ async function moveStage(id) {
       let email = null;
       while (true) {
         email = await customPrompt('Email is required before moving ' + c.name + '.\n\nEnter their email:');
-        if (!email) { toast('Move cancelled GÇö email required'); return; }
+        if (!email) { toast('Move cancelled Î“Ã‡Ã¶ email required'); return; }
         if (email.includes('@')) break;
-        toast('Invalid email GÇö must contain @');
+        toast('Invalid email Î“Ã‡Ã¶ must contain @');
       }
       await sb.from('mcl_clients').update({ email }).eq('id', id);
       c.email = email;
@@ -1473,10 +1473,10 @@ async function moveStage(id) {
       let phone = null;
       while (true) {
         phone = await customPrompt('Phone number is required before moving ' + c.name + '.\n\nEnter their phone (10 digits):');
-        if (!phone) { toast('Move cancelled GÇö phone required'); return; }
+        if (!phone) { toast('Move cancelled Î“Ã‡Ã¶ phone required'); return; }
         const digits = phone.replace(/\D/g, '');
         if (digits.length >= 10 && digits.length <= 11) break;
-        toast('Invalid phone GÇö must be 10-11 digits');
+        toast('Invalid phone Î“Ã‡Ã¶ must be 10-11 digits');
       }
       await sb.from('mcl_clients').update({ phone }).eq('id', id);
       c.phone = phone;
@@ -1493,16 +1493,16 @@ async function moveStage(id) {
   // If moving to Do Not Call, ask for reason and follow-up date
   if (newStage === 'do_not_call') {
     const reason = await customPrompt('Why is this client being moved to Do Not Call?\n\n(e.g. "In active services", "Client requested no contact until April")');
-    if (!reason) { toast('Move cancelled GÇö reason required'); return; }
+    if (!reason) { toast('Move cancelled Î“Ã‡Ã¶ reason required'); return; }
     const dateStr = await customPrompt('When should we follow up with this client?\n\nEnter a date (MM/DD/YYYY):\n\nThis client will turn red on this date as a reminder.');
-    if (!dateStr) { toast('Move cancelled GÇö follow-up date required'); return; }
+    if (!dateStr) { toast('Move cancelled Î“Ã‡Ã¶ follow-up date required'); return; }
     const parts = dateStr.split('/');
-    if (parts.length !== 3) { toast('Invalid date GÇö use MM/DD/YYYY'); return; }
+    if (parts.length !== 3) { toast('Invalid date Î“Ã‡Ã¶ use MM/DD/YYYY'); return; }
     const yr = parts[2].length === 2 ? '20' + parts[2] : parts[2];
     updateData.next_followup_date = yr + '-' + parts[0].padStart(2,'0') + '-' + parts[1].padStart(2,'0');
     updateData.pause_reason = reason;
   } else {
-    // Moving to any other stage GÇö clear scheduled follow-up and pause
+    // Moving to any other stage Î“Ã‡Ã¶ clear scheduled follow-up and pause
     updateData.next_followup_date = null;
     updateData.pause_reason = null;
   }
@@ -1513,7 +1513,7 @@ async function moveStage(id) {
   // Update Pipedrive label
   await updatePipedriveLabel(c.pipedrive_id, newStage);
   
-  toast(`Moved to ${newStage} G£ô`);
+  toast(`Moved to ${newStage} Î“Â£Ã´`);
   currentStage = newStage;
   await loadData();
   renderProfile(id);
@@ -1555,9 +1555,9 @@ function renderRoundDates(c) {
   if (!round) return '';
 
   let badge = '';
-  if (round.status === 'active') badge = `<span style="background:#fff3cd;color:#856404;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;">=ƒöä Active Round ${round.round}</span>`;
-  else if (round.status === 'upcoming') badge = `<span style="background:#e8f4fd;color:#0c5460;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;">GÅ¦ Upcoming Round ${round.round}</span>`;
-  else badge = `<span style="background:#d4edda;color:#155724;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;">G£à Rounds Complete</span>`;
+  if (round.status === 'active') badge = `<span style="background:#fff3cd;color:#856404;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;">â‰¡Æ’Ã¶Ã¤ Active Round ${round.round}</span>`;
+  else if (round.status === 'upcoming') badge = `<span style="background:#e8f4fd;color:#0c5460;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;">Î“Ã…â”‚ Upcoming Round ${round.round}</span>`;
+  else badge = `<span style="background:#d4edda;color:#155724;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;">Î“Â£Ã  Rounds Complete</span>`;
 
   const rows = [c.rd1_dates, c.rd2_dates, c.rd3_dates, c.rd4_dates]
     .map((d, i) => d ? `<div class="info-row"><span class="info-lbl">RD ${i+1}</span><span class="info-val">${d}</span></div>` : '')
@@ -1569,7 +1569,7 @@ function renderRoundDates(c) {
       ${badge}
     </div>
     ${rows}
-    ${round.status === 'active' ? `<div style="margin-top:8px;padding:8px;background:#fff3cd;border-radius:6px;font-size:12px;color:#856404;">GÜán+Å Client is mid-round GÇö offer to wait until <strong>${round.end}</strong> to pull one report for both MCL and ASAP</div>` : ''}
+    ${round.status === 'active' ? `<div style="margin-top:8px;padding:8px;background:#fff3cd;border-radius:6px;font-size:12px;color:#856404;">Î“ÃœÃ¡âˆ©â••Ã… Client is mid-round Î“Ã‡Ã¶ offer to wait until <strong>${round.end}</strong> to pull one report for both MCL and ASAP</div>` : ''}
   </div>`;
 }
 
@@ -1624,23 +1624,23 @@ async function saveField(id, field, value) {
   
   // Validate fields
   if (field === 'email' && value && !value.includes('@')) {
-    toast('Invalid email GÇö must contain @'); return;
+    toast('Invalid email Î“Ã‡Ã¶ must contain @'); return;
   }
   if (field === 'phone' && value) {
     const digits = value.replace(/\D/g, '');
-    if (digits.length < 10 || digits.length > 11) { toast('Invalid phone GÇö must be 10-11 digits'); return; }
+    if (digits.length < 10 || digits.length > 11) { toast('Invalid phone Î“Ã‡Ã¶ must be 10-11 digits'); return; }
   }
   if (field === 'pipedrive_id' && value) {
     const digits = value.replace(/\D/g, '');
-    if (digits.length < 5 || digits.length > 6) { toast('Invalid Deal ID GÇö must be 5 or 6 digits'); return; }
+    if (digits.length < 5 || digits.length > 6) { toast('Invalid Deal ID Î“Ã‡Ã¶ must be 5 or 6 digits'); return; }
     value = digits;
   }
   
   if (c) c[field] = value;
   await sb.from('mcl_clients').update({ [field]: value }).eq('id', id);
-  toast(field.replace(/_/g,' ') + ' saved G£ô');
+  toast(field.replace(/_/g,' ') + ' saved Î“Â£Ã´');
 
-  // When Deal ID is added GÇö push correct label + fetch round dates
+  // When Deal ID is added Î“Ã‡Ã¶ push correct label + fetch round dates
   if (field === 'pipedrive_id' && value && c) {
     await updatePipedriveLabel(value, c.outcome || c.stage);
     // Fetch round dates from Pipedrive
@@ -1658,15 +1658,15 @@ async function saveField(id, field, value) {
           rd4_dates: rdData.rd4 || null
         }).eq('id', id);
         if (rdData.rd1 || rdData.rd2 || rdData.rd3 || rdData.rd4) {
-          toast('=ƒôà ASAP round dates loaded G£ô');
+          toast('â‰¡Æ’Ã´Ã  ASAP round dates loaded Î“Â£Ã´');
         }
       }
     } catch(e) { console.error('Round dates fetch failed:', e); }
   }
 
-  // When Deal ID is added on a client with a credit error GÇö push pinned note to Pipedrive
+  // When Deal ID is added on a client with a credit error Î“Ã‡Ã¶ push pinned note to Pipedrive
   if (field === 'pipedrive_id' && value && c && c.error_details && c.error_details.trim()) {
-    const violationNote = `@@@ CLIENT HAS AN FCRA VIOLATION GÇö ${c.error_details.trim()}\n\nLET CLIENT KNOW ABOUT THIS VIOLATION`;
+    const violationNote = `@@@ CLIENT HAS AN FCRA VIOLATION Î“Ã‡Ã¶ ${c.error_details.trim()}\n\nLET CLIENT KNOW ABOUT THIS VIOLATION`;
     try {
       await fetch(PIPEDRIVE_PROXY_URL, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -1674,9 +1674,9 @@ async function saveField(id, field, value) {
       });
       await fetch(PIPEDRIVE_PROXY_URL, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'add_activity', dealId: value, subject: 'GÜán+Å FCRA Violation GÇö Contact Client Today', note: violationNote })
+        body: JSON.stringify({ action: 'add_activity', dealId: value, subject: 'Î“ÃœÃ¡âˆ©â••Ã… FCRA Violation Î“Ã‡Ã¶ Contact Client Today', note: violationNote })
       });
-      toast('GÜán+Å FCRA violation note + activity added to Pipedrive G£ô');
+      toast('Î“ÃœÃ¡âˆ©â••Ã… FCRA violation note + activity added to Pipedrive Î“Â£Ã´');
     } catch (e) { console.error('Pipedrive violation push failed:', e); }
   }
   
@@ -1723,7 +1723,7 @@ async function sendManual(id, mode) {
           const copyData = await copyRes.json();
           if (!copyData.ok) console.error('Accounts copy failed:', copyData);
         } catch (copyErr) { console.error('Accounts copy error:', copyErr); }
-        toast('Email sent to ' + sendToEmail + ' G£ô');
+        toast('Email sent to ' + sendToEmail + ' Î“Â£Ã´');
       } else { toast('Email error: ' + (data.error || 'unknown')); }
     } catch (e) { toast('Email failed: ' + e.message); }
     if (document.getElementById('manualTo')) document.getElementById('manualTo').remove();
@@ -1732,10 +1732,10 @@ async function sendManual(id, mode) {
     const btns = document.getElementById('manualBtns');
     if (btns && !btns.querySelector('[onclick*="prefillMcCarthy"]')) {
       btns.innerHTML = 
-        '<button class="btn btn-navy btn-sm" onclick="sendManual(\'' + id + '\',\'email\')">=ƒôº Send Email</button>' +
-        '<button class="btn btn-green btn-sm" onclick="sendManual(\'' + id + '\',\'sms\')">=ƒÆ¼ Send Text</button>' +
+        '<button class="btn btn-navy btn-sm" onclick="sendManual(\'' + id + '\',\'email\')">â‰¡Æ’Ã´Âº Send Email</button>' +
+        '<button class="btn btn-green btn-sm" onclick="sendManual(\'' + id + '\',\'sms\')">â‰¡Æ’Ã†Â¼ Send Text</button>' +
         '<button class="btn btn-outline btn-sm" onclick="sendManual(\'' + id + '\',\'both\')">+ Send Both</button>' +
-        '<button class="btn btn-gold btn-sm" onclick="prefillMcCarthy(\'' + id + '\')">GÜûn+Å Email McCarthy Law</button>';
+        '<button class="btn btn-gold btn-sm" onclick="prefillMcCarthy(\'' + id + '\')">Î“ÃœÃ»âˆ©â••Ã… Email McCarthy Law</button>';
     }
   } else if ((mode === 'email' || mode === 'both') && !sendToEmail) { toast('No email on file'); }
   if ((mode === 'sms' || mode === 'both') && c.phone) {
@@ -1745,27 +1745,27 @@ async function sendManual(id, mode) {
         const smsParams = new URLSearchParams(); smsParams.append('SMS', smsText); smsParams.append('Texting Cell', c.phone); smsParams.append('Person First Name', c.name.split(' ')[0]);
         await fetch(SEND_SMS_URL, { method: 'POST', body: smsParams });
         await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'sms_sent', details: 'Manual SMS via webhook' });
-        toast('Text sent G£ô');
+        toast('Text sent Î“Â£Ã´');
       } catch (e) { toast('SMS failed: ' + e.message); }
     } else {
       await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'sms_sent', details: 'Manual SMS logged (no webhook)' });
-      toast('Text logged G£ô (no webhook URL set)');
+      toast('Text logged Î“Â£Ã´ (no webhook URL set)');
     }
   } else if ((mode === 'sms' || mode === 'both') && !c.phone) { toast('No phone on file'); }
   document.getElementById('manualSubject').value = '';
   document.getElementById('manualBody').value = '';
-  // Don't reload GÇö just update comm log in memory and re-render
+  // Don't reload Î“Ã‡Ã¶ just update comm log in memory and re-render
   const log = c.comm_log || [];
   const now = new Date();
   const dateStr = (now.getMonth()+1).toString().padStart(2,'0') + '/' + now.getDate().toString().padStart(2,'0');
   if (mode === 'email' || mode === 'both') {
     const toAddr = toOverride || c.email;
     const truncBody = body.length > 200 ? body.substring(0, 200) + '...' : body;
-    log.push({ date: dateStr, agent: 'JOE', text: '=ƒôº Email to ' + toAddr + ': ' + (subject || '(no subject)') + ' GÇö ' + truncBody });
+    log.push({ date: dateStr, agent: 'JOE', text: 'â‰¡Æ’Ã´Âº Email to ' + toAddr + ': ' + (subject || '(no subject)') + ' Î“Ã‡Ã¶ ' + truncBody });
   }
   if (mode === 'sms' || mode === 'both') {
     const truncBody = body.length > 200 ? body.substring(0, 200) + '...' : body;
-    log.push({ date: dateStr, agent: 'JOE', text: '=ƒÆ¼ Text to ' + (c.phone || 'N/A') + ': ' + truncBody });
+    log.push({ date: dateStr, agent: 'JOE', text: 'â‰¡Æ’Ã†Â¼ Text to ' + (c.phone || 'N/A') + ': ' + truncBody });
   }
   c.comm_log = log;
   await sb.from('mcl_clients').update({ comm_log: log }).eq('id', c.id);
@@ -1864,9 +1864,9 @@ async function saveNotes(id) {
   await sb.from('mcl_clients').update({ notes }).eq('id', id);
 }
 
-// GòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉ
+// Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰
 // SEND EMAIL/SMS
-// GòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉ
+// Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰
 async function resendFollowup(clientId, fuType) {
   const c = clients.find(x => x.id === clientId);
   if (!c) return;
@@ -1878,7 +1878,7 @@ async function resendFollowup(clientId, fuType) {
   const smsTpl = templates.find(t => t.key === fuKeys.sms);
   const label = fuType === 'intro' ? 'Intro' : 'FU #' + fuType.replace('fu','');
 
-  if (!(await customConfirm(`Resend ${label} to ${c.name}?\n\nEmail: ${emailTpl ? 'G£ô ' + emailTpl.subject : 'G£ù no template'}\nSMS: ${smsTpl ? 'G£ô will send' : 'G£ù no template'}`))) return;
+  if (!(await customConfirm(`Resend ${label} to ${c.name}?\n\nEmail: ${emailTpl ? 'Î“Â£Ã´ ' + emailTpl.subject : 'Î“Â£Ã¹ no template'}\nSMS: ${smsTpl ? 'Î“Â£Ã´ will send' : 'Î“Â£Ã¹ no template'}`))) return;
 
   const now = new Date();
   const dateStr = (now.getMonth()+1).toString().padStart(2,'0') + '/' + now.getDate().toString().padStart(2,'0');
@@ -1918,8 +1918,8 @@ async function resendFollowup(clientId, fuType) {
   if (emailOk) sentParts.push('email');
   if (smsOk) sentParts.push('text');
   const logText = sentParts.length
-    ? `Gå+ Resent ${label} GÇö ${sentParts.join(' + ')} sent`
-    : `Gå+ Resend attempted: ${label} GÇö nothing sent (check email/phone)`;
+    ? `Î“Ã¥â•— Resent ${label} Î“Ã‡Ã¶ ${sentParts.join(' + ')} sent`
+    : `Î“Ã¥â•— Resend attempted: ${label} Î“Ã‡Ã¶ nothing sent (check email/phone)`;
 
   const log = Array.isArray(c.comm_log) ? [...c.comm_log] : [];
   log.push({ date: dateStr, agent: 'SYS', text: logText });
@@ -1929,13 +1929,13 @@ async function resendFollowup(clientId, fuType) {
   const dbUpdate = { comm_log: log };
   if (fuField) dbUpdate[fuField] = now.toISOString();
   const { error: saveErr } = await sb.from('mcl_clients').update(dbUpdate).eq('id', c.id);
-  if (saveErr) { toast('G¥î Log save failed: ' + saveErr.message); return; }
+  if (saveErr) { toast('Î“Â¥Ã® Log save failed: ' + saveErr.message); return; }
 
   if (emailOk || smsOk) {
     await sb.from('mcl_activity_log').insert({ client_id: c.id, action: 'resent', details: logText });
-    toast(`${logText} G£ô`);
+    toast(`${logText} Î“Â£Ã´`);
   } else {
-    toast('Nothing sent GÇö check email/phone on file');
+    toast('Nothing sent Î“Ã‡Ã¶ check email/phone on file');
   }
 
   await loadData();
@@ -1966,7 +1966,7 @@ function openSendModal(clientId, type) {
   if (!tpl) { toast('No template found for this step'); return; }
 
   const nextNum = lastFu === 'none' ? 'Intro' : `Follow-up #${parseInt(lastFu.replace('fu','')) + 1}`;
-  document.getElementById('sendModalTitle').textContent = `=ƒôº Send ${nextNum} to ${c.name}`;
+  document.getElementById('sendModalTitle').textContent = `â‰¡Æ’Ã´Âº Send ${nextNum} to ${c.name}`;
   document.getElementById('sendTemplateInfo').textContent = `${tpl.name} (${tpl.key})`;
   document.getElementById('sendSubject').textContent = tpl.subject || '(SMS - no subject)';
 
@@ -2044,7 +2044,7 @@ async function confirmSend() {
       await sb.from('mcl_clients').update({outcome:'lost',outcome_at:new Date().toISOString()}).eq('id',c.id);
       await sb.from('mcl_activity_log').insert({client_id:c.id,action:'lost',details:'Auto-lost: 5 follow-ups with no response'});
       if (c.pipedrive_id) await updatePipedriveLabel(c.pipedrive_id, 'lost');
-      toast('Client moved to Lost GÇö 5 attempts, no response');
+      toast('Client moved to Lost Î“Ã‡Ã¶ 5 attempts, no response');
       closeModal('sendModal');
       pendingSend = null;
       await loadData();
@@ -2052,7 +2052,7 @@ async function confirmSend() {
     }
   }
   closeModal('sendModal');
-  toast('Sent G£ô');
+  toast('Sent Î“Â£Ã´');
 
   // Show "Did they answer?" for Need to Call clients after intro
   if (c.stage === 'need_to_call' && pendingSend.lastFu === 'none') {
@@ -2078,9 +2078,9 @@ async function callOutcome(id, result) {
       let email = null;
       while (true) {
         email = await customPrompt('Email is required before moving ' + c.name + '.\n\nEnter their email:');
-        if (!email) { toast('Move cancelled GÇö email required'); return; }
+        if (!email) { toast('Move cancelled Î“Ã‡Ã¶ email required'); return; }
         if (email.includes('@')) break;
-        toast('Invalid email GÇö must contain @');
+        toast('Invalid email Î“Ã‡Ã¶ must contain @');
       }
       await sb.from('mcl_clients').update({ email }).eq('id', id);
       c.email = email;
@@ -2089,10 +2089,10 @@ async function callOutcome(id, result) {
       let phone = null;
       while (true) {
         phone = await customPrompt('Phone number is required before moving ' + c.name + '.\n\nEnter their phone (10 digits):');
-        if (!phone) { toast('Move cancelled GÇö phone required'); return; }
+        if (!phone) { toast('Move cancelled Î“Ã‡Ã¶ phone required'); return; }
         const digits = phone.replace(/\D/g, '');
         if (digits.length >= 10 && digits.length <= 11) break;
-        toast('Invalid phone GÇö must be 10-11 digits');
+        toast('Invalid phone Î“Ã‡Ã¶ must be 10-11 digits');
       }
       await sb.from('mcl_clients').update({ phone }).eq('id', id);
       c.phone = phone;
@@ -2101,9 +2101,9 @@ async function callOutcome(id, result) {
       let dealId = null;
       while (true) {
         dealId = await customPrompt('Pipedrive Deal ID is required before moving ' + c.name + '.\n\nEnter their 5 or 6-digit Deal ID:');
-        if (!dealId) { toast('Move cancelled GÇö Deal ID required'); return; }
+        if (!dealId) { toast('Move cancelled Î“Ã‡Ã¶ Deal ID required'); return; }
         if (/^\d{6}$/.test(dealId.trim())) break;
-        toast('Invalid Deal ID GÇö must be 5 or 6 digits');
+        toast('Invalid Deal ID Î“Ã‡Ã¶ must be 5 or 6 digits');
       }
       await sb.from('mcl_clients').update({ pipedrive_id: dealId.trim() }).eq('id', id);
       c.pipedrive_id = dealId.trim();
@@ -2112,14 +2112,14 @@ async function callOutcome(id, result) {
   
   if (result === 'spoke') {
     await sb.from('mcl_clients').update({ stage: 'contacted', intro_type: 'spoke' }).eq('id', id);
-    await sb.from('mcl_activity_log').insert({ client_id: id, action: 'stage_change', details: 'Spoke with client GåÆ Contacted' });
+    await sb.from('mcl_activity_log').insert({ client_id: id, action: 'stage_change', details: 'Spoke with client Î“Ã¥Ã† Contacted' });
     if (c && c.pipedrive_id) await updatePipedriveLabel(c.pipedrive_id, 'contacted');
-    toast('Moved to Contacted G£ô');
+    toast('Moved to Contacted Î“Â£Ã´');
   } else if (result === 'lvm') {
     await sb.from('mcl_clients').update({ stage: 'lvm', intro_type: 'lvm' }).eq('id', id);
-    await sb.from('mcl_activity_log').insert({ client_id: id, action: 'stage_change', details: 'Left voicemail GåÆ LVM' });
+    await sb.from('mcl_activity_log').insert({ client_id: id, action: 'stage_change', details: 'Left voicemail Î“Ã¥Ã† LVM' });
     if (c && c.pipedrive_id) await updatePipedriveLabel(c.pipedrive_id, 'lvm');
-    toast('Moved to LVM G£ô');
+    toast('Moved to LVM Î“Â£Ã´');
   }
   
   // Update sheet with contact info + Contacted flag for spoke/lvm
@@ -2138,7 +2138,7 @@ async function callOutcome(id, result) {
   if (result === 'no_answer') {
     await sb.from('mcl_clients').update({ intro_type: 'no_answer' }).eq('id', id);
     await sb.from('mcl_activity_log').insert({ client_id: id, action: 'call_attempt', details: 'No answer, no voicemail' });
-    toast('Logged GÇö staying in Need to Call');
+    toast('Logged Î“Ã‡Ã¶ staying in Need to Call');
   }
   await loadData();
   renderProfile(id);
@@ -2157,9 +2157,9 @@ async function handleAnswer(result) {
       let email = null;
       while (true) {
         email = await customPrompt('Email is required before moving ' + c.name + '.\n\nEnter their email:');
-        if (!email) { toast('Move cancelled GÇö email required'); return; }
+        if (!email) { toast('Move cancelled Î“Ã‡Ã¶ email required'); return; }
         if (email.includes('@')) break;
-        toast('Invalid email GÇö must contain @');
+        toast('Invalid email Î“Ã‡Ã¶ must contain @');
       }
       await sb.from('mcl_clients').update({ email }).eq('id', id);
       c.email = email;
@@ -2168,10 +2168,10 @@ async function handleAnswer(result) {
       let phone = null;
       while (true) {
         phone = await customPrompt('Phone number is required before moving ' + c.name + '.\n\nEnter their phone (10 digits):');
-        if (!phone) { toast('Move cancelled GÇö phone required'); return; }
+        if (!phone) { toast('Move cancelled Î“Ã‡Ã¶ phone required'); return; }
         const digits = phone.replace(/\D/g, '');
         if (digits.length >= 10 && digits.length <= 11) break;
-        toast('Invalid phone GÇö must be 10-11 digits');
+        toast('Invalid phone Î“Ã‡Ã¶ must be 10-11 digits');
       }
       await sb.from('mcl_clients').update({ phone }).eq('id', id);
       c.phone = phone;
@@ -2180,14 +2180,14 @@ async function handleAnswer(result) {
 
   if (result === 'spoke') {
     await sb.from('mcl_clients').update({ stage: 'contacted', intro_type: 'spoke' }).eq('id', id);
-    await sb.from('mcl_activity_log').insert({ client_id: id, action: 'stage_change', details: 'Spoke with client GåÆ Contacted' });
+    await sb.from('mcl_activity_log').insert({ client_id: id, action: 'stage_change', details: 'Spoke with client Î“Ã¥Ã† Contacted' });
     if (c && c.pipedrive_id) await updatePipedriveLabel(c.pipedrive_id, 'contacted');
-    toast('Moved to Contacted G£ô');
+    toast('Moved to Contacted Î“Â£Ã´');
   } else if (result === 'lvm') {
     await sb.from('mcl_clients').update({ stage: 'lvm', intro_type: 'lvm' }).eq('id', id);
-    await sb.from('mcl_activity_log').insert({ client_id: id, action: 'stage_change', details: 'Left voicemail GåÆ LVM' });
+    await sb.from('mcl_activity_log').insert({ client_id: id, action: 'stage_change', details: 'Left voicemail Î“Ã¥Ã† LVM' });
     if (c && c.pipedrive_id) await updatePipedriveLabel(c.pipedrive_id, 'lvm');
-    toast('Moved to LVM G£ô');
+    toast('Moved to LVM Î“Â£Ã´');
   }
   
   // Update sheet with contact info + Contacted flag for spoke/lvm
@@ -2206,23 +2206,23 @@ async function handleAnswer(result) {
   if (result === 'no_answer') {
     await sb.from('mcl_clients').update({ intro_type: 'no_answer' }).eq('id', id);
     await sb.from('mcl_activity_log').insert({ client_id: id, action: 'call_attempt', details: 'No answer, no voicemail' });
-    toast('Logged GÇö staying in Need to Call');
+    toast('Logged Î“Ã‡Ã¶ staying in Need to Call');
   }
   await loadData();
   renderProfile(id);
 }
 
-// GòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉ
+// Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰
 // HELPERS
-// GòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉ
+// Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰
 function fmtDate(d) {
-  if (!d) return 'GÇö';
+  if (!d) return 'Î“Ã‡Ã¶';
   const dt = new Date(d);
   return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function statusLabel(s) {
-  return { overdue: 'GÜá Overdue', due_today: 'GùÅ Due Today', on_track: 'G£ô On Track', responded: 'G£ô Responded', needs_intro: 'Gùï Needs Intro', resolved: 'GùÅ Resolved' }[s] || s;
+  return { overdue: 'Î“ÃœÃ¡ Overdue', due_today: 'Î“Ã¹Ã… Due Today', on_track: 'Î“Â£Ã´ On Track', responded: 'Î“Â£Ã´ Responded', needs_intro: 'Î“Ã¹Ã¯ Needs Intro', resolved: 'Î“Ã¹Ã… Resolved' }[s] || s;
 }
 
 function updateOverdueBadge() {
@@ -2230,7 +2230,7 @@ function updateOverdueBadge() {
   const regularOverdue = clients.filter(c => c.follow_up_status === 'overdue' && !noFollowupStages.includes(c.stage) && !c.pause_reason && !c.next_followup_date && !c.outcome).length;
   const scheduledDue = clients.filter(c => c.next_followup_date && new Date(c.next_followup_date) <= new Date() && !c.outcome).length;
   const overdue = regularOverdue + scheduledDue;
-  document.getElementById('overdueGlobal').textContent = overdue > 0 ? `${overdue} overdue` : 'G£ô All clear';
+  document.getElementById('overdueGlobal').textContent = overdue > 0 ? `${overdue} overdue` : 'Î“Â£Ã´ All clear';
   document.getElementById('overdueGlobal').style.background = overdue > 0 ? 'var(--red)' : 'var(--green)';
 }
 
@@ -2260,9 +2260,9 @@ document.querySelectorAll('.modal-bg').forEach(m => {
   m.addEventListener('click', e => { if (e.target === m) m.classList.remove('visible'); });
 });
 
-// GòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉ
+// Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰
 // INIT
-// GòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉGòÉ
+// Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰
 loadData();
 loadPipedriveLabels();
 
@@ -2292,7 +2292,7 @@ function isBusinessHours() {
 
 function getSecsUntilNextSync() {
   const last = parseInt(localStorage.getItem('mcl_last_sync_ts') || '0');
-  if (!last) return 0; // never synced GÇö sync immediately
+  if (!last) return 0; // never synced Î“Ã‡Ã¶ sync immediately
   const elapsed = Math.floor((Date.now() - last) / 1000);
   return Math.max(0, 300 - elapsed);
 }
@@ -2316,7 +2316,7 @@ function updateSyncCountdown() {
   el.textContent = `next sync ${m}:${s}`;
 }
 
-// Tick every second GÇö syncs when countdown hits 0 during business hours
+// Tick every second Î“Ã‡Ã¶ syncs when countdown hits 0 during business hours
 setInterval(() => {
   if (isBusinessHours()) {
     const secs = getSecsUntilNextSync();
@@ -2335,7 +2335,7 @@ async function manualSync() {
   await syncData();
 }
 
-// Initialise countdown display on load GÇö do NOT reset the timestamp
+// Initialise countdown display on load Î“Ã‡Ã¶ do NOT reset the timestamp
 updateSyncCountdown();
 </script>
 </body>
