@@ -959,7 +959,7 @@ function renderProfile(clientId) {
         </div>
       </div>
       <div class="prof-actions">
-        ${!c.outcome ? `<button class="btn btn-red btn-sm" onclick="markOutcome('${c.id}','lost')">❌ Lost</button>` : ''}
+        ${(!c.outcome || c.outcome === 'litigation') ? `<button class="btn btn-red btn-sm" onclick="markOutcome('${c.id}','lost')">❌ Lost</button>` : ''}
         ${c.outcome === 'lost' ? `<button class="btn btn-sm" style="background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;" onclick="reviveClient('${c.id}')">♻️ Revive</button>` : ''}
         ${c.pause_reason ? `<button class="btn btn-sm" onclick="unpauseClient('${c.id}')" style="background:#e8f5e9;color:#2e7d32;border:1px solid #4caf50;font-size:11px;">▶ Unpause</button>` : `<button class="btn btn-sm" onclick="pauseClient('${c.id}')" style="background:#fff3e0;color:#e65100;border:1px solid #ffb74d;font-size:11px;">⏸ Pause</button>`}
         ${!c.outcome ? `<button class="btn btn-sm" onclick="scheduleFollowup('${c.id}')" style="background:#e3f2fd;color:#1565c0;border:1px solid #64b5f6;font-size:11px;">📅 Schedule</button>` : ''}
@@ -1134,7 +1134,8 @@ function renderTimeline(c) {
   // Next action
   const hasFutureSchedule = c.next_followup_date && new Date(c.next_followup_date) > new Date();
   const noFollowupStages = ['do_not_call', 'waiting_mcl', 'disputes_mailed', 'reports_received', 'litigation', 'lost'];
-  if (!c.responded && !c.outcome && !noFollowupStages.includes(c.stage) && !c.pause_reason && !hasFutureSchedule) {
+  const blockingOutcome = c.outcome && c.outcome !== 'litigation';
+  if (!c.responded && !blockingOutcome && !noFollowupStages.includes(c.stage) && !c.pause_reason && !hasFutureSchedule) {
     const lastFu = c.last_followup || 'none';
     const fuKeys = getTemplateKeys(c.stage, lastFu, c);
     if (fuKeys.email) {
