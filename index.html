@@ -816,7 +816,7 @@ function renderStages() {
   STAGES.forEach(s => {
     const stageClients = clients.filter(c => {
       if (s.key === 'do_not_call') return c.stage === 'do_not_call' && !c.outcome;
-      if (s.key === 'litigation') return c.outcome === 'litigation';
+      if (s.key === 'litigation') return c.stage === 'litigation';
       if (s.key === 'lost') return c.outcome === 'lost';
       return c.stage === s.key && !c.outcome;
     });
