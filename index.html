@@ -662,6 +662,12 @@ async function syncData() {
           const roundOver = new Date(existing.round_over_date);
           if (roundOver <= new Date()) {
             updateData.stage = 'waiting_reports';
+            // Reset fu timestamps so follow-up sequence restarts fresh
+            updateData.intro_sent_at = null;
+            updateData.fu1_sent_at = null;
+            updateData.fu2_sent_at = null;
+            updateData.fu3_sent_at = null;
+            updateData.fu4_sent_at = null;
             stage = 'waiting_reports';
             console.log('Auto-moving to waiting_reports (round over):', existing.name);
           }
@@ -2133,15 +2139,15 @@ async function callOutcome(id, result) {
     toast('Moved to LVM ✓');
   }
   
-  // Update sheet with contact info + Contacted flag for spoke/lvm
+  // Update sheet with contact info — only set Contacted=TRUE for spoke, not lvm
   if ((result === 'spoke' || result === 'lvm') && c) {
     try {
       const params = new URLSearchParams();
       params.append('Name', c.name);
       params.append('Client Email', c.email || '');
       params.append('Phone Number', c.phone || '');
-      params.append('Contacted', 'TRUE');
-      params.append('Action', 'contacted');
+      params.append('Contacted', result === 'spoke' ? 'TRUE' : 'FALSE');
+      params.append('Action', result === 'spoke' ? 'contacted' : 'lvm');
       await fetch(SHEET_UPDATE_URL, { method: 'POST', body: params });
     } catch (e) { console.error('Sheet webhook failed:', e); }
   }
@@ -2201,15 +2207,15 @@ async function handleAnswer(result) {
     toast('Moved to LVM ✓');
   }
   
-  // Update sheet with contact info + Contacted flag for spoke/lvm
+  // Update sheet with contact info — only set Contacted=TRUE for spoke, not lvm
   if ((result === 'spoke' || result === 'lvm') && c) {
     try {
       const params = new URLSearchParams();
       params.append('Name', c.name);
       params.append('Client Email', c.email || '');
       params.append('Phone Number', c.phone || '');
-      params.append('Contacted', 'TRUE');
-      params.append('Action', 'contacted');
+      params.append('Contacted', result === 'spoke' ? 'TRUE' : 'FALSE');
+      params.append('Action', result === 'spoke' ? 'contacted' : 'lvm');
       await fetch(SHEET_UPDATE_URL, { method: 'POST', body: params });
     } catch (e) { console.error('Sheet webhook failed:', e); }
   }
