@@ -670,6 +670,31 @@ async function syncData() {
             updateData.fu4_sent_at = null;
             stage = 'waiting_reports';
             console.log('Auto-moving to waiting_reports (round over):', existing.name);
+            // Auto-send intro email+SMS for waiting_reports
+            const wrEmailKey = 'followup_31day_email';
+            const wrSmsKey = 'followup_31day_text';
+            const wrEmailTpl = templates.find(t => t.key === wrEmailKey);
+            const wrSmsTpl = templates.find(t => t.key === wrSmsKey);
+            if (wrEmailTpl && existing.email) {
+              try {
+                const wrBody = wrEmailTpl.body.replace(/\{name\}/g, existing.name.split(' ')[0]).replace(/\{agent\}/g, existing.assigned_to || 'ASAP Credit Repair');
+                await fetch(SEND_EMAIL_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ to: existing.email, subject: wrEmailTpl.subject, body: wrBody }) });
+                updateData.intro_sent_at = new Date().toISOString();
+                console.log('Auto-sent waiting_reports intro email to:', existing.name);
+              } catch(e) { console.error('Auto-send email failed:', e); }
+            }
+            if (wrSmsTpl && existing.phone) {
+              try {
+                const wrSmsBody = (wrSmsTpl.body || '').replace(/\{name\}/g, existing.name.split(' ')[0]).replace(/\{agent\}/g, existing.assigned_to || 'ASAP Credit Repair').replace(/<[^>]*>/g, '').trim();
+                const wrSmsParams = new URLSearchParams();
+                wrSmsParams.append('SMS', wrSmsBody);
+                wrSmsParams.append('Texting Cell', existing.phone);
+                wrSmsParams.append('Person First Name', existing.name.split(' ')[0]);
+                await fetch(SEND_SMS_URL, { method: 'POST', body: wrSmsParams });
+                if (!updateData.intro_sent_at) updateData.intro_sent_at = new Date().toISOString();
+                console.log('Auto-sent waiting_reports intro SMS to:', existing.name);
+              } catch(e) { console.error('Auto-send SMS failed:', e); }
+            }
           }
         }
 
