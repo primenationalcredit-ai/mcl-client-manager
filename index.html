@@ -740,12 +740,10 @@ async function syncData() {
         if (error) { console.error('Update error for', name, error); errors++; }
         else {
           updated++;
-          // Always sync Pipedrive label for any client with a deal ID
-          if (existing.pipedrive_id) {
+          // Only push Pipedrive label if stage actually changed
+          if (existing.pipedrive_id && stage !== existing.stage) {
             const labelStage = outcome || stage;
-            console.log('PIPEDRIVE LABEL SYNC:', existing.name, '| dealId:', existing.pipedrive_id, '| stage:', labelStage);
-            const labelResult = await updatePipedriveLabel(existing.pipedrive_id, labelStage);
-            console.log('LABEL RESULT:', existing.name, labelResult);
+            await updatePipedriveLabel(existing.pipedrive_id, labelStage);
           }
         }
       } else {
@@ -813,15 +811,7 @@ async function syncData() {
       } catch(e) { console.error('Round dates sync failed for:', c.name, e); }
     }
 
-    // Push Pipedrive labels for ALL clients with a deal ID after sync
-    const clientsWithDeals = clients.filter(c => c.pipedrive_id && c.stage !== 'lost' && c.outcome !== 'lost');
-    console.log('Pushing Pipedrive labels for', clientsWithDeals.length, 'clients with deal IDs...');
-    for (const c of clientsWithDeals) {
-      const labelStage = c.outcome || c.stage;
-      if (MCL_LABELS[labelStage]) {
-        await updatePipedriveLabel(c.pipedrive_id, labelStage);
-      }
-    }
+    // Pipedrive labels are pushed only when stage changes (not every sync)
     
     let msg = `Synced ✓ — ${sheetRows.length} sheet rows`;
     if (inserted) msg += `, ${inserted} new`;
