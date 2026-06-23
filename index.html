@@ -707,12 +707,6 @@ async function syncData() {
           delete updateData.outcome_at;
         }
         // Never move backwards from locked stages
-        const lockedStages = ['reports_received', 'litigation', 'waiting_reports'];
-        if (lockedStages.includes(existing.stage) && !inLitigation) {
-          delete updateData.stage;
-          delete updateData.outcome;
-          delete updateData.outcome_at;
-        }
         // Always allow sheet to move client FORWARD in pipeline
         // Also always allow litigation to be set from sheet
         const lockedStages = ['reports_received', 'litigation', 'waiting_reports'];
@@ -916,7 +910,7 @@ function renderClientList() {
 function getStageClients() {
   let list;
   if (currentStage === 'do_not_call') list = clients.filter(c => c.stage === 'do_not_call' && !c.outcome);
-  else if (currentStage === 'litigation') list = clients.filter(c => c.outcome === 'litigation');
+  else if (currentStage === 'litigation') list = clients.filter(c => c.stage === 'litigation');
   else if (currentStage === 'lost') list = clients.filter(c => c.outcome === 'lost');
   else list = clients.filter(c => c.stage === currentStage && !c.outcome);
   if (overdueOnly) list = list.filter(c => {
