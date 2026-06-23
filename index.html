@@ -715,7 +715,9 @@ async function syncData() {
         }
         // Always allow sheet to move client FORWARD in pipeline
         // Also always allow litigation to be set from sheet
-        if (sheetIdx > existingIdx || inLitigation || updateData.stage === 'waiting_reports') {
+        const lockedStages = ['reports_received', 'litigation', 'waiting_reports'];
+if (lockedStages.includes(existing.stage) && !inLitigation) { delete updateData.stage; delete updateData.outcome; delete updateData.outcome_at; }
+if (sheetIdx > existingIdx || inLitigation || updateData.stage === 'waiting_reports') {
           // Sheet is ahead or auto-move triggered — update stage and outcome
         } else {
           // Sheet is same or behind — keep existing stage, don't regress
