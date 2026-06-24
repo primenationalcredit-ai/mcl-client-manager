@@ -725,7 +725,7 @@ if (sheetIdx > existingIdx || inLitigation) {
         if (!phone) delete updateData.phone;
 
         // Fire webhook if client just became disqualified or resolved non-lit
-        if ((isDisqualified || isResolvedNonLit) && existing.stage !== 'lost' && existing.outcome !== 'lost') {
+        if ((isDisqualified || isResolvedNonLit) && existing.stage !== 'lost' && existing.outcome !== 'lost' && !lockedStages.includes(existing.stage)) {
           const reason = isDisqualified ? 'Disqualified' : 'Resolved_NON_Lit';
           const webhookParams = new URLSearchParams();
           webhookParams.append('Name', name);
