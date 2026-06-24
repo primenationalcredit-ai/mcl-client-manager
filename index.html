@@ -709,7 +709,7 @@ async function syncData() {
         // Never move backwards from locked stages
         // Always allow sheet to move client FORWARD in pipeline
         // Also always allow litigation to be set from sheet
-if (sheetIdx > existingIdx || inLitigation || updateData.stage === 'waiting_reports') {
+if (sheetIdx > existingIdx || inLitigation) {
           // Sheet is ahead or auto-move triggered — update stage and outcome
         } else {
           // Sheet is same or behind — keep existing stage, don't regress
