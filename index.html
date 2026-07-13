@@ -938,7 +938,7 @@ function renderFilteredClients(list) {
     li.innerHTML = `
       <div class="ci-left">
         <div class="ci-name">${c.name}${isOverdue ? '<span class="ci-overdue-tag">OVERDUE</span>' : ''}</div>
-        <div class="ci-sub">${scheduledDue ? '🔴 Follow-up due!' : c.next_followup_date ? '📅 Follow-up: ' + new Date(c.next_followup_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : fuLabel + ' · ' + daysLabel}${isOverdue && !scheduledDue ? ' · ⚠️ ' + (c.days_since_contact || '?') + 'd overdue' : ''}</div>
+        <div class="ci-sub">${scheduledDue ? '🔴 Follow-up due!' : c.next_followup_date ? '📅 Follow-up: ' + new Date(c.next_followup_date.substring(0,10) + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : fuLabel + ' · ' + daysLabel}${isOverdue && !scheduledDue ? ' · ⚠️ ' + (c.days_since_contact || '?') + 'd overdue' : ''}</div>
       </div>
       <div><span class="dot ${c.follow_up_status}"></span></div>`;
     ul.appendChild(li);
@@ -1010,7 +1010,7 @@ function renderProfile(clientId) {
         <span style="font-size:20px;">${new Date(c.next_followup_date) <= new Date() ? '🔴' : '📅'}</span>
         <div>
           <div style="font-weight:600;color:${new Date(c.next_followup_date) <= new Date() ? '#c62828' : '#1565c0'};">${new Date(c.next_followup_date) <= new Date() ? 'FOLLOW-UP DUE TODAY!' : 'Scheduled Follow-up'}</div>
-          <div style="font-size:13px;color:#555;">${new Date(c.next_followup_date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}</div>
+          <div style="font-size:13px;color:#555;">${new Date(c.next_followup_date.substring(0,10) + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}</div>
         </div>
       </div>
       <button class="btn btn-outline btn-sm" onclick="clearFollowupDate('${c.id}')" style="font-size:11px;">Clear Date</button>
