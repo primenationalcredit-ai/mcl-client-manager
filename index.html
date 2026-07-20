@@ -487,7 +487,7 @@ function getTemplateKeys(stage, lastFu, client) {
     waiting_mcl: { none:'intro_email_mailing', intro:'fu1_email_mailing', fu1:'fu2_email_mailing', fu2:'fu3_email_mailing' },
     packet_sent: { none:'intro_email_mailing', intro:'fu1_email_mailing', fu1:'fu2_email_mailing', fu2:'fu3_email_mailing' },
     disputes_mailed: { none:'intro_email_mailing', intro:'fu1_email_mailing', fu1:'fu2_email_mailing', fu2:'fu3_email_mailing' },
-    waiting_reports: { none:'followup_31day_text', intro:'fu2_text_reports', fu1:'fu2_text_reports', fu2:'fu3_text_reports', fu3:'fu4_text_reports' },
+    waiting_reports: { none:'followup_31day_email', intro:'fu2_email_reports', fu1:'fu2_email_reports', fu2:'fu3_email_reports', fu3:'fu4_email_reports' },
   };
   const smsMap = {
     need_to_call: { none:'intro_text_no_answer', intro:'fu1_text_no_answer', fu1:'fu2_text_no_answer', fu2:'fu3_text_no_answer' },
@@ -496,7 +496,7 @@ function getTemplateKeys(stage, lastFu, client) {
     waiting_mcl: { none:'intro_text_mailing', intro:'fu1_text_mailing', fu1:'fu2_text_mailing', fu2:'fu3_text_mailing' },
     packet_sent: { none:'intro_text_mailing', intro:'fu1_text_mailing', fu1:'fu2_text_mailing', fu2:'fu3_text_mailing' },
     disputes_mailed: { none:'intro_text_mailing', intro:'fu1_text_mailing', fu1:'fu2_text_mailing', fu2:'fu3_text_mailing' },
-    waiting_reports: { none:'followup_31day_text', intro:'fu2_text_reports', fu1:'fu2_text_reports', fu2:'fu3_text_reports', fu3:'fu4_text_reports' },
+    waiting_reports: { none:'followup_31day_email', intro:'fu2_email_reports', fu1:'fu2_email_reports', fu2:'fu3_email_reports', fu3:'fu4_email_reports' },
   };
   const stageMap = map[stage] || {};
   const smsStageMap = smsMap[stage] || {};
