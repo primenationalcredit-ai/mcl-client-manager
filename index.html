@@ -658,7 +658,7 @@ async function syncData() {
         const sheetIdx = stageOrder.indexOf(stage);
 
         // Auto-move disputes_mailed → waiting_reports if round_over_date has passed
-        if (existing.stage === 'disputes_mailed' && existing.round_over_date) {
+        if (existing.stage === 'disputes_mailed' && !existing.intro_sent_at && existing.round_over_date) {
           const roundOver = new Date(existing.round_over_date);
           if (roundOver <= new Date()) {
             updateData.stage = 'waiting_reports';
