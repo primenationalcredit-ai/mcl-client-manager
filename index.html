@@ -1739,6 +1739,16 @@ async function saveField(id, field, value) {
     } catch (e) { console.error('Pipedrive violation push failed:', e); }
   }
   
+  // Push note to Pipedrive when error_details saved with deal ID
+  if (field === 'error_details' && value && c && c.pipedrive_id) {
+    const vNote = '@@@ CLIENT HAS AN FCRA VIOLATION — ' + value.trim() + '\n\nLET CLIENT KNOW ABOUT THIS VIOLATION';
+    try {
+      await fetch(PIPEDRIVE_PROXY_URL, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ action: 'add_note', dealId: c.pipedrive_id, content: vNote }) });
+      await fetch(PIPEDRIVE_PROXY_URL, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ action: 'add_activity', dealId: c.pipedrive_id, subject: 'FCRA Violation — Contact Client Today', note: vNote }) });
+      toast('FCRA note pushed to Pipedrive');
+    } catch(e) { console.error('Pipedrive push failed:', e); }
+  }
+
   // Sync name, email, phone changes to Google Sheet
   if (c && (field === 'name' || field === 'email' || field === 'phone')) {
     try {
