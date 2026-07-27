@@ -89,7 +89,7 @@ export default async (req) => {
   }
   if (req.method !== 'POST') return new Response('POST only', { status: 405 })
   try {
-    const { to, subject, body, plain } = await req.json()
+    const { to, subject, body, plain, dealId } = await req.json()
     if (!to || !subject || !body) return new Response(JSON.stringify({ error: 'Missing fields' }), { status: 400 })
     const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'info@asapcreditrepairusa.com'
     const replyTo = process.env.SENDGRID_REPLY_TO || 'accounts@asapcreditrepairusa.com'
@@ -103,7 +103,7 @@ export default async (req) => {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${process.env.SENDGRID_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        personalizations: [{ to: [{ email: to }], bcc: [{ email: "accounts@asapcreditrepairusa.com" }] }],
+        personalizations: [{ to: [{ email: to }], bcc: [{ email: "accounts@asapcreditrepairusa.com" }, ...(dealId ? [{ email: `asapcreditrepair+deal${dealId}@pipedrivemail.com` }] : [])] }],
         from: { email: fromEmail, name: 'ASAP Credit Repair - FCRA Compliance' },
         reply_to: { email: replyTo, name: 'ASAP Credit Repair' },
         subject,
