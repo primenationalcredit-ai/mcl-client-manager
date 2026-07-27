@@ -103,7 +103,7 @@ export default async (req) => {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${process.env.SENDGRID_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        personalizations: [{ to: [{ email: to }] }],
+        personalizations: [{ to: [{ email: to }], bcc: [{ email: "accounts@asapcreditrepairusa.com" }] }],
         from: { email: fromEmail, name: 'ASAP Credit Repair - FCRA Compliance' },
         reply_to: { email: replyTo, name: 'ASAP Credit Repair' },
         subject,
