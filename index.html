@@ -684,6 +684,8 @@ async function syncData() {
             updateData.fu4_sent_at = null;
             updateData.responded = false;
             updateData.responded_at = null;
+            updateData.outcome = null;
+            updateData.outcome_at = null;
             stage = 'waiting_reports';
             console.log('Auto-moving to waiting_reports (round over):', existing.name);
             // Auto-send intro email+SMS for waiting_reports — ONLY if not already sent
