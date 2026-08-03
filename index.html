@@ -1188,7 +1188,8 @@ function renderTimeline(c) {
   const hasFutureSchedule = c.next_followup_date && new Date(c.next_followup_date) > new Date();
   const noFollowupStages = ['do_not_call', 'waiting_mcl', 'disputes_mailed', 'reports_received', 'litigation', 'lost'];
   const blockingOutcome = c.outcome && c.outcome !== 'litigation';
-  if (!c.responded && !blockingOutcome && !noFollowupStages.includes(c.stage) && !c.pause_reason && !hasFutureSchedule) {
+  const isResponded = c.responded && c.stage !== 'waiting_reports';
+  if (!isResponded && !blockingOutcome && !noFollowupStages.includes(c.stage) && !c.pause_reason && !hasFutureSchedule) {
     const lastFu = c.last_followup || 'none';
     const fuKeys = getTemplateKeys(c.stage, lastFu, c);
     if (fuKeys.email) {
