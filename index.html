@@ -578,7 +578,7 @@ async function syncData() {
     const csvText = await csvResp.text();
     const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
     
-    const sheetRows = parsed.data.filter(r => r.Name && r.Name.trim());
+    const sheetRows = parsed.data.filter(r => (r.Name || r.RF) && (r.Name || r.RF).trim());
     console.log('Sheet rows with names:', sheetRows.length);
     
     let inserted = 0, updated = 0, errors = 0;
@@ -586,7 +586,7 @@ async function syncData() {
     for (let rowIdx = 0; rowIdx < sheetRows.length; rowIdx++) {
       const row = sheetRows[rowIdx];
       const sheetRowNum = rowIdx + 2; // +2 because row 1 is header
-      const name = row.Name.trim();
+      const name = (row.Name || row.RF).trim();
       if (!name) continue;
       
       // Determine correct stage from sheet columns
