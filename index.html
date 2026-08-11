@@ -300,6 +300,17 @@ input,select,textarea{font-family:inherit;}
 </div>
 
 <!-- SEND EMAIL MODAL -->
+<div class="modal-bg" id="viewMsgModal">
+  <div class="modal">
+    <div class="modal-head"><h3 id="viewMsgTitle">Message Content</h3><button class="modal-close" onclick="closeModal('viewMsgModal')">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-row"><label class="form-label">Email Subject <button class="btn btn-outline btn-sm" style="font-size:10px;padding:2px 8px;margin-left:6px;" onclick="copyFromBox('viewMsgSubject')">Copy</button></label><textarea id="viewMsgSubject" readonly style="width:100%;font-size:13px;padding:8px 10px;background:var(--g50);border:1px solid var(--g200);border-radius:8px;resize:none;height:38px;font-family:inherit;"></textarea></div>
+      <div class="form-row"><label class="form-label">Email Body (plain text) <button class="btn btn-outline btn-sm" style="font-size:10px;padding:2px 8px;margin-left:6px;" onclick="copyFromBox('viewMsgEmail')">Copy</button></label><textarea id="viewMsgEmail" readonly style="width:100%;font-size:13px;padding:10px;background:var(--g50);border:1px solid var(--g200);border-radius:8px;height:200px;font-family:inherit;line-height:1.5;"></textarea></div>
+      <div class="form-row"><label class="form-label">SMS Text <button class="btn btn-outline btn-sm" style="font-size:10px;padding:2px 8px;margin-left:6px;" onclick="copyFromBox('viewMsgSms')">Copy</button></label><textarea id="viewMsgSms" readonly style="width:100%;font-size:13px;padding:10px;background:var(--g50);border:1px solid var(--g200);border-radius:8px;height:110px;font-family:inherit;line-height:1.5;"></textarea></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" onclick="closeModal('viewMsgModal')">Close</button></div>
+  </div>
+</div>
 <div class="modal-bg" id="sendModal">
   <div class="modal">
     <div class="modal-head"><h3 id="sendModalTitle">Send Follow-up</h3><button class="modal-close" onclick="closeModal('sendModal')">✕</button></div>
@@ -1183,7 +1194,7 @@ function renderTimeline(c) {
     </div>
     <ul class="flow-events">
       ${events.length === 0 ? `<li class="flow-event"><span class="fe-icon">⚪</span><span class="fe-text">No follow-ups sent yet</span></li>` : ''}
-      ${events.map(e => `<li class="flow-event"><span class="fe-icon">${e.icon}</span><span class="fe-text">${e.label}</span><span class="fe-date">${fmtDate(e.date)}</span><button class="btn btn-outline btn-sm" onclick="resendFollowup('${c.id}','${e.type}')" style="font-size:10px;padding:2px 8px;margin-left:6px;">↻ Resend</button></li>`).join('')}
+      ${events.map(e => `<li class="flow-event"><span class="fe-icon">${e.icon}</span><span class="fe-text">${e.label}</span><span class="fe-date">${fmtDate(e.date)}</span><button class="btn btn-outline btn-sm" onclick="resendFollowup('${c.id}','${e.type}')" style="font-size:10px;padding:2px 8px;margin-left:6px;">↻ Resend</button><button class="btn btn-outline btn-sm" onclick="viewMessage('${c.id}','${e.type}')" style="font-size:10px;padding:2px 8px;margin-left:4px;">View</button></li>`).join('')}
     </ul>`;
 
   // Next action
@@ -1941,6 +1952,38 @@ async function saveNotes(id) {
 // ═══════════════════════════════════════════════════
 // SEND EMAIL/SMS
 // ═══════════════════════════════════════════════════
+function stripHtmlToText(html) {
+  return (html || '')
+    .replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n\n').replace(/<\/div>/gi, '\n')
+    .replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&quot;/g, '"')
+    .replace(/\n{3,}/g, '\n\n').trim();
+}
+
+function viewMessage(clientId, fuType) {
+  const c = clients.find(x => x.id === clientId);
+  if (!c) return;
+  const prevMap = { intro: 'none', fu1: 'intro', fu2: 'fu1', fu3: 'fu2', fu4: 'fu3' };
+  const lastFu = prevMap[fuType] || 'none';
+  const fuKeys = getTemplateKeys(c.stage, lastFu, c);
+  const emailTpl = templates.find(t => t.key === fuKeys.email);
+  const smsTpl = templates.find(t => t.key === fuKeys.sms);
+  const round = getCurrentAsapRound(c);
+  const roundEnd = round && round.status === 'active' ? round.end : '';
+  const fill = s => (s || '').replace(/\{name\}/g, c.name.split(' ')[0]).replace(/\{agent\}/g, c.assigned_to || 'ASAP Credit Repair').replace(/\{round_end_date\}/g, roundEnd);
+  const label = fuType === 'intro' ? 'Intro' : 'FU #' + fuType.replace('fu','');
+  document.getElementById('viewMsgTitle').textContent = label + ' - ' + c.name;
+  document.getElementById('viewMsgSubject').value = emailTpl ? fill(emailTpl.subject) : '(no email template for this stage)';
+  document.getElementById('viewMsgEmail').value = emailTpl ? stripHtmlToText(fill(emailTpl.body)) : '(no email template for this stage)';
+  document.getElementById('viewMsgSms').value = smsTpl ? stripHtmlToText(fill(smsTpl.body)) : '(no SMS template for this stage)';
+  document.getElementById('viewMsgModal').classList.add('visible');
+}
+
+function copyFromBox(id) {
+  const el = document.getElementById(id);
+  el.select(); el.setSelectionRange(0, 999999);
+  try { navigator.clipboard.writeText(el.value).then(function(){ toast('Copied!'); }); }
+  catch(e) { document.execCommand('copy'); toast('Copied!'); }
+}
 async function resendFollowup(clientId, fuType) {
   const c = clients.find(x => x.id === clientId);
   if (!c) return;
