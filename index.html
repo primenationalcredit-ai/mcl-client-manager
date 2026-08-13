@@ -1791,7 +1791,7 @@ async function sendManual(id, mode) {
   const sendToEmail = toOverride || c.email;
   if ((mode === 'email' || mode === 'both') && sendToEmail) {
     try {
-      const emailPayload = { to: sendToEmail, subject: subject || 'Follow-up from ASAP Credit Repair', body };
+      const emailPayload = { to: sendToEmail, subject: subject || 'Follow-up from ASAP Credit Repair', body, dealId: c.pipedrive_id };
       const res = await fetch(SEND_EMAIL_URL, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(emailPayload)
@@ -1900,7 +1900,7 @@ async function sendMcCarthy(id) {
   try {
     const res = await fetch(SEND_EMAIL_URL, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to: 'FCRA@McCarthyLawyer.com', subject, body: fullBody })
+      body: JSON.stringify({ to: 'FCRA@McCarthyLawyer.com', subject, body: fullBody, dealId: c.pipedrive_id })
     });
     const data = await res.json();
     if (data.ok) {
