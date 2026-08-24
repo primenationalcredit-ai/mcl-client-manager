@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 :root {
   --navy:#003f87; --navy-dark:#002d63; --navy-light:#e8f0fa;
@@ -224,6 +225,31 @@ input,select,textarea{font-family:inherit;}
     <span class="badge-alert" id="overdueGlobal">0 overdue</span>
     <span id="syncCountdown" style="font-size:11px;color:#94a3b8;font-family:'JetBrains Mono',monospace;">next sync 5:00</span>
     <button class="btn btn-outline btn-sm" onclick="manualSync()" id="syncBtn" style="font-size:13px;">↻ Sync</button>
+    <input type="file" id="crcFileInput" accept="application/pdf,.pdf" style="display:none;" onchange="crcFileChosen(this)">
+    <button class="btn btn-outline btn-sm" onclick="document.getElementById('crcFileInput').click()" id="crcBtn" style="font-size:13px;">Upload CRC Report</button>
+  </div>
+</div>
+
+
+<div class="modal-bg" id="crcModal">
+  <div class="modal" style="width:min(1040px,95vw);max-width:none;">
+    <div class="modal-head">
+      <h3 id="crcModalTitle">CRC Report Review</h3>
+      <button class="modal-close" onclick="closeModal('crcModal')">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px;">
+      <div id="crcSummary" style="font-size:13px;color:var(--g600);margin-bottom:12px;"></div>
+      <div id="crcIntegrity"></div>
+      <div id="crcMismatches"></div>
+      <div id="crcProtected"></div>
+      <div id="crcNoMatch"></div>
+      <div id="crcUnmapped"></div>
+    </div>
+    <div class="modal-foot">
+      <span id="crcCheckedCount" style="margin-right:auto;font-size:12px;color:var(--g500);align-self:center;"></span>
+      <button class="btn btn-outline" onclick="closeModal('crcModal')">Cancel</button>
+      <button class="btn btn-primary" id="crcApplyBtn" onclick="crcApply()">Apply Checked Moves</button>
+    </div>
   </div>
 </div>
 
@@ -572,6 +598,59 @@ async function loadData() {
   }
 }
 
+// ══════════════════════════════════════════════════
+// ENTER waiting_reports — single shared path.
+// Resets the follow-up sequence and fires the intro email+SMS.
+// Called by the sheet round-over mover AND the CRC upload applier.
+// Mutates updateData in place. Do not fork this.
+// ══════════════════════════════════════════════════
+async function enterWaitingReports(existing, updateData, why) {
+  updateData.stage = 'waiting_reports';
+  // Reset fu timestamps so follow-up sequence restarts fresh
+  updateData.intro_sent_at = null;
+  updateData.fu1_sent_at = null;
+  updateData.fu2_sent_at = null;
+  updateData.fu3_sent_at = null;
+  updateData.fu4_sent_at = null;
+  updateData.responded = false;
+  updateData.responded_at = null;
+  updateData.outcome = null;
+  updateData.outcome_at = null;
+  console.log('Auto-moving to waiting_reports (' + (why || 'auto') + '):', existing.name);
+
+  // Auto-send intro email+SMS — ONLY if not already sent
+  if (existing.intro_sent_at) {
+    console.log('Auto-send skipped — intro already sent to:', existing.name);
+    return false;
+  }
+  const wrEmailTpl = templates.find(t => t.key === 'followup_31day_email');
+  const wrSmsTpl = templates.find(t => t.key === 'followup_31day_text');
+  let sent = false;
+  if (wrEmailTpl && existing.email) {
+    try {
+      const wrBody = wrEmailTpl.body.replace(/\{name\}/g, existing.name.split(' ')[0]).replace(/\{agent\}/g, existing.assigned_to || 'ASAP Credit Repair');
+      await fetch(SEND_EMAIL_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ to: existing.email, subject: wrEmailTpl.subject, body: wrBody }) });
+      updateData.intro_sent_at = new Date().toISOString();
+      sent = true;
+      console.log('Auto-sent waiting_reports intro email to:', existing.name);
+    } catch(e) { console.error('Auto-send email failed:', e); }
+  }
+  if (wrSmsTpl && existing.phone) {
+    try {
+      const wrSmsBody = (wrSmsTpl.body || '').replace(/\{name\}/g, existing.name.split(' ')[0]).replace(/\{agent\}/g, existing.assigned_to || 'ASAP Credit Repair').replace(/<[^>]*>/g, '').trim();
+      const wrSmsParams = new URLSearchParams();
+      wrSmsParams.append('SMS', wrSmsBody);
+      wrSmsParams.append('Texting Cell', existing.phone);
+      wrSmsParams.append('Person First Name', existing.name.split(' ')[0]);
+      await fetch(SEND_SMS_URL, { method: 'POST', body: wrSmsParams });
+      if (!updateData.intro_sent_at) updateData.intro_sent_at = new Date().toISOString();
+      sent = true;
+      console.log('Auto-sent waiting_reports intro SMS to:', existing.name);
+    } catch(e) { console.error('Auto-send SMS failed:', e); }
+  }
+  return sent;
+}
+
 async function syncData() {
   const btn = document.getElementById('syncBtn');
   if (btn) { btn.textContent = '⟳ Syncing...'; btn.disabled = true; }
@@ -687,49 +766,9 @@ async function syncData() {
         if (existing.stage === 'disputes_mailed' && existing.round_over_date) {
           const roundOver = new Date(existing.round_over_date);
           if (roundOver <= new Date()) {
-            updateData.stage = 'waiting_reports';
-            // Reset fu timestamps so follow-up sequence restarts fresh
-            updateData.intro_sent_at = null;
-            updateData.fu1_sent_at = null;
-            updateData.fu2_sent_at = null;
-            updateData.fu3_sent_at = null;
-            updateData.fu4_sent_at = null;
-            updateData.responded = false;
-            updateData.responded_at = null;
-            updateData.outcome = null;
-            updateData.outcome_at = null;
+            await enterWaitingReports(existing, updateData, 'round over');
             stage = 'waiting_reports';
             autoMovedWR = true;
-            console.log('Auto-moving to waiting_reports (round over):', existing.name);
-            // Auto-send intro email+SMS for waiting_reports — ONLY if not already sent
-            if (existing.intro_sent_at) {
-              console.log('Auto-send skipped — intro already sent to:', existing.name);
-            } else {
-            const wrEmailKey = 'followup_31day_email';
-            const wrSmsKey = 'followup_31day_text';
-            const wrEmailTpl = templates.find(t => t.key === wrEmailKey);
-            const wrSmsTpl = templates.find(t => t.key === wrSmsKey);
-            if (wrEmailTpl && existing.email) {
-              try {
-                const wrBody = wrEmailTpl.body.replace(/\{name\}/g, existing.name.split(' ')[0]).replace(/\{agent\}/g, existing.assigned_to || 'ASAP Credit Repair');
-                await fetch(SEND_EMAIL_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ to: existing.email, subject: wrEmailTpl.subject, body: wrBody }) });
-                updateData.intro_sent_at = new Date().toISOString();
-                console.log('Auto-sent waiting_reports intro email to:', existing.name);
-              } catch(e) { console.error('Auto-send email failed:', e); }
-            }
-            if (wrSmsTpl && existing.phone) {
-              try {
-                const wrSmsBody = (wrSmsTpl.body || '').replace(/\{name\}/g, existing.name.split(' ')[0]).replace(/\{agent\}/g, existing.assigned_to || 'ASAP Credit Repair').replace(/<[^>]*>/g, '').trim();
-                const wrSmsParams = new URLSearchParams();
-                wrSmsParams.append('SMS', wrSmsBody);
-                wrSmsParams.append('Texting Cell', existing.phone);
-                wrSmsParams.append('Person First Name', existing.name.split(' ')[0]);
-                await fetch(SEND_SMS_URL, { method: 'POST', body: wrSmsParams });
-                if (!updateData.intro_sent_at) updateData.intro_sent_at = new Date().toISOString();
-                console.log('Auto-sent waiting_reports intro SMS to:', existing.name);
-              } catch(e) { console.error('Auto-send SMS failed:', e); }
-            }
-            } // end auto-send block
           }
         }
 
@@ -2454,6 +2493,516 @@ async function manualSync() {
 
 // Initialise countdown display on load — do NOT reset the timestamp
 updateSyncCountdown();
+</script>
+<script>
+/* =====================================================================
+   CRC WEEKLY REPORT UPLOAD
+   Upload the McCarthy Law "Approved for Dispute" PDF, parse it in the
+   browser, diff it against mcl_clients, review, then apply.
+   CRC is the source of truth. Nothing moves without a checked box.
+   ===================================================================== */
+
+// ---- column geometry of the TCPDF report (verified 8/20/26) ----------
+const CRC_COLS = [42.8, 96.8, 150.7, 204.6, 258.6, 312.5, 366.5,
+                  420.4, 474.4, 528.3, 582.3, 636.2, 690.1];
+const CRC_C_NAME = 0, CRC_C_SUBMITTED = 1, CRC_C_MAILED = 4,
+      CRC_C_SENT = 5, CRC_C_DUE = 6, CRC_C_PAID = 7;
+const CRC_COL_TOL = 1.5;
+
+const CRC_RE_SECTION = /CRC\s*Case\s*Status\s*=\s*(.+?)\s*,\s*Count\s*=\s*(\d+)/i;
+const CRC_RE_DATE = /(\d{2})\/(\d{2})\/(\d{4})/;
+const CRC_RE_DATEONLY = /^\s*(\d{2})\/(\d{2})\/(\d{4})\s*$/;
+const CRC_RE_FOOTER = /^\s*\d+\s*\/\s*\d+\s*$/;
+const CRC_RE_TITLE = /ASAP Credit Repair Approved for Dispute/i;
+
+// ---- CRC status -> app stage. THE ONLY PLACE THIS IS DEFINED. -------
+// stage    : target app stage
+// outcome  : value for the outcome column, or null to leave alone
+// dueRule  : 'passed->waiting_reports' promotes once resp-due is past
+// null entry = reported but never moved (report-only)
+const CRC_STATUS_MAP = {
+  'dispute by mcl'                : { stage:'disputes_mailed', outcome:null, dueRule:'passed->waiting_reports' },
+  'in litigation'                 : { stage:'litigation',      outcome:null },
+  'resolved-non-lit'              : { stage:'lost',            outcome:'lost' },
+  'resolved-litigation'           : { stage:'lost',            outcome:'won'  },
+  'disqualified'                  : { stage:'lost',            outcome:'lost' },
+  'waiting updated credit report' : { stage:'waiting_reports', outcome:null },
+  'in review'                     : null,
+  'need date disputes mailed'     : null,
+  'attorney review'               : null
+};
+
+// Stages the applier refuses to touch outright.
+const CRC_HARD_SKIP = ['do_not_call'];
+// Stages shown but UNCHECKED — ticking one is a deliberate override.
+const CRC_PROTECTED = ['litigation', 'reports_received'];
+
+let crcProposals = [];
+let crcParseResult = null;
+
+// ---------------------------------------------------------------------
+// PARSING
+// ---------------------------------------------------------------------
+function crcColOf(x) {
+  let idx = 0;
+  for (let i = 0; i < CRC_COLS.length; i++) if (x >= CRC_COLS[i] - CRC_COL_TOL) idx = i;
+  return idx;
+}
+function crcToISO(mdy) {
+  const m = CRC_RE_DATE.exec(String(mdy || ''));
+  return m ? (m[3] + '-' + m[1] + '-' + m[2]) : '';
+}
+function crcPad(n) { return (n < 10 ? '0' : '') + n; }
+
+function crcBuildLines(items, pageHeight) {
+  const map = {};
+  for (const it of items) {
+    if (!it.str || !it.str.trim()) continue;
+    const y = Math.round(pageHeight - it.transform[5]);
+    (map[y] = map[y] || []).push({ x: it.transform[4], str: it.str });
+  }
+  return Object.keys(map).map(Number).sort((a,b) => a-b).map(t => {
+    const arr = map[t].sort((a,b) => a.x - b.x);
+    const cols = {};
+    for (const a of arr) {
+      const c = crcColOf(a.x);
+      cols[c] = (cols[c] ? cols[c] + ' ' : '') + a.str.trim();
+    }
+    for (const k in cols) cols[k] = cols[k].replace(/\s+/g,' ').trim();
+    return { top:t, cols, raw: arr.map(a => a.str).join('').replace(/\s+/g,' ').trim() };
+  });
+}
+
+// CRC packs the caption into one cell: "Last, First v. Creditor/BUREAU".
+// Real deviations seen in production reports:
+//   "Adams. Alexis v. Ally/EQ"        period instead of comma
+//   "Rodriguez, Jeissen AustinCap/EQ" missing " v. "
+//   "Osei Kofi, Jeffrey"              two-word surname
+//   "Brillantes-Benguan, Marigold"    hyphenated surname
+function crcNormalizeName(raw) {
+  let str = String(raw || '').replace(/\s+/g,' ').trim();
+  const parts = str.split(/\s+v\.\s*/i);
+  let left = parts.length > 1 ? parts[0] : str;
+  if (parts.length === 1) left = left.replace(/\s+[A-Za-z]*\/[A-Z].*$/, '');
+  left = left.replace(/\s*\/.*$/, '').trim();
+
+  let last = '', first = '', m = left.match(/^([^,]+),\s*(.*)$/);
+  if (m) { last = m[1]; first = m[2]; }
+  else {
+    m = left.match(/^([^.]+)\.\s*(.*)$/);
+    if (m) { last = m[1]; first = m[2]; } else { last = left; first = ''; }
+  }
+  first = (first.split(' ')[0] || '');
+  const tidy = v => String(v||'').replace(/[^A-Za-z\-' ]/g,'').replace(/\s+/g,' ').trim();
+  last = tidy(last); first = tidy(first);
+  return {
+    last, first,
+    key: (first + ' ' + last).replace(/\s+/g,' ').trim().toLowerCase(),
+    display: (first ? first + ' ' : '') + last
+  };
+}
+
+function crcParseLines(pageLineSets) {
+  const rows = [], sections = [], errors = [];
+  let section = null, cur = null, reportDate = null;
+
+  pageLineSets.forEach((lines, pIdx) => {
+    lines.forEach(ln => {
+      const raw = ln.raw, cols = ln.cols;
+      if (!raw) return;
+      if (CRC_RE_TITLE.test(raw)) return;
+      if (/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun),/.test(raw)) {
+        if (!reportDate) {
+          const dm = raw.match(/(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})/);
+          if (dm) {
+            const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].indexOf(dm[2]) + 1;
+            if (mo > 0) reportDate = dm[3] + '-' + crcPad(mo) + '-' + crcPad(parseInt(dm[1],10));
+          }
+        }
+        return;
+      }
+      if (CRC_RE_FOOTER.test(raw)) return;
+
+      const sm = CRC_RE_SECTION.exec(raw);
+      if (sm) {
+        section = { status: sm[1].trim(), declared: parseInt(sm[2],10), parsed: 0 };
+        sections.push(section); cur = null; return;
+      }
+      // column-header block of a section table
+      if (/^FCRA\s*Case/i.test(cols[CRC_C_NAME] || '') ||
+          /^Name$/i.test(cols[CRC_C_NAME] || '') ||
+          /^(Submitted|Date)$/i.test(cols[CRC_C_SUBMITTED] || '')) { cur = null; return; }
+
+      // Record anchor = bare MM/DD/YYYY in the Date Submitted cell.
+      // pdf.js sometimes welds a long name to that date into one item
+      // (real case: "Lupian-Coron06/09/2026") — recover it.
+      let sub = cols[CRC_C_SUBMITTED] || '';
+      const nameCell = cols[CRC_C_NAME] || '';
+      if (!CRC_RE_DATEONLY.test(sub) && CRC_RE_DATE.test(nameCell)) {
+        const spill = CRC_RE_DATE.exec(nameCell);
+        sub = spill[0];
+        cols[CRC_C_NAME] = nameCell.slice(0, spill.index).trim();
+      }
+      if (CRC_RE_DATEONLY.test(sub)) {
+        cur = { crcStatus: section ? section.status : '', nameParts: [],
+                submitted: crcToISO(sub), respDue: '', mailedToClient: '',
+                letterSent: '', paid: '', page: pIdx + 1 };
+        rows.push(cur);
+        if (section) section.parsed++;
+        else errors.push('Row found before any section header on page ' + (pIdx + 1));
+      }
+      if (!cur) return;
+      if (cols[CRC_C_NAME]) cur.nameParts.push(cols[CRC_C_NAME]);
+      if (!cur.respDue && CRC_RE_DATE.test(cols[CRC_C_DUE] || '')) cur.respDue = crcToISO(cols[CRC_C_DUE]);
+      if (!cur.mailedToClient && CRC_RE_DATE.test(cols[CRC_C_MAILED] || '')) cur.mailedToClient = crcToISO(cols[CRC_C_MAILED]);
+      if (!cur.letterSent && CRC_RE_DATE.test(cols[CRC_C_SENT] || '')) cur.letterSent = crcToISO(cols[CRC_C_SENT]);
+      if (!cur.paid && cols[CRC_C_PAID]) cur.paid = cols[CRC_C_PAID];
+    });
+  });
+
+  for (const r of rows) {
+    r.rawName = r.nameParts.join(' ').replace(/\s+/g,' ').trim();
+    delete r.nameParts;
+    const n = crcNormalizeName(r.rawName);
+    r.last = n.last; r.first = n.first; r.key = n.key; r.display = n.display;
+    if (!r.last) errors.push('Unparseable client name: "' + r.rawName + '"');
+  }
+
+  const integrity = sections.map(x => ({ status:x.status, declared:x.declared, parsed:x.parsed, ok:x.declared === x.parsed }));
+  const ok = integrity.length > 0 && integrity.every(x => x.ok);
+  if (!ok) errors.push('Row counts do not match the counts printed in the report.');
+  return { ok, integrity, reportDate, rows, errors };
+}
+
+async function crcParsePdf(arrayBuffer) {
+  if (!window.pdfjsLib) throw new Error('pdf.js failed to load');
+  // pdf.js refuses to run without an explicit worker source
+  if (pdfjsLib.GlobalWorkerOptions && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+  const doc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const jobs = [];
+  for (let p = 1; p <= doc.numPages; p++) {
+    jobs.push(doc.getPage(p).then(async page => {
+      const h = page.getViewport({ scale: 1 }).height;
+      const tc = await page.getTextContent();
+      return crcBuildLines(tc.items, h);
+    }));
+  }
+  return crcParseLines(await Promise.all(jobs));
+}
+
+// ---------------------------------------------------------------------
+// MAPPING + MATCHING
+// ---------------------------------------------------------------------
+function crcMapStatus(crcStatus, dueISO, todayISO) {
+  const key = String(crcStatus || '').trim().toLowerCase();
+  let rule;
+  if (/\bdispute by mcl\b/.test(key)) rule = CRC_STATUS_MAP['dispute by mcl'];
+  else if (Object.prototype.hasOwnProperty.call(CRC_STATUS_MAP, key)) rule = CRC_STATUS_MAP[key];
+  else rule = undefined;
+  if (!rule) return null;
+
+  let stage = rule.stage, why = crcStatus;
+  if (rule.dueRule === 'passed->waiting_reports') {
+    if (dueISO && dueISO <= todayISO) { stage = 'waiting_reports'; why = crcStatus + ', response due ' + dueISO + ' passed'; }
+    else if (dueISO) { why = crcStatus + ', response due ' + dueISO; }
+    else { why = crcStatus + ', no response-due date on report'; }
+  }
+  return { stage, outcome: rule.outcome || null, reason: why, known: true };
+}
+
+function crcAppKey(name) {
+  return String(name || '').toLowerCase().replace(/[^a-z\-' ]/g,'').replace(/\s+/g,' ').trim();
+}
+
+// Deterministic, two tiers. Tier 2 is reported so it can be eyeballed.
+function crcMatchClient(row, index) {
+  const exact = index.byFull[row.key];
+  if (exact && exact.length === 1) return { client: exact[0], tier: 'exact' };
+  if (exact && exact.length > 1)   return { client: null, tier: 'ambiguous' };
+  const li = (row.last + '|' + (row.first[0] || '')).toLowerCase();
+  const near = index.byLastInitial[li];
+  if (near && near.length === 1) return { client: near[0], tier: 'last+initial' };
+  if (near && near.length > 1)   return { client: null, tier: 'ambiguous' };
+  return { client: null, tier: 'none' };
+}
+
+function crcBuildIndex(list) {
+  const byFull = {}, byLastInitial = {};
+  for (const c of list) {
+    const k = crcAppKey(c.name);
+    (byFull[k] = byFull[k] || []).push(c);
+    const bits = k.split(' ');
+    if (bits.length >= 2) {
+      const li = (bits.slice(1).join(' ') + '|' + bits[0][0]);
+      (byLastInitial[li] = byLastInitial[li] || []).push(c);
+    }
+  }
+  return { byFull, byLastInitial };
+}
+
+const CRC_STAGE_ORDER = ['need_to_call','do_not_call','lvm','contacted','waiting_mcl',
+                         'packet_sent','disputes_mailed','waiting_reports','reports_received','litigation','lost'];
+
+function crcBuildProposals(parse) {
+  const today = new Date().toISOString().slice(0,10);
+  const index = crcBuildIndex(clients);
+
+  // One CRC row per person: keep the furthest-along status.
+  const best = {};
+  const dupes = [];
+  for (const r of parse.rows) {
+    const prev = best[r.key];
+    if (!prev) { best[r.key] = r; continue; }
+    dupes.push(r.display);
+    const a = crcMapStatus(prev.crcStatus, prev.respDue, today);
+    const b = crcMapStatus(r.crcStatus, r.respDue, today);
+    const ai = a ? CRC_STAGE_ORDER.indexOf(a.stage) : -1;
+    const bi = b ? CRC_STAGE_ORDER.indexOf(b.stage) : -1;
+    if (bi > ai) best[r.key] = r;
+  }
+
+  const moves = [], protectedRows = [], noMatch = [], unmapped = [], agree = [];
+  for (const key in best) {
+    const row = best[key];
+    const mapped = crcMapStatus(row.crcStatus, row.respDue, today);
+    const hit = crcMatchClient(row, index);
+
+    if (!hit.client) {
+      if (hit.tier === 'ambiguous') noMatch.push({ row, why: 'more than one app client matches' });
+      else noMatch.push({ row, why: 'no app client with this name' });
+      continue;
+    }
+    if (!mapped) { unmapped.push({ row, client: hit.client }); continue; }
+
+    const c = hit.client;
+    if (CRC_HARD_SKIP.includes(c.stage)) continue;
+    if (c.stage === mapped.stage && (!mapped.outcome || c.outcome === mapped.outcome)) { agree.push(row); continue; }
+
+    const paused = !!c.pause_reason;
+    const isProtected = paused ||
+      (CRC_PROTECTED.includes(c.stage) && !(c.stage === 'litigation' && mapped.stage === 'lost'));
+    const firesIntro = mapped.stage === 'waiting_reports' && c.stage !== 'waiting_reports' && !c.intro_sent_at;
+
+    const item = {
+      id: c.id, clientName: c.name, crcName: row.display, tier: hit.tier,
+      from: c.stage, fromOutcome: c.outcome || null,
+      to: mapped.stage, outcome: mapped.outcome,
+      crcStatus: row.crcStatus, respDue: row.respDue, reason: mapped.reason,
+      paused, pauseReason: c.pause_reason || '', isProtected, firesIntro,
+      checked: !isProtected
+    };
+    (isProtected ? protectedRows : moves).push(item);
+  }
+  moves.sort((a,b) => a.clientName.localeCompare(b.clientName));
+  protectedRows.sort((a,b) => a.clientName.localeCompare(b.clientName));
+  return { moves, protectedRows, noMatch, unmapped, agree, dupes };
+}
+
+// ---------------------------------------------------------------------
+// UI
+// ---------------------------------------------------------------------
+function crcFileChosen(input) {
+  const f = input.files && input.files[0];
+  input.value = '';
+  if (f) crcUpload(f);
+}
+
+async function crcUpload(file) {
+  const btn = document.getElementById('crcBtn');
+  if (btn) { btn.textContent = 'Parsing...'; btn.disabled = true; }
+  try {
+    if (!clients.length) await loadData();
+    const buf = await file.arrayBuffer();
+    const parse = await crcParsePdf(new Uint8Array(buf));
+    crcParseResult = parse;
+    const built = crcBuildProposals(parse);
+    crcProposals = built.moves.concat(built.protectedRows);
+    crcRenderReview(parse, built, file.name);
+    document.getElementById('crcModal').classList.add('visible');
+  } catch (e) {
+    console.error('CRC parse failed:', e);
+    toast('CRC parse failed: ' + e.message);
+  }
+  if (btn) { btn.textContent = 'Upload CRC Report'; btn.disabled = false; }
+}
+
+function crcEsc(v) {
+  return String(v == null ? '' : v).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+}
+function crcStageLabel(k) {
+  const st = STAGES.find(x => x.key === k);
+  return st ? st.label : k;
+}
+
+function crcRenderReview(parse, built, fileName) {
+  const bad = parse.integrity.filter(x => !x.ok);
+  const totalRows = parse.rows.length;
+
+  document.getElementById('crcModalTitle').textContent =
+    'CRC Report Review \u2014 ' + (parse.reportDate || fileName);
+
+  document.getElementById('crcSummary').innerHTML =
+    crcEsc(totalRows) + ' cases in report &middot; ' +
+    crcEsc(built.moves.length) + ' proposed moves &middot; ' +
+    crcEsc(built.protectedRows.length) + ' need override &middot; ' +
+    crcEsc(built.agree.length) + ' already correct &middot; ' +
+    crcEsc(built.noMatch.length) + ' unmatched &middot; ' +
+    crcEsc(built.unmapped.length) + ' unmapped status';
+
+  // Integrity tripwire — refuse to apply on a bad parse.
+  const applyBtn = document.getElementById('crcApplyBtn');
+  if (bad.length || parse.errors.length) {
+    document.getElementById('crcIntegrity').innerHTML =
+      '<div style="background:var(--red-light);border:1px solid var(--red);color:var(--red);border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;font-weight:600;">' +
+      'Parse failed its own integrity check. Nothing can be applied.<br><span style="font-weight:400;">' +
+      bad.map(b => crcEsc(b.status) + ': report says ' + b.declared + ', parsed ' + b.parsed).concat(parse.errors.map(crcEsc)).join('<br>') +
+      '</span></div>';
+    applyBtn.disabled = true;
+    applyBtn.style.opacity = '.4';
+  } else {
+    document.getElementById('crcIntegrity').innerHTML =
+      '<div style="background:var(--green-light);border:1px solid var(--green);color:var(--green);border-radius:8px;padding:9px 12px;margin-bottom:14px;font-size:12px;font-weight:600;">' +
+      'Integrity check passed \u2014 every section matches the count printed in the report.</div>';
+    applyBtn.disabled = false;
+    applyBtn.style.opacity = '1';
+  }
+
+  document.getElementById('crcMismatches').innerHTML =
+    crcTable('Proposed moves', built.moves, true);
+  document.getElementById('crcProtected').innerHTML =
+    built.protectedRows.length
+      ? crcTable('Paused / protected \u2014 unchecked on purpose, ticking one is an override', built.protectedRows, true)
+      : '';
+
+  document.getElementById('crcNoMatch').innerHTML = built.noMatch.length ? (
+    crcHeading('In the CRC report, not matched to an app client (' + built.noMatch.length + ')') +
+    '<div style="font-size:12px;color:var(--g600);max-height:180px;overflow-y:auto;border:1px solid var(--g200);border-radius:8px;padding:10px;">' +
+    built.noMatch.map(n => crcEsc(n.row.display) + ' <span style="color:var(--g400);">\u2014 ' + crcEsc(n.row.crcStatus) + ' \u2014 ' + crcEsc(n.why) + '</span>').join('<br>') +
+    '</div>') : '';
+
+  const byStatus = {};
+  for (const u of built.unmapped) byStatus[u.row.crcStatus] = (byStatus[u.row.crcStatus] || 0) + 1;
+  document.getElementById('crcUnmapped').innerHTML = built.unmapped.length ? (
+    crcHeading('CRC statuses with no mapping \u2014 reported only, never moved') +
+    '<div style="font-size:12px;color:var(--g600);border:1px solid var(--g200);border-radius:8px;padding:10px;">' +
+    Object.keys(byStatus).map(k => crcEsc(k) + ': ' + byStatus[k] + ' client(s)').join('<br>') +
+    (built.dupes.length ? '<br><span style="color:var(--g400);">' + built.dupes.length + ' client(s) had more than one CRC row; the furthest-along status was used.</span>' : '') +
+    '</div>') : '';
+
+  crcUpdateCount();
+}
+
+function crcHeading(t) {
+  return '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--g400);margin:16px 0 8px;">' + crcEsc(t) + '</div>';
+}
+
+function crcTable(title, items, checkable) {
+  if (!items.length) return crcHeading(title) + '<div style="font-size:13px;color:var(--g500);">None.</div>';
+  let h = crcHeading(title + ' (' + items.length + ')');
+  h += '<div style="border:1px solid var(--g200);border-radius:8px;overflow:hidden;">';
+  h += '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+  h += '<tr style="background:var(--g50);color:var(--g500);text-align:left;">' +
+       '<th style="padding:7px 8px;width:30px;"></th>' +
+       '<th style="padding:7px 8px;">Client</th>' +
+       '<th style="padding:7px 8px;">Move</th>' +
+       '<th style="padding:7px 8px;">Why (CRC)</th></tr>';
+  for (const it of items) {
+    const idx = crcProposals.indexOf(it);
+    h += '<tr style="border-top:1px solid var(--g100);">';
+    h += '<td style="padding:7px 8px;vertical-align:top;">' +
+         (checkable ? '<input type="checkbox" data-crc-idx="' + idx + '"' + (it.checked ? ' checked' : '') + ' onchange="crcToggle(' + idx + ', this.checked)">' : '') + '</td>';
+    h += '<td style="padding:7px 8px;vertical-align:top;font-weight:600;">' + crcEsc(it.clientName) +
+         (it.tier === 'last+initial' ? '<div style="font-weight:400;color:var(--gold);">CRC spells it "' + crcEsc(it.crcName) + '" \u2014 matched on surname + initial</div>' : '') +
+         (it.paused ? '<div style="font-weight:400;color:var(--red);">Paused: ' + crcEsc(it.pauseReason) + '</div>' : '') +
+         '</td>';
+    h += '<td style="padding:7px 8px;vertical-align:top;">' + crcEsc(crcStageLabel(it.from)) +
+         ' &rarr; <strong>' + crcEsc(crcStageLabel(it.to)) + '</strong>' +
+         (it.outcome ? ' <span style="color:var(--g500);">(' + crcEsc(it.outcome) + ')</span>' : '') +
+         (it.firesIntro ? '<div style="color:var(--gold);font-weight:700;">\u26a1 sends intro immediately</div>' : '') +
+         '</td>';
+    h += '<td style="padding:7px 8px;vertical-align:top;color:var(--g600);">' + crcEsc(it.reason) + '</td>';
+    h += '</tr>';
+  }
+  return h + '</table></div>';
+}
+
+function crcToggle(idx, val) {
+  if (crcProposals[idx]) crcProposals[idx].checked = val;
+  crcUpdateCount();
+}
+function crcUpdateCount() {
+  const checked = crcProposals.filter(p => p.checked);
+  const intros = checked.filter(p => p.firesIntro).length;
+  document.getElementById('crcCheckedCount').textContent =
+    checked.length + ' checked' + (intros ? ' \u2014 ' + intros + ' will send an intro immediately' : '');
+}
+
+// ---------------------------------------------------------------------
+// APPLY
+// ---------------------------------------------------------------------
+async function crcApply() {
+  const picked = crcProposals.filter(p => p.checked);
+  if (!picked.length) { toast('Nothing checked'); return; }
+  const intros = picked.filter(p => p.firesIntro).length;
+  const msg = 'Apply ' + picked.length + ' stage change(s)?' +
+              (intros ? '\n\n' + intros + ' client(s) will be sent the intro email and SMS right now.' : '');
+  if (!(await customConfirm(msg))) return;
+
+  const btn = document.getElementById('crcApplyBtn');
+  btn.disabled = true; btn.textContent = 'Applying...';
+
+  const now = new Date();
+  const dateStr = (now.getMonth()+1).toString().padStart(2,'0') + '/' + now.getDate().toString().padStart(2,'0');
+  const stamp = crcParseResult && crcParseResult.reportDate ? crcParseResult.reportDate : dateStr;
+  let done = 0, failed = 0, sent = 0;
+
+  for (const p of picked) {
+    const c = clients.find(x => x.id === p.id);
+    if (!c) { failed++; continue; }
+    try {
+      const updateData = { stage: p.to };
+      if (p.outcome) { updateData.outcome = p.outcome; updateData.outcome_at = now.toISOString(); }
+
+      // Reuse the shared waiting_reports path — same reset + auto-send
+      // the round-over mover uses. Do not duplicate that logic here.
+      if (p.to === 'waiting_reports' && c.stage !== 'waiting_reports') {
+        const didSend = await enterWaitingReports(c, updateData, 'CRC report ' + stamp);
+        if (didSend) sent++;
+      }
+
+      const log = Array.isArray(c.comm_log) ? [...c.comm_log] : [];
+      log.push({ date: dateStr, agent: 'SYS',
+                 text: 'Stage set per CRC report ' + stamp + ': ' + p.from + ' \u2192 ' + p.to + ' (' + p.crcStatus + ')' });
+      updateData.comm_log = log;
+
+      const { error } = await sb.from('mcl_clients').update(updateData).eq('id', p.id);
+      if (error) { console.error('CRC update failed for', c.name, error); failed++; continue; }
+
+      await sb.from('mcl_activity_log').insert({
+        client_id: p.id, action: 'crc_stage_set',
+        details: 'CRC ' + stamp + ': ' + p.from + ' -> ' + p.to + ' (' + p.crcStatus + ')'
+      });
+      if (c.pipedrive_id) {
+        try { await updatePipedriveLabel(c.pipedrive_id, p.outcome || p.to); }
+        catch(e) { console.error('Pipedrive label failed for', c.name, e); }
+      }
+      done++;
+    } catch (e) {
+      console.error('CRC apply error for', p.clientName, e);
+      failed++;
+    }
+  }
+
+  btn.disabled = false; btn.textContent = 'Apply Checked Moves';
+  closeModal('crcModal');
+  await loadData();
+  renderStages();
+  renderClientList();
+  toast('CRC applied \u2014 ' + done + ' moved' + (sent ? ', ' + sent + ' intro(s) sent' : '') + (failed ? ', ' + failed + ' failed' : ''));
+  console.log('CRC apply complete:', { done, sent, failed });
+}
 </script>
 </body>
 </html>
